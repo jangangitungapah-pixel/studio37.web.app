@@ -18,7 +18,10 @@ export const firebaseClientConfig = Object.freeze({
     'VITE_FIREBASE_AUTH_DOMAIN',
     studio37FirebaseProjectDefaults.authDomain,
   ),
-  projectId: readEnvironmentValue('VITE_FIREBASE_PROJECT_ID', studio37FirebaseProjectDefaults.projectId),
+  projectId: readEnvironmentValue(
+    'VITE_FIREBASE_PROJECT_ID',
+    studio37FirebaseProjectDefaults.projectId,
+  ),
   storageBucket: readEnvironmentValue(
     'VITE_FIREBASE_STORAGE_BUCKET',
     studio37FirebaseProjectDefaults.storageBucket,
