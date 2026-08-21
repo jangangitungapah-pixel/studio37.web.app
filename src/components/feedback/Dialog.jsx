@@ -24,7 +24,9 @@ export function Dialog({
 }) {
   const generatedId = useId();
   const titleId = `dialog-title-${generatedId.replaceAll(':', '')}`;
-  const descriptionId = description ? `dialog-description-${generatedId.replaceAll(':', '')}` : undefined;
+  const descriptionId = description
+    ? `dialog-description-${generatedId.replaceAll(':', '')}`
+    : undefined;
   const dialogRef = useRef(null);
 
   useEffect(() => {
@@ -112,7 +114,12 @@ export function Dialog({
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
-          <button type="button" className="ui-dialog__close" aria-label={closeLabel} onClick={onClose}>
+          <button
+            type="button"
+            className="ui-dialog__close"
+            aria-label={closeLabel}
+            onClick={onClose}
+          >
             ×
           </button>
         </header>
