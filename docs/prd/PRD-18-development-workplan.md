@@ -58,10 +58,10 @@ Phase 0 completed on 2026-08-21. GitHub Actions Quality run `32480902311` passed
 - [x] Implement typography/spacing/layout primitives.
 - [x] Implement Buttons.
 - [x] Implement Inputs/Textareas.
-- [ ] Implement Select/Combobox foundation.
-- [ ] Implement Modal/Dialog foundation.
+- [x] Implement Select/Combobox foundation.
+- [x] Implement Modal/Dialog foundation.
 - [x] Implement Badge/Status components.
-- [ ] Implement Toast/feedback states.
+- [x] Implement Toast/feedback states.
 - [x] Implement desktop sidebar/topbar shell.
 - [x] Implement responsive/mobile navigation shell.
 - [x] Implement reusable page/subpage context pattern.
@@ -69,15 +69,16 @@ Phase 0 completed on 2026-08-21. GitHub Actions Quality run `32480902311` passed
 
 ### Phase 1 gate
 
-- [ ] Shared components render consistently.
-- [ ] Desktop/mobile shell responsive QA passes.
-- [ ] Lint/test/build pass.
+- [x] Shared components render consistently.
+- [x] Desktop/mobile shell responsive QA passes.
+- [x] Lint/test/build pass.
 
 Phase 1 progress on 2026-08-21:
 
 - Phase 1A semantic tokens, shell, responsive navigation, page context, and focus baseline passed GitHub Actions and were manually checked in-browser by the project owner.
 - Phase 1B Button, Input/Textarea, and Badge/Status primitives passed GitHub Actions Quality run `32487452247`, including formatting, lint, component tests, production build, and Vite development-server smoke.
-- Select/Combobox, Modal/Dialog, Toast/feedback, and the final Phase 1 gate remain open.
+- Phase 1C Select/Combobox, Dialog, and Toast/feedback primitives passed GitHub Actions Quality run `32489239004`, including formatting, lint, component tests, production build, and Vite development-server smoke.
+- Phase 1 final shared-component visual consistency and desktop/mobile manual browser QA were accepted by the project owner on 2026-08-21.
 
 ---
 
@@ -569,7 +570,8 @@ Documentation baseline:
 Implementation status:
 
 - [x] Phase 0 — Repository & Quality Foundation completed and quality-gated.
-- [ ] Phase 1 — Design System & App Shell in progress.
+- [x] Phase 1 — Design System & App Shell completed and quality-gated.
   - [x] Phase 1A — semantic design tokens and responsive shell completed and quality-gated.
   - [x] Phase 1B — Button, Input/Textarea, and Badge/Status primitives completed and quality-gated.
-  - [ ] Remaining Phase 1 shared primitives and final gate.
+  - [x] Phase 1C — Select/Combobox, Dialog, and Toast/feedback primitives completed and quality-gated.
+  - [x] Final Phase 1 shared-component visual consistency and desktop/mobile manual browser QA accepted.
