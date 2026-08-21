@@ -108,9 +108,9 @@ export function FirebaseStatusPage() {
           <div>
             <strong>Manual backend probe</strong>
             <p>
-              Reads the reserved <code>__studio37_system__/connectivity-probe</code> path once.
-              A permission-denied response still proves the configured Firestore backend is
-              reachable; Phase 3 will establish authenticated access and Security Rules.
+              Reads the reserved <code>__studio37_system__/connectivity-probe</code> path once. A
+              permission-denied response still proves the configured Firestore backend is reachable;
+              Phase 3 will establish authenticated access and Security Rules.
             </p>
           </div>
           <Button onClick={runProbe} loading={probing}>
