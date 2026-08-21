@@ -2,7 +2,7 @@ import { useId } from 'react';
 
 import './field.css';
 
-function FieldFrame({ children, description, error, id, label, required = false }) {
+export function FieldFrame({ children, description, error, id, label, required = false }) {
   const descriptionId = description ? `${id}-description` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined;
