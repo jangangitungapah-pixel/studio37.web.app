@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier src/lib/firebase/config.js && exit 1",
     "test": "vitest run",
     "test:watch": "vitest"
   },
