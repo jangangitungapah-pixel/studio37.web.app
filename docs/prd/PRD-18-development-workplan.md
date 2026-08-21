@@ -19,34 +19,36 @@ Act as the implementation tracker and phase-by-phase execution source for Studio
 
 ## 0.1 Application Bootstrap
 
-- [ ] Initialize Vite React JavaScript project.
-- [ ] Confirm `.jsx`, `.js`, `.css` workflow.
-- [ ] Install/configure Tailwind CSS.
-- [ ] Establish feature-oriented `src/` structure from PRD-01.
-- [ ] Add routing foundation.
-- [ ] Add application shell/layout foundation.
+- [x] Initialize Vite React JavaScript project.
+- [x] Confirm `.jsx`, `.js`, `.css` workflow.
+- [x] Install/configure Tailwind CSS.
+- [x] Establish feature-oriented `src/` structure from PRD-01.
+- [x] Add routing foundation.
+- [x] Add application shell/layout foundation.
 
 ## 0.2 Development Quality
 
-- [ ] Configure ESLint.
-- [ ] Configure formatting conventions.
-- [ ] Configure unit/component testing.
-- [ ] Configure production build command.
-- [ ] Add baseline CI quality workflow if GitHub Actions is used.
-- [ ] Ensure lint/test/build pass on clean repository.
+- [x] Configure ESLint.
+- [x] Configure formatting conventions.
+- [x] Configure unit/component testing.
+- [x] Configure production build command.
+- [x] Add baseline CI quality workflow if GitHub Actions is used.
+- [x] Ensure lint/test/build pass on clean repository.
 
 ## 0.3 Environment
 
-- [ ] Add `.env.example`.
-- [ ] Add local environment ignore rules.
-- [ ] Define development/prod Firebase configuration boundary.
+- [x] Add `.env.example`.
+- [x] Add local environment ignore rules.
+- [x] Define development/prod Firebase configuration boundary.
 
 ### Phase 0 gate
 
-- [ ] App launches locally.
-- [ ] Lint passes.
-- [ ] Tests pass.
-- [ ] Production build passes.
+- [x] App launches locally.
+- [x] Lint passes.
+- [x] Tests pass.
+- [x] Production build passes.
+
+Phase 0 completed on 2026-08-21. GitHub Actions Quality run `32480902311` passed formatting, lint, component tests, production build, and a Vite development-server smoke check.
 
 ---
 
@@ -558,4 +560,7 @@ Documentation baseline:
 - [x] PRD-17 Testing & QA drafted.
 - [x] PRD-18 Development Workplan drafted.
 
-Application implementation has not started yet. The next implementation checkpoint is **Phase 0 — Repository & Quality Foundation** after PRD review/acceptance.
+Implementation status:
+
+- [x] Phase 0 — Repository & Quality Foundation completed and quality-gated.
+- [ ] Phase 1 — Design System & App Shell is the next implementation checkpoint.
