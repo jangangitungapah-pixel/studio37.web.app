@@ -183,7 +183,9 @@ export function DesignSystemPreviewPage() {
           <div className="design-preview__row">
             <Button
               variant="secondary"
-              onClick={() => pushToast({ title: 'Saved', message: 'Changes were saved.', tone: 'success' })}
+              onClick={() =>
+                pushToast({ title: 'Saved', message: 'Changes were saved.', tone: 'success' })
+              }
             >
               Success toast
             </Button>
