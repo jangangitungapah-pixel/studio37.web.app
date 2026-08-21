@@ -31,9 +31,7 @@ describe('Studio37 application shell', () => {
     await user.click(openButton);
 
     expect(openButton).toHaveAttribute('aria-expanded', 'true');
-    expect(
-      screen.getByRole('navigation', { name: 'Navigasi utama mobile' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Navigasi utama mobile' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Tutup menu' }));
 
