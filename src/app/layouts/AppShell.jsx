@@ -53,7 +53,12 @@ function Navigation({ ariaLabel, onNavigate }) {
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -61,7 +66,12 @@ function MenuIcon() {
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="m6.5 6.5 11 11m0-11-11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="m6.5 6.5 11 11m0-11-11 11"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -100,7 +110,11 @@ export function AppShell() {
             aria-label="Tutup navigasi"
             onClick={() => setMobileNavigationOpen(false)}
           />
-          <aside className="app-shell__mobile-drawer" data-open="true" aria-label="Menu aplikasi mobile">
+          <aside
+            className="app-shell__mobile-drawer"
+            data-open="true"
+            aria-label="Menu aplikasi mobile"
+          >
             <div className="app-shell__mobile-drawer-inner">
               <div className="app-shell__mobile-drawer-header">
                 <Brand />
