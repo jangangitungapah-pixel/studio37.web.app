@@ -1,4 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+
+import './app-shell.css';
 
 const navigationItems = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -8,51 +11,149 @@ const navigationItems = [
   { to: '/settings/account', label: 'Settings' },
 ];
 
-function NavigationLink({ item }) {
+const pageLabels = [
+  { match: '/bookings/', label: 'Booking Detail' },
+  { match: '/fees-commissions', label: 'Fee & Commission' },
+  { match: '/bookkeeping', label: 'Pembukuan' },
+  { match: '/calendar', label: 'Booking Calendar' },
+  { match: '/settings', label: 'Settings' },
+  { match: '/dashboard', label: 'Dashboard' },
+];
+
+function getPageLabel(pathname) {
+  return pageLabels.find((item) => pathname.startsWith(item.match))?.label ?? 'Studio37';
+}
+
+function Brand() {
   return (
-    <NavLink
-      to={item.to}
-      className={({ isActive }) =>
-        [
-          'block rounded-lg px-3 py-2 text-sm font-medium transition',
-          isActive
-            ? 'bg-slate-900 text-white'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
-        ].join(' ')
-      }
-    >
-      {item.label}
-    </NavLink>
+    <div className="app-brand">
+      <div className="app-brand__mark" aria-hidden="true">
+        37
+      </div>
+      <div className="min-w-0">
+        <p className="app-brand__name">Studio37 OS</p>
+        <p className="app-brand__meta">Studio Management</p>
+      </div>
+    </div>
+  );
+}
+
+function Navigation({ ariaLabel, onNavigate }) {
+  return (
+    <nav aria-label={ariaLabel} className="app-nav">
+      {navigationItems.map((item) => (
+        <NavLink key={item.to} to={item.to} className="app-nav__link" onClick={onNavigate}>
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m6.5 6.5 11 11m0-11-11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
 export function AppShell() {
+  const location = useLocation();
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const pageLabel = getPageLabel(location.pathname);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white px-4 py-3 md:hidden">
-        <div className="font-semibold">Studio37</div>
-      </header>
+    <div className="app-shell">
+      <a className="app-shell__skip-link" href="#main-content">
+        Lewati ke konten utama
+      </a>
 
-      <nav
-        aria-label="Navigasi utama mobile"
-        className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 md:hidden"
-      >
-        {navigationItems.map((item) => (
-          <NavigationLink key={item.to} item={item} />
-        ))}
-      </nav>
+      <aside className="app-shell__sidebar" aria-label="Sidebar aplikasi">
+        <div className="app-shell__sidebar-inner">
+          <Brand />
 
-      <div className="mx-auto grid min-h-screen max-w-[1600px] md:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-slate-200 bg-white p-4 md:block">
-          <div className="mb-6 px-3 text-lg font-semibold">Studio37</div>
-          <nav aria-label="Navigasi utama" className="space-y-1">
-            {navigationItems.map((item) => (
-              <NavigationLink key={item.to} item={item} />
-            ))}
-          </nav>
-        </aside>
+          <div className="app-shell__navigation">
+            <p className="app-shell__navigation-label">Workspace</p>
+            <Navigation ariaLabel="Navigasi utama" />
+          </div>
 
-        <main className="min-w-0 p-4 md:p-6">
+          <div className="app-shell__sidebar-footer">
+            <p className="app-shell__role">Studio37 Management</p>
+          </div>
+        </div>
+      </aside>
+
+      {mobileNavigationOpen ? (
+        <>
+          <button
+            className="app-shell__mobile-overlay"
+            type="button"
+            aria-label="Tutup navigasi"
+            onClick={() => setMobileNavigationOpen(false)}
+          />
+          <aside className="app-shell__mobile-drawer" data-open="true" aria-label="Menu aplikasi mobile">
+            <div className="app-shell__mobile-drawer-inner">
+              <div className="app-shell__mobile-drawer-header">
+                <Brand />
+                <button
+                  className="app-shell__close-button"
+                  type="button"
+                  aria-label="Tutup menu"
+                  onClick={() => setMobileNavigationOpen(false)}
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="app-shell__navigation">
+                <p className="app-shell__navigation-label">Workspace</p>
+                <Navigation
+                  ariaLabel="Navigasi utama mobile"
+                  onNavigate={() => setMobileNavigationOpen(false)}
+                />
+              </div>
+            </div>
+          </aside>
+        </>
+      ) : null}
+
+      <div className="app-shell__workspace">
+        <header className="app-shell__topbar">
+          <div className="app-shell__topbar-inner">
+            <div className="app-shell__topbar-start">
+              <button
+                className="app-shell__menu-button"
+                type="button"
+                aria-label="Buka menu"
+                aria-expanded={mobileNavigationOpen}
+                onClick={() => setMobileNavigationOpen(true)}
+              >
+                <MenuIcon />
+              </button>
+
+              <div className="app-shell__page-label">
+                <p className="app-shell__page-kicker">Studio37</p>
+                <p className="app-shell__page-title">{pageLabel}</p>
+              </div>
+            </div>
+
+            <div className="app-shell__status" aria-label="Status aplikasi">
+              <span className="app-shell__status-dot" aria-hidden="true" />
+              Foundation ready
+            </div>
+          </div>
+        </header>
+
+        <main id="main-content" className="app-shell__content" tabIndex="-1">
           <Outlet />
         </main>
       </div>
