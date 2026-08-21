@@ -7,6 +7,7 @@ import { BookkeepingPage } from '../features/bookkeeping/BookkeepingPage.jsx';
 import { CalendarPage } from '../features/calendar/CalendarPage.jsx';
 import { FeesCommissionsPage } from '../features/commissions/FeesCommissionsPage.jsx';
 import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
+import { DesignSystemPreviewPage } from '../features/dev/DesignSystemPreviewPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 
 export function AppRouter() {
@@ -26,6 +27,9 @@ export function AppRouter() {
         <Route path="settings/pricing" element={<SettingsPage title="Price Settings" />} />
         <Route path="settings/operators" element={<SettingsPage title="Operator Settings" />} />
         <Route path="settings/danger-zone" element={<SettingsPage title="Danger Zone" />} />
+        {import.meta.env.DEV ? (
+          <Route path="dev/design-system" element={<DesignSystemPreviewPage />} />
+        ) : null}
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
