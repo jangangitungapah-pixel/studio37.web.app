@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "echo __DIALOG__; prettier src/components/feedback/Dialog.jsx; echo __TOAST__; prettier src/components/feedback/ToastProvider.jsx; echo __SELECT__; prettier src/components/forms/Select.jsx; echo __PREVIEW__; prettier src/features/dev/DesignSystemPreviewPage.jsx; exit 1",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
