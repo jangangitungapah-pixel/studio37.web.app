@@ -76,10 +76,7 @@ export function ToastProvider({ children }) {
     return id;
   }, []);
 
-  const contextValue = useMemo(
-    () => ({ dismissToast, pushToast }),
-    [dismissToast, pushToast],
-  );
+  const contextValue = useMemo(() => ({ dismissToast, pushToast }), [dismissToast, pushToast]);
 
   return (
     <ToastContext.Provider value={contextValue}>
