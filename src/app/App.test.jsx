@@ -8,10 +8,11 @@ describe('Studio37 application shell', () => {
   it('renders the dashboard inside the semantic application shell', () => {
     window.history.pushState({}, '', '/dashboard');
 
-    render(<App />);
+    const { container } = render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
+    expect(container.querySelector('.app-shell__sidebar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Buka menu' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Lewati ke konten utama' })).toHaveAttribute(
       'href',
       '#main-content',
