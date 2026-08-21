@@ -44,13 +44,7 @@ export function Input({
   const id = providedId || `field-${generatedId.replaceAll(':', '')}`;
 
   return (
-    <FieldFrame
-      description={description}
-      error={error}
-      id={id}
-      label={label}
-      required={required}
-    >
+    <FieldFrame description={description} error={error} id={id} label={label} required={required}>
       {({ describedBy }) => (
         <input
           {...props}
@@ -79,13 +73,7 @@ export function Textarea({
   const id = providedId || `field-${generatedId.replaceAll(':', '')}`;
 
   return (
-    <FieldFrame
-      description={description}
-      error={error}
-      id={id}
-      label={label}
-      required={required}
-    >
+    <FieldFrame description={description} error={error} id={id} label={label} required={required}>
       {({ describedBy }) => (
         <textarea
           {...props}
