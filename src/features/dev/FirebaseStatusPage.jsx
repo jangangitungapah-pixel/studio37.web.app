@@ -1,6 +1,10 @@
+import { useState } from 'react';
+
 import { Badge } from '../../components/feedback/Badge.jsx';
 import { PageContext } from '../../components/navigation/PageContext.jsx';
+import { Button } from '../../components/ui/Button.jsx';
 import { getFirebaseClientStatus } from '../../lib/firebase/client.js';
+import { probeFirestoreConnectivity } from '../../lib/firebase/connectivity.js';
 
 import './firebase-status.css';
 
@@ -13,15 +17,41 @@ function StatusItem({ label, value, tone = 'neutral' }) {
   );
 }
 
+function getProbeTone(probe) {
+  if (probe?.reachable && probe.authorized) return 'success';
+  if (probe?.reachable) return 'warning';
+  return 'danger';
+}
+
+function getProbeLabel(probe) {
+  if (!probe) return 'Not checked';
+  if (probe.state === 'connected') return 'Connected';
+  if (probe.state === 'reachable-but-denied') return 'Reachable / Rules denied';
+  if (probe.state === 'misconfigured') return 'Client unavailable';
+  return `Unavailable (${probe.code})`;
+}
+
 export function FirebaseStatusPage() {
   const status = getFirebaseClientStatus();
+  const [probe, setProbe] = useState(null);
+  const [probing, setProbing] = useState(false);
+
+  const runProbe = async () => {
+    setProbing(true);
+
+    try {
+      setProbe(await probeFirestoreConnectivity());
+    } finally {
+      setProbing(false);
+    }
+  };
 
   return (
     <section className="firebase-status">
       <PageContext
-        eyebrow="Phase 2A"
-        title="Firebase Client Foundation"
-        description="Development-only status for the configured Firebase App, Authentication, and Cloud Firestore clients. This page performs no Firestore reads or writes."
+        eyebrow="Phase 2B"
+        title="Firebase Development Foundation"
+        description="Development-only status for Firebase clients, emulator routing, and a manual Firestore connectivity probe. The probe runs only when requested and performs one server document read attempt with no writes."
       />
 
       <article className="firebase-status__panel">
@@ -58,10 +88,34 @@ export function FirebaseStatusPage() {
             tone={status.useFirebaseEmulators ? 'warning' : 'neutral'}
           />
           <StatusItem
+            label="Emulator routing"
+            value={status.emulatorsConnected ? status.emulatorHost : 'Not connected'}
+            tone={status.emulatorsConnected ? 'warning' : 'neutral'}
+          />
+          <StatusItem
             label="Analytics"
             value={status.analyticsEligible ? 'Eligible' : 'Deferred'}
             tone={status.analyticsEligible ? 'info' : 'neutral'}
           />
+          <StatusItem
+            label="Firestore connectivity"
+            value={getProbeLabel(probe)}
+            tone={probe ? getProbeTone(probe) : 'neutral'}
+          />
+        </div>
+
+        <div className="firebase-status__probe">
+          <div>
+            <strong>Manual backend probe</strong>
+            <p>
+              Reads the reserved <code>__studio37_system__/connectivity-probe</code> path once.
+              A permission-denied response still proves the configured Firestore backend is
+              reachable; Phase 3 will establish authenticated access and Security Rules.
+            </p>
+          </div>
+          <Button onClick={runProbe} loading={probing}>
+            Run Firestore probe
+          </Button>
         </div>
       </article>
     </section>

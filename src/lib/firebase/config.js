@@ -10,6 +10,11 @@ const studio37FirebaseProjectDefaults = Object.freeze({
 
 const readEnvironmentValue = (key, fallback = '') => import.meta.env[key] ?? fallback;
 
+function readPort(key, fallback) {
+  const value = Number.parseInt(readEnvironmentValue(key, String(fallback)), 10);
+  return Number.isInteger(value) && value > 0 && value <= 65535 ? value : fallback;
+}
+
 export const appEnvironment = readEnvironmentValue('VITE_APP_ENV', 'development');
 
 export const firebaseClientConfig = Object.freeze({
@@ -40,7 +45,14 @@ export const firebaseClientConfig = Object.freeze({
 export const useFirebaseEmulators =
   readEnvironmentValue('VITE_USE_FIREBASE_EMULATORS', 'false').toLowerCase() === 'true';
 
+export const firebaseEmulatorConfig = Object.freeze({
+  host: readEnvironmentValue('VITE_FIREBASE_EMULATOR_HOST', '127.0.0.1'),
+  authPort: readPort('VITE_FIREBASE_AUTH_EMULATOR_PORT', 9099),
+  firestorePort: readPort('VITE_FIRESTORE_EMULATOR_PORT', 8080),
+});
+
 export const isProductionEnvironment = appEnvironment === 'production';
+export const shouldUseFirebaseEmulators = useFirebaseEmulators && !isProductionEnvironment;
 
 export function hasFirebaseClientConfiguration() {
   const requiredKeys = [
@@ -60,7 +72,9 @@ export function getFirebaseProjectSummary() {
     appEnvironment,
     authDomain: firebaseClientConfig.authDomain,
     configured: hasFirebaseClientConfiguration(),
+    emulatorHost: firebaseEmulatorConfig.host,
+    emulatorRequested: useFirebaseEmulators,
     projectId: firebaseClientConfig.projectId,
-    useFirebaseEmulators,
+    useFirebaseEmulators: shouldUseFirebaseEmulators,
   });
 }
