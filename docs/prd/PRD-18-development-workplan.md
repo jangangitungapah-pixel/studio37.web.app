@@ -54,24 +54,30 @@ Phase 0 completed on 2026-08-21. GitHub Actions Quality run `32480902311` passed
 
 # Phase 1 — Design System & App Shell
 
-- [ ] Implement semantic design tokens.
-- [ ] Implement typography/spacing/layout primitives.
-- [ ] Implement Buttons.
-- [ ] Implement Inputs/Textareas.
+- [x] Implement semantic design tokens.
+- [x] Implement typography/spacing/layout primitives.
+- [x] Implement Buttons.
+- [x] Implement Inputs/Textareas.
 - [ ] Implement Select/Combobox foundation.
 - [ ] Implement Modal/Dialog foundation.
-- [ ] Implement Badge/Status components.
+- [x] Implement Badge/Status components.
 - [ ] Implement Toast/feedback states.
-- [ ] Implement desktop sidebar/topbar shell.
-- [ ] Implement responsive/mobile navigation shell.
-- [ ] Implement reusable page/subpage context pattern.
-- [ ] Verify keyboard/focus baseline.
+- [x] Implement desktop sidebar/topbar shell.
+- [x] Implement responsive/mobile navigation shell.
+- [x] Implement reusable page/subpage context pattern.
+- [x] Verify keyboard/focus baseline.
 
 ### Phase 1 gate
 
 - [ ] Shared components render consistently.
 - [ ] Desktop/mobile shell responsive QA passes.
 - [ ] Lint/test/build pass.
+
+Phase 1 progress on 2026-08-21:
+
+- Phase 1A semantic tokens, shell, responsive navigation, page context, and focus baseline passed GitHub Actions and were manually checked in-browser by the project owner.
+- Phase 1B Button, Input/Textarea, and Badge/Status primitives passed GitHub Actions Quality run `32487452247`, including formatting, lint, component tests, production build, and Vite development-server smoke.
+- Select/Combobox, Modal/Dialog, Toast/feedback, and the final Phase 1 gate remain open.
 
 ---
 
@@ -563,4 +569,7 @@ Documentation baseline:
 Implementation status:
 
 - [x] Phase 0 — Repository & Quality Foundation completed and quality-gated.
-- [ ] Phase 1 — Design System & App Shell is the next implementation checkpoint.
+- [ ] Phase 1 — Design System & App Shell in progress.
+  - [x] Phase 1A — semantic design tokens and responsive shell completed and quality-gated.
+  - [x] Phase 1B — Button, Input/Textarea, and Badge/Status primitives completed and quality-gated.
+  - [ ] Remaining Phase 1 shared primitives and final gate.
