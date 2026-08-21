@@ -98,7 +98,9 @@ export function Combobox({
     return normalizedOptions.filter(
       (option) =>
         !option.disabled &&
-        `${option.label} ${option.keywords || ''}`.toLocaleLowerCase('id-ID').includes(normalizedQuery),
+        `${option.label} ${option.keywords || ''}`
+          .toLocaleLowerCase('id-ID')
+          .includes(normalizedQuery),
     );
   }, [normalizedOptions, query, selectedOption?.label]);
 
