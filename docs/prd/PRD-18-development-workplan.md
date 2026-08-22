@@ -120,9 +120,9 @@ Phase 2 progress on 2026-08-21:
 
 # Phase 3 — Authentication, Owner Bootstrap & Permissions
 
-- [ ] Implement Login page.
-- [ ] Implement Firebase session persistence.
-- [ ] Implement protected routes.
+- [x] Implement Login page.
+- [x] Implement Firebase session persistence.
+- [x] Implement protected routes.
 - [ ] Implement `users` profile model.
 - [ ] Implement Owner bootstrap strategy.
 - [ ] Implement active/disabled user handling.
@@ -141,6 +141,17 @@ Phase 2 progress on 2026-08-21:
 - [ ] Direct URL cannot bypass permission checks.
 - [ ] Security Rule tests pass.
 - [ ] Lint/test/build pass.
+
+Phase 3 progress on 2026-08-22:
+
+- Phase 3A implemented Firebase email/password login, explicit browser-local session persistence,
+  centralized auth observation, and fail-closed protected-route redirects that preserve the
+  requested internal destination.
+- Phase 3A added focused gateway, provider, Login, navigation, route-guard, and application
+  integration coverage. GitHub Actions Quality run `32548647650` passed formatting, lint, 65 tests,
+  production build, and Vite development-server smoke.
+- Firestore user profiles, Owner bootstrap, active/disabled enforcement, permissions, logout UI,
+  Security Rules, and every final Phase 3 gate remain pending for later focused sub-phases.
 
 ---
 
@@ -592,3 +603,5 @@ Implementation status:
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
   - [x] Phase 2C — converters, timestamp/timezone, integer-IDR, phone normalization, and query/index registry completed and quality-gated.
+- [ ] Phase 3 — Authentication, Owner Bootstrap & Permissions in progress.
+  - [x] Phase 3A — Login, Firebase session persistence, and authenticated-route foundation implemented and quality-gated.
