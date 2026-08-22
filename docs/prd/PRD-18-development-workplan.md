@@ -92,15 +92,15 @@ Phase 1 progress on 2026-08-21:
 - [x] Implement repository/service layer conventions.
 - [x] Define Firestore converters/normalizers if used.
 - [x] Implement timestamp/timezone utilities.
-- [ ] Implement integer-IDR money utilities.
-- [ ] Implement phone normalization utility.
+- [x] Implement integer-IDR money utilities.
+- [x] Implement phone normalization utility.
 - [ ] Document required Firestore indexes as queries emerge.
 
 ### Phase 2 gate
 
 - [x] Firebase dev connection works.
 - [x] Emulator/dev strategy documented.
-- [ ] Core data utilities have tests.
+- [x] Core data utilities have tests.
 - [x] Lint/test/build pass.
 
 Phase 2 progress on 2026-08-21:
@@ -112,6 +112,7 @@ Phase 2 progress on 2026-08-21:
 - Phase 2B connectivity/repository unit tests and the synchronized Firebase package lock passed GitHub Actions Quality run `32494354595` with formatting, lint, tests, production build, and Vite development-server smoke.
 - On 2026-08-22, the project owner reran the fixed manual `/dev/firebase` probe against Firebase project `studio37webapp` and confirmed `Connected`; the Firebase development connectivity gate is accepted.
 - Phase 2C slice 1 defined explicit Firestore encode/decode conventions, added centralized Firestore Timestamp/JavaScript Date and IANA timezone utilities, and passed GitHub Actions Quality run `32546928867` with formatting, lint, tests, production build, and Vite development-server smoke.
+- Phase 2C slice 2 added strict safe-integer IDR validation, checked IDR addition/formatting, canonical Indonesian E.164 phone normalization, and focused unit tests. GitHub Actions Quality run `32547371906` passed formatting, lint, tests, production build, and Vite development-server smoke.
 
 ---
 
@@ -588,4 +589,4 @@ Implementation status:
 - [ ] Phase 2 — Firebase & Data Foundation in progress.
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
-  - [ ] Remaining Phase 2 integer-IDR money utilities, phone normalization, index documentation, and final gate.
+  - [ ] Remaining Phase 2 Firestore query/index documentation and final closure.
