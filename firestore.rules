@@ -482,9 +482,8 @@ service cloud.firestore {
         && isValidAccountInvitation(operatorId, request.resource.data);
     }
 
-    function acceptedInvitationMatchesUser(operatorId, invitationId, uid, user) {
-      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
-      return isValidAccountInvitation(operatorId, invitation)
+    function acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user) {
+      return invitation.operatorId == operatorId
         && invitation.status == 'accepted'
         && invitation.acceptedAt == request.time
         && invitation.acceptedByUid == uid
@@ -494,32 +493,39 @@ service cloud.firestore {
         && hasVerifiedInvitationEmail(invitation.email);
     }
 
+    function acceptedInvitationAfterMatchesUser(operatorId, invitationId, uid, user) {
+      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
+      return acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user);
+    }
+
     function invitationSnapshotMatchesUser(operatorId, invitationId, uid, user) {
       let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
-      return acceptedInvitationMatchesUser(operatorId, invitationId, uid, user)
+      return acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user)
         && invitation.displayName == user.displayName
         && invitation.phone == user.phone;
     }
 
     function invitedOperatorAfter(operatorId, uid) {
       let operator = getAfter(operatorPath(operatorId)).data;
-      return isValidOperator(operator)
-        && operator.linkedUserUid == uid
+      return operator.linkedUserUid == uid
         && operator.status == 'active'
         && 'studio_operator' in operator.operatorTypes
         && operator.updatedAt == request.time
         && operator.updatedByUid == uid;
     }
 
-    function invitedUserAfter(operatorId, invitationId, uid) {
-      let user = getAfter(userPath(uid)).data;
-      return isValidUserProfile(uid, user)
+    function invitedUserDataMatches(user, operatorId, invitationId, uid) {
+      return user.uid == uid
         && user.role == 'studio_operator'
         && user.status == 'active'
         && user.operatorId == operatorId
         && activationInviteId(user) == invitationId
-        && user.updatedAt == request.time
-        && acceptedInvitationMatchesUser(operatorId, invitationId, uid, user);
+        && user.updatedAt == request.time;
+    }
+
+    function invitedUserAfter(operatorId, invitationId, uid) {
+      let user = getAfter(userPath(uid)).data;
+      return invitedUserDataMatches(user, operatorId, invitationId, uid);
     }
 
     function isAccountInvitationAcceptance(operatorId, invitationId) {
@@ -691,7 +697,7 @@ service cloud.firestore {
         && existsAfter(operatorPath(operatorId))
         && existsAfter(accountInvitationPath(operatorId, invitationId))
         && invitedOperatorAfter(operatorId, uid)
-        && acceptedInvitationMatchesUser(
+        && acceptedInvitationAfterMatchesUser(
           operatorId,
           invitationId,
           uid,
@@ -711,7 +717,13 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == uid
         && invitationId is string
         && existsAfter(accountInvitationPath(operatorId, invitationId))
-        && invitedUserAfter(operatorId, invitationId, uid);
+        && invitedUserDataMatches(user, operatorId, invitationId, uid)
+        && acceptedInvitationAfterMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          user
+        );
     }
 
     function preservesUserRoleAndActivationSource() {
