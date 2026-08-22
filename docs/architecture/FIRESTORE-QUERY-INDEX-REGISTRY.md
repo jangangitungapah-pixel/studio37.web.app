@@ -18,12 +18,12 @@ Phase 2. Production index review and deployment remain part of Phase 17.
 
 Phase 2 currently performs only document-addressed Firestore operations:
 
-| Operation | Shape | Composite index |
-| --- | --- | --- |
-| Connectivity probe | One explicit document read | Not required |
-| `getById` | One explicit document read | Not required |
-| `setById` | One explicit document write | Not required |
-| `updateById` | One explicit document update | Not required |
+| Operation          | Shape                        | Composite index |
+| ------------------ | ---------------------------- | --------------- |
+| Connectivity probe | One explicit document read   | Not required    |
+| `getById`          | One explicit document read   | Not required    |
+| `setById`          | One explicit document write  | Not required    |
+| `updateById`       | One explicit document update | Not required    |
 
 There are no implemented collection queries and therefore no required composite indexes yet.
 `firestore.indexes.json` intentionally begins with empty `indexes` and `fieldOverrides` arrays.
@@ -35,33 +35,33 @@ change that introduces or materially changes the corresponding feature-repositor
 
 Required columns for future entries:
 
-| Field | Required content |
-| --- | --- |
-| Query ID | Stable feature-owned identifier |
-| Repository | Module that constructs the query |
-| Collection | Exact collection or collection group |
-| Purpose | User workflow served by the query |
-| Filters | Equality, membership, and range filters |
-| Ordering | Ordered fields and directions |
-| Bound | Limit, page size, or date window |
-| Listener | One-shot or intentionally shared real-time listener |
-| Index | Not required, required manifest entry, or pending emulator verification |
-| Phase | Workplan phase that owns implementation |
+| Field      | Required content                                                        |
+| ---------- | ----------------------------------------------------------------------- |
+| Query ID   | Stable feature-owned identifier                                         |
+| Repository | Module that constructs the query                                        |
+| Collection | Exact collection or collection group                                    |
+| Purpose    | User workflow served by the query                                       |
+| Filters    | Equality, membership, and range filters                                 |
+| Ordering   | Ordered fields and directions                                           |
+| Bound      | Limit, page size, or date window                                        |
+| Listener   | One-shot or intentionally shared real-time listener                     |
+| Index      | Not required, required manifest entry, or pending emulator verification |
+| Phase      | Workplan phase that owns implementation                                 |
 
 ## Anticipated query families
 
 These are planning candidates, not active query contracts and not permission to pre-create
 indexes:
 
-| Candidate | Owning phase | Mandatory discipline |
-| --- | --- | --- |
-| Customer exact-phone match | Phase 7 | Canonical phone equality and explicit limit |
-| Customer booking history | Phase 7/10 | Customer filter, stable ordering, pagination |
-| Booking calendar window | Phase 8/9 | Visible date range, studio scope, no per-cell listener |
-| Booking payment attention | Phase 10/13 | Explicit status/date scope and result limit |
-| Operator commission period | Phase 11 | Operator, state, bounded period, pagination |
-| Ledger period view | Phase 12 | Bounded period plus explicit type/category filters |
-| Audit history | Phase 14 | Entity or bounded date scope with pagination |
+| Candidate                  | Owning phase | Mandatory discipline                                   |
+| -------------------------- | ------------ | ------------------------------------------------------ |
+| Customer exact-phone match | Phase 7      | Canonical phone equality and explicit limit            |
+| Customer booking history   | Phase 7/10   | Customer filter, stable ordering, pagination           |
+| Booking calendar window    | Phase 8/9    | Visible date range, studio scope, no per-cell listener |
+| Booking payment attention  | Phase 10/13  | Explicit status/date scope and result limit            |
+| Operator commission period | Phase 11     | Operator, state, bounded period, pagination            |
+| Ledger period view         | Phase 12     | Bounded period plus explicit type/category filters     |
+| Audit history              | Phase 14     | Entity or bounded date scope with pagination           |
 
 The owning feature phase must finalize field names, filter combinations, ordering, and index
 requirements from its real repository implementation.
