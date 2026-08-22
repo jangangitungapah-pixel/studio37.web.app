@@ -158,6 +158,12 @@ Small global configuration documents, for example:
 - booking defaults
 - numbering preferences
 
+Phase 4A implements the exact `appSettings/studio` document with business name, Indonesian IANA
+timezone, same-day operating-hour minutes, booking interval, immutable creation metadata, and
+server-controlled update metadata. The finalized field and authorization contract is documented in
+`docs/architecture/STUDIO-SETTINGS-CONTRACT.md`. Other settings documents remain deferred and
+default-deny.
+
 ### `permissionSets`
 Configurable Studio Operator permission templates if permissions are not stored directly on user documents.
 

@@ -26,9 +26,14 @@ The application currently performs only document-addressed Firestore operations:
 | `updateById`          | One explicit document update                 | Not required    |
 | User profile observer | One explicit `users/{uid}` document listener | Not required    |
 | Permission observer   | One explicit `permissionSets/{id}` listener  | Not required    |
+| Studio settings load  | One explicit `appSettings/studio` read       | Not required    |
 
 There are no implemented collection queries and therefore no required composite indexes yet.
 `firestore.indexes.json` intentionally begins with empty `indexes` and `fieldOverrides` arrays.
+
+Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
+configuration resolves to an unsaved UI draft and does not trigger a collection fallback or an
+automatic write.
 
 ### Active document-listener registry
 

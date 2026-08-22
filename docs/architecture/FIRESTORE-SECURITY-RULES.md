@@ -31,6 +31,7 @@ generic unbounded read path.
 | ----------------------------------- | ------------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------ | ------------------------------- |
 | `users/{uid}`                       | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.    | Active Owner only, with canonical schema and monotonic timestamps. | Denied; use status changes.     |
 | `permissionSets/{id}`               | Active Owner, or active Operator whose exact profile references this ID. | Denied.    | Active Owner only, with supported delegable capabilities.          | Denied; use `status: disabled`. |
+| `appSettings/studio`                | Any exact valid active Studio37 user profile.                            | Denied.    | Owner or active Operator with `settings.studio.edit`; validated.   | Denied.                         |
 | `studio37System/connectivity-probe` | Active Owner exact-document read only.                                   | Denied.    | Denied.                                                            | Denied.                         |
 | Every other path                    | Denied.                                                                  | Denied.    | Denied.                                                            | Denied.                         |
 
@@ -61,11 +62,26 @@ Permission-set writes allow only the supported delegable capability registry. In
 `permissions.manage`, `danger_zone.execute`, and unknown capability strings are rejected. A unit
 contract keeps the rule allowlist synchronized with the JavaScript capability registry.
 
+## Studio settings invariants
+
+Phase 4A opens only the exact `appSettings/studio` document. Reads require a canonical active user
+profile. Writes require implicit Owner access or an exact active permission set containing
+`settings.studio.edit`.
+
+The rules enforce the canonical field set, supported Indonesian IANA timezone, supported booking
+interval, same-day aligned operating-hours window, immutable creation actor/time, server update
+time, and current authenticated update actor. List/query and delete remain denied. The detailed
+schema is documented in:
+
+```text
+docs/architecture/STUDIO-SETTINGS-CONTRACT.md
+```
+
 ## Deferred product collections
 
-Bookings, customers, studios, settings, pricing, payments, commissions, ledger entries, and audit
-logs remain default-deny in this initial rule set. Their later phases must add the smallest required
-access with:
+Bookings, customers, studio rooms, remaining settings documents, pricing, payments, commissions,
+ledger entries, and audit logs remain default-deny. Their later phases must add the smallest
+required access with:
 
 1. a finalized document contract,
 2. explicit capability and field-level constraints,

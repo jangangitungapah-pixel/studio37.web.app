@@ -3,7 +3,12 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './providers/AppProviders.jsx';
 import { AppRouter } from './router.jsx';
 
-export function App({ authGateway, permissionSetRepository, userProfileRepository }) {
+export function App({
+  authGateway,
+  permissionSetRepository,
+  studioSettingsRepository,
+  userProfileRepository,
+}) {
   return (
     <AppProviders
       authGateway={authGateway}
@@ -11,7 +16,7 @@ export function App({ authGateway, permissionSetRepository, userProfileRepositor
       userProfileRepository={userProfileRepository}
     >
       <BrowserRouter>
-        <AppRouter />
+        <AppRouter studioSettingsRepository={studioSettingsRepository} />
       </BrowserRouter>
     </AppProviders>
   );
