@@ -1,23 +1,137 @@
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+
+import { Input } from '../../components/forms/Field.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { getAuthErrorMessage } from './authErrors.js';
+import { getPostLoginPath } from './authNavigation.js';
+import { useAuth } from './useAuth.js';
+import './auth.css';
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateCredentials(email, password) {
+  const errors = {};
+
+  if (!email) {
+    errors.email = 'Email wajib diisi.';
+  } else if (!emailPattern.test(email)) {
+    errors.email = 'Masukkan alamat email yang valid.';
+  }
+
+  if (!password) {
+    errors.password = 'Password wajib diisi.';
+  }
+
+  return errors;
+}
 
 export function LoginPage() {
+  const location = useLocation();
+  const { error: sessionError, signIn, status, user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [submissionError, setSubmissionError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const postLoginPath = useMemo(() => getPostLoginPath(location.state?.from), [location.state]);
+
+  if (status === 'authenticated' && user) {
+    return <Navigate to={postLoginPath} replace />;
+  }
+
+  if (status === 'loading') {
+    return (
+      <main className="auth-status" aria-live="polite">
+        <span className="auth-status__spinner" aria-hidden="true" />
+        <p>Memulihkan sesi Studio37…</p>
+      </main>
+    );
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    const normalizedEmail = email.trim();
+    const errors = validateCredentials(normalizedEmail, password);
+    setFieldErrors(errors);
+    setSubmissionError('');
+
+    if (Object.keys(errors).length) return;
+
+    setSubmitting(true);
+
+    try {
+      await signIn({ email: normalizedEmail, password });
+    } catch (error) {
+      setSubmissionError(getAuthErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const visibleError = submissionError || (sessionError ? getAuthErrorMessage(sessionError) : '');
+
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-50 p-6">
-      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Phase 0 Foundation
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold">Studio37 Login</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Firebase Authentication is intentionally wired in Phase 3. This route exists now so the
-          application architecture does not need to be reorganized later.
-        </p>
-        <Link
-          to="/dashboard"
-          className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+    <main className="login-page">
+      <section className="login-page__panel" aria-labelledby="login-title">
+        <div className="login-page__brand" aria-hidden="true">
+          37
+        </div>
+
+        <div>
+          <p className="login-page__eyebrow">Studio Management</p>
+          <h1 id="login-title">Masuk ke Studio37</h1>
+          <p className="login-page__intro">
+            Gunakan akun yang diberikan Owner untuk membuka workspace operasional.
+          </p>
+        </div>
+
+        {visibleError ? (
+          <div className="login-page__alert" role="alert">
+            {visibleError}
+          </div>
+        ) : null}
+
+        <form
+          className="login-page__form"
+          aria-label="Login Studio37"
+          noValidate
+          onSubmit={handleSubmit}
         >
-          Open foundation shell
-        </Link>
+          <Input
+            autoComplete="email"
+            autoFocus
+            error={fieldErrors.email}
+            inputMode="email"
+            label="Email"
+            name="email"
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="owner@studio37.id"
+            required
+            type="email"
+            value={email}
+          />
+
+          <Input
+            autoComplete="current-password"
+            error={fieldErrors.password}
+            label="Password"
+            name="password"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            type="password"
+            value={password}
+          />
+
+          <Button className="login-page__submit" loading={submitting} size="lg" type="submit">
+            Masuk
+          </Button>
+        </form>
+
+        <p className="login-page__support">
+          Belum punya akses atau akun dinonaktifkan? Hubungi Owner Studio37.
+        </p>
       </section>
     </main>
   );

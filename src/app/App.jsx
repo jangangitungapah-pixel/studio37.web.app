@@ -3,9 +3,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './providers/AppProviders.jsx';
 import { AppRouter } from './router.jsx';
 
-export function App() {
+export function App({ authGateway }) {
   return (
-    <AppProviders>
+    <AppProviders authGateway={authGateway}>
       <BrowserRouter>
         <AppRouter />
       </BrowserRouter>
