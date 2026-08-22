@@ -540,8 +540,6 @@ service cloud.firestore {
         && request.resource.data.acceptedAt == request.time
         && request.resource.data.acceptedByUid == request.auth.uid
         && isValidAccountInvitation(operatorId, request.resource.data)
-        && existsAfter(operatorPath(operatorId))
-        && existsAfter(userPath(request.auth.uid))
         && invitedOperatorAfter(operatorId, request.auth.uid)
         && invitedUserAfter(operatorId, invitationId, request.auth.uid);
     }
@@ -670,8 +668,6 @@ service cloud.firestore {
         && request.resource.data.permissionSetId == null
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && existsAfter(operatorPath(operatorId))
-        && existsAfter(accountInvitationPath(operatorId, invitationId))
         && invitedOperatorAfter(operatorId, uid)
         && invitationSnapshotMatchesUser(
           operatorId,
@@ -693,9 +689,6 @@ service cloud.firestore {
         && operatorId is string
         && invitationId is string
         && request.resource.data.updatedAt == request.time
-        && hasVerifiedInvitationEmail(request.resource.data.email)
-        && existsAfter(operatorPath(operatorId))
-        && existsAfter(accountInvitationPath(operatorId, invitationId))
         && invitedOperatorAfter(operatorId, uid)
         && acceptedInvitationAfterMatchesUser(
           operatorId,
@@ -705,18 +698,10 @@ service cloud.firestore {
         );
     }
 
-    function isInvitationOperatorLink(operatorId) {
-      let uid = request.auth.uid;
+    function isInvitationOperatorLinkDetails(operatorId, uid) {
       let user = getAfter(userPath(uid)).data;
       let invitationId = activationInviteId(user);
-      return resource.data.linkedUserUid == null
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
-        && request.resource.data.linkedUserUid == uid
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.updatedByUid == uid
-        && invitationId is string
-        && existsAfter(accountInvitationPath(operatorId, invitationId))
+      return invitationId is string
         && invitedUserDataMatches(user, operatorId, invitationId, uid)
         && acceptedInvitationAfterMatchesUser(
           operatorId,
@@ -724,6 +709,17 @@ service cloud.firestore {
           uid,
           user
         );
+    }
+
+    function isInvitationOperatorLink(operatorId) {
+      let uid = request.auth.uid;
+      return resource.data.linkedUserUid == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
+        && request.resource.data.linkedUserUid == uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == uid
+        && isInvitationOperatorLinkDetails(operatorId, uid);
     }
 
     function preservesUserRoleAndActivationSource() {
@@ -751,10 +747,10 @@ service cloud.firestore {
           || isInvitationUserCreate(uid));
 
       allow update: if isValidUserProfile(uid, request.resource.data)
-        && usesCurrentWriteTime(request.resource.data)
-        && preservesUserHistory()
         && (isInvitationUserLinkUpdate(uid)
-          || (canUpdateUserProfile(uid, resource.data)
+          || (usesCurrentWriteTime(request.resource.data)
+            && preservesUserHistory()
+            && canUpdateUserProfile(uid, resource.data)
             && preservesOwnOwnerAccess(uid)
             && preservesUserRoleAndActivationSource()
             && (request.resource.data.operatorId == resource.data.operatorId
@@ -822,8 +818,7 @@ service cloud.firestore {
         && usesOperatorCreateMetadata();
 
       allow update: if isValidOperator(request.resource.data)
-        && ((preservesOperatorHistory()
-            && isInvitationOperatorLink(operatorId))
+        && (isInvitationOperatorLink(operatorId)
           || (hasCapability('settings.operators.manage')
             && preservesOperatorHistoryAndAccountLink())
           || (isActiveOwner()
