@@ -428,6 +428,19 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == request.auth.uid;
     }
 
+    function linkedOperatorAfter(operatorId, expectedUserUid) {
+      let linkedOperator = getAfter(operatorPath(operatorId)).data;
+      return linkedOperator.linkedUserUid == expectedUserUid
+        && linkedOperator.updatedAt == request.time
+        && linkedOperator.updatedByUid == request.auth.uid;
+    }
+
+    function linkedUserAfter(userUid, expectedOperatorId) {
+      let linkedUser = getAfter(userPath(userUid)).data;
+      return linkedUser.operatorId == expectedOperatorId
+        && linkedUser.updatedAt == request.time;
+    }
+
     function isAtomicUserOperatorLink(uid) {
       let previousOperatorId = resource.data.operatorId;
       let nextOperatorId = request.resource.data.operatorId;
@@ -437,17 +450,11 @@ service cloud.firestore {
         && ((previousOperatorId == null
             && nextOperatorId is string
             && existsAfter(operatorPath(nextOperatorId))
-            && isValidOperator(getAfter(operatorPath(nextOperatorId)).data)
-            && getAfter(operatorPath(nextOperatorId)).data.updatedAt == request.time
-            && getAfter(operatorPath(nextOperatorId)).data.updatedByUid == request.auth.uid
-            && getAfter(operatorPath(nextOperatorId)).data.linkedUserUid == uid)
+            && linkedOperatorAfter(nextOperatorId, uid))
           || (previousOperatorId is string
             && nextOperatorId == null
             && existsAfter(operatorPath(previousOperatorId))
-            && isValidOperator(getAfter(operatorPath(previousOperatorId)).data)
-            && getAfter(operatorPath(previousOperatorId)).data.updatedAt == request.time
-            && getAfter(operatorPath(previousOperatorId)).data.updatedByUid == request.auth.uid
-            && getAfter(operatorPath(previousOperatorId)).data.linkedUserUid == null));
+            && linkedOperatorAfter(previousOperatorId, null)));
     }
 
     function isAtomicOperatorUserLink(operatorId) {
@@ -458,21 +465,11 @@ service cloud.firestore {
         && ((previousUserUid == null
             && nextUserUid is string
             && existsAfter(userPath(nextUserUid))
-            && isValidUserProfile(
-              nextUserUid,
-              getAfter(userPath(nextUserUid)).data
-            )
-            && getAfter(userPath(nextUserUid)).data.updatedAt == request.time
-            && getAfter(userPath(nextUserUid)).data.operatorId == operatorId)
+            && linkedUserAfter(nextUserUid, operatorId))
           || (previousUserUid is string
             && nextUserUid == null
             && existsAfter(userPath(previousUserUid))
-            && isValidUserProfile(
-              previousUserUid,
-              getAfter(userPath(previousUserUid)).data
-            )
-            && getAfter(userPath(previousUserUid)).data.updatedAt == request.time
-            && getAfter(userPath(previousUserUid)).data.operatorId == null));
+            && linkedUserAfter(previousUserUid, null)));
     }
 
     function preservesOwnOwnerAccess(uid) {
