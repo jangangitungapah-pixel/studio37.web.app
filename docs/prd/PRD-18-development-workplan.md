@@ -215,6 +215,7 @@ Phase 3 progress on 2026-08-22:
 - [x] Support Recording Operator/Engineer type.
 - [x] Support operator without login.
 - [x] Link operator to user account where applicable.
+- [x] Add scoped operator account invitation/self-registration foundation.
 - [ ] Configure operator permissions.
 - [x] Activate/deactivate operator.
 
@@ -281,9 +282,20 @@ Phase 4 progress on 2026-08-22:
   existing bounded list without adding a user query, Auth provisioning, or permission mutation.
 - GitHub Actions Quality run `32575053286` passed formatting, lint, 183 unit/component tests, 28
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Booking/calendar consumption of active rooms/hours, permission administration, real-Firebase
-  account-link acceptance, and final Phase 4 responsive/integration gates remain pending; Phase 4
-  remains in progress.
+- Phase 4C5A added opaque exact-path account invitations beneath eligible active, unlinked Studio
+  Operators. The repository exposes no list/query/Auth-user administration path and lets a Firebase
+  user with a matching verified email redeem one pending invitation into an exact reciprocal
+  user/operator relationship without manual `users/{uid}` console provisioning.
+- Invitation redemption atomically creates or updates the exact user profile, links the operator,
+  and accepts the invitation. New users are forced to active `studio_operator` with
+  `permissionSetId: null`; eligible existing Studio Operators preserve their permission set.
+  Security Rules reject expired/revoked/reused invitations, unverified or mismatched emails,
+  one-sided writes, injected permissions, and every invitation/Owner role escalation path.
+- GitHub Actions Quality run `32579690151` passed formatting, lint, 196 unit/component tests, 34
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms/hours, permission administration, invitation
+  provider/delivery and browser UI, final real-Firebase account-link acceptance, and final Phase 4
+  responsive/integration gates remain pending; Phase 4 remains in progress.
 
 ---
 
@@ -717,4 +729,5 @@ Implementation status:
   - [x] Phase 4C2 — bounded Operator Settings UI, add/edit, and soft activation/deactivation implemented and quality-gated.
   - [x] Phase 4C3 — exact-document atomic operator/account-link repository and Security Rules foundation implemented and quality-gated.
   - [x] Phase 4C4 — Owner-only exact-UID operator/account-link review, link, and unlink UI implemented and quality-gated.
-  - [ ] Permission management, real-Firebase account-link acceptance, and final integration/responsive gates pending.
+  - [x] Phase 4C5A — exact-path verified-email invitation/self-registration model, repository, atomic Rules, and automated coverage implemented and quality-gated.
+  - [ ] Invitation provider/delivery and browser UI, permission management, real-Firebase account-link acceptance, and final integration/responsive gates pending.
