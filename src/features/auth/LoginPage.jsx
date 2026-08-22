@@ -9,6 +9,23 @@ import { useAuth } from './useAuth.js';
 import './auth.css';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const blockedAccessContent = Object.freeze({
+  disabled: {
+    description:
+      'Akun ini masih terhubung ke Firebase, tetapi akses operasionalnya dinonaktifkan. Hubungi Owner Studio37 untuk aktivasi ulang.',
+    title: 'Akun dinonaktifkan',
+  },
+  'profile-error': {
+    description:
+      'Studio37 tidak dapat memverifikasi profil akses akun ini. Coba lagi setelah koneksi atau konfigurasi Firestore diperiksa.',
+    title: 'Profil akses gagal diverifikasi',
+  },
+  'profile-missing': {
+    description:
+      'Akun Firebase berhasil dikenali, tetapi profil Studio37 belum dibuat. Owner perlu menyelesaikan bootstrap atau menambahkan profil pengguna.',
+    title: 'Profil akses belum tersedia',
+  },
+});
 
 function validateCredentials(email, password) {
   const errors = {};
@@ -26,9 +43,57 @@ function validateCredentials(email, password) {
   return errors;
 }
 
+function BlockedAccessPanel({ onSignOut, status }) {
+  const [error, setError] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
+  const content = blockedAccessContent[status];
+
+  async function handleSignOut() {
+    setError('');
+    setSigningOut(true);
+
+    try {
+      await onSignOut();
+    } catch {
+      setError('Sesi belum dapat ditutup. Periksa koneksi lalu coba lagi.');
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <main className="login-page">
+      <section className="login-page__panel" aria-labelledby="access-state-title">
+        <div className="login-page__brand" aria-hidden="true">
+          37
+        </div>
+
+        <div>
+          <p className="login-page__eyebrow">Studio37 Access</p>
+          <h1 id="access-state-title">{content.title}</h1>
+          <p className="login-page__intro">{content.description}</p>
+        </div>
+
+        {error ? (
+          <div className="login-page__alert" role="alert">
+            {error}
+          </div>
+        ) : null}
+
+        <Button loading={signingOut} onClick={handleSignOut} size="lg" variant="secondary">
+          Keluar dan gunakan akun lain
+        </Button>
+
+        <p className="login-page__support">
+          Status ini memblokir seluruh protected route sampai profil kembali aktif.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export function LoginPage() {
   const location = useLocation();
-  const { error: sessionError, signIn, status, user } = useAuth();
+  const { error: sessionError, signIn, signOut, status, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -47,6 +112,10 @@ export function LoginPage() {
         <p>Memulihkan sesi Studio37…</p>
       </main>
     );
+  }
+
+  if (user && blockedAccessContent[status]) {
+    return <BlockedAccessPanel onSignOut={signOut} status={status} />;
   }
 
   async function handleSubmit(event) {

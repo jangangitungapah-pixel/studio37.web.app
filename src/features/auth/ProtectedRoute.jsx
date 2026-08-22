@@ -1,11 +1,12 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from './useAuth.js';
+import { USER_PROFILE_STATUSES } from './userProfile.js';
 import './auth.css';
 
 export function ProtectedRoute() {
   const location = useLocation();
-  const { status, user } = useAuth();
+  const { profile, status, user } = useAuth();
 
   if (status === 'loading') {
     return (
@@ -16,7 +17,7 @@ export function ProtectedRoute() {
     );
   }
 
-  if (status !== 'authenticated' || !user) {
+  if (status !== 'authenticated' || !user || profile?.status !== USER_PROFILE_STATUSES.ACTIVE) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

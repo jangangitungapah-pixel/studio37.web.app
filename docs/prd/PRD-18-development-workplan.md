@@ -123,9 +123,9 @@ Phase 2 progress on 2026-08-21:
 - [x] Implement Login page.
 - [x] Implement Firebase session persistence.
 - [x] Implement protected routes.
-- [ ] Implement `users` profile model.
-- [ ] Implement Owner bootstrap strategy.
-- [ ] Implement active/disabled user handling.
+- [x] Implement `users` profile model.
+- [x] Implement Owner bootstrap strategy.
+- [x] Implement active/disabled user handling.
 - [ ] Implement capability-based permission helpers.
 - [ ] Implement route-level permission guards.
 - [ ] Implement feature/action-level permission guards.
@@ -150,8 +150,18 @@ Phase 3 progress on 2026-08-22:
 - Phase 3A added focused gateway, provider, Login, navigation, route-guard, and application
   integration coverage. GitHub Actions Quality run `32548647650` passed formatting, lint, 65 tests,
   production build, and Vite development-server smoke.
-- Firestore user profiles, Owner bootstrap, active/disabled enforcement, permissions, logout UI,
-  Security Rules, and every final Phase 3 gate remain pending for later focused sub-phases.
+- At the Phase 3A checkpoint, Firestore user profiles, Owner bootstrap, active/disabled enforcement,
+  permissions, logout UI, Security Rules, and every final Phase 3 gate remained pending.
+- Phase 3B added the canonical `users/{uid}` profile model and one explicit document listener per
+  Firebase session. Missing, malformed, unreadable, and disabled profiles fail closed; live
+  disable/reactivate changes are applied without a page refresh.
+- Phase 3B documented a manual Firebase-console Owner bootstrap with no public sign-up,
+  self-promotion path, Admin SDK credential, or service-account key. GitHub Actions Quality run
+  `32549566508` passed formatting, lint, 84 tests, production build, and Vite development-server
+  smoke.
+- Capability permissions, route/action authorization, the app-shell user menu, Firestore Security
+  Rules, emulator rule tests, manual Owner login acceptance, and every final Phase 3 gate remain
+  pending.
 
 ---
 
@@ -605,3 +615,4 @@ Implementation status:
   - [x] Phase 2C — converters, timestamp/timezone, integer-IDR, phone normalization, and query/index registry completed and quality-gated.
 - [ ] Phase 3 — Authentication, Owner Bootstrap & Permissions in progress.
   - [x] Phase 3A — Login, Firebase session persistence, and authenticated-route foundation implemented and quality-gated.
+  - [x] Phase 3B — user profile model, manual Owner bootstrap strategy, and active/disabled access enforcement implemented and quality-gated.

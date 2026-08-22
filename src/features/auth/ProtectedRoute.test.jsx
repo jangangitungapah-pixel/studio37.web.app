@@ -27,7 +27,14 @@ function renderRoute(authValue) {
 
 describe('ProtectedRoute', () => {
   it('waits for the Firebase session observer before deciding', () => {
-    renderRoute({ error: null, signIn: vi.fn(), signOut: vi.fn(), status: 'loading', user: null });
+    renderRoute({
+      error: null,
+      profile: null,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      status: 'loading',
+      user: null,
+    });
 
     expect(screen.getByText('Memeriksa sesi Studio37…')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Protected calendar' })).not.toBeInTheDocument();
@@ -36,6 +43,7 @@ describe('ProtectedRoute', () => {
   it('redirects unauthenticated users and preserves the requested path', () => {
     renderRoute({
       error: null,
+      profile: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       status: 'unauthenticated',
@@ -48,6 +56,7 @@ describe('ProtectedRoute', () => {
   it('renders protected content for an authenticated Firebase user', () => {
     renderRoute({
       error: null,
+      profile: { status: 'active', uid: 'owner-1' },
       signIn: vi.fn(),
       signOut: vi.fn(),
       status: 'authenticated',
@@ -55,5 +64,19 @@ describe('ProtectedRoute', () => {
     });
 
     expect(screen.getByRole('heading', { name: 'Protected calendar' })).toBeInTheDocument();
+  });
+
+  it('redirects a Firebase-authenticated user whose application profile is disabled', () => {
+    renderRoute({
+      error: null,
+      profile: { status: 'disabled', uid: 'owner-1' },
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      status: 'disabled',
+      user: { uid: 'owner-1' },
+    });
+
+    expect(screen.getByText('Login from /calendar')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Protected calendar' })).not.toBeInTheDocument();
   });
 });

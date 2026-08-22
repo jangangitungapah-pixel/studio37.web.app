@@ -16,17 +16,28 @@ Phase 2. Production index review and deployment remain part of Phase 17.
 
 ## Current implemented-query state
 
-Phase 2 currently performs only document-addressed Firestore operations:
+The application currently performs only document-addressed Firestore operations:
 
-| Operation          | Shape                        | Composite index |
-| ------------------ | ---------------------------- | --------------- |
-| Connectivity probe | One explicit document read   | Not required    |
-| `getById`          | One explicit document read   | Not required    |
-| `setById`          | One explicit document write  | Not required    |
-| `updateById`       | One explicit document update | Not required    |
+| Operation             | Shape                                        | Composite index |
+| --------------------- | -------------------------------------------- | --------------- |
+| Connectivity probe    | One explicit document read                   | Not required    |
+| `getById`             | One explicit document read                   | Not required    |
+| `setById`             | One explicit document write                  | Not required    |
+| `updateById`          | One explicit document update                 | Not required    |
+| User profile observer | One explicit `users/{uid}` document listener | Not required    |
 
 There are no implemented collection queries and therefore no required composite indexes yet.
 `firestore.indexes.json` intentionally begins with empty `indexes` and `fieldOverrides` arrays.
+
+### Active document-listener registry
+
+| Query ID              | Repository                 | Path          | Bound                          | Listener                 | Phase |
+| --------------------- | -------------------------- | ------------- | ------------------------------ | ------------------------ | ----- |
+| `auth.profile-by-uid` | `userProfileRepository.js` | `users/{uid}` | One authenticated UID document | One per Firebase session | 3B    |
+
+The listener exists so profile removal, disablement, and reactivation take effect without a page
+refresh. It is unsubscribed when the Firebase identity changes, signs out, or the Auth provider
+unmounts.
 
 ## Active query registry
 

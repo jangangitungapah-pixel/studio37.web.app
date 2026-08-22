@@ -5,13 +5,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from './AuthProvider.jsx';
 import { useAuth } from './useAuth.js';
 
+const firebaseUser = Object.freeze({ email: 'owner@studio37.id', uid: 'owner-1' });
+const activeProfile = Object.freeze({
+  displayName: 'Studio37 Owner',
+  status: 'active',
+  uid: 'owner-1',
+});
+
 function SessionProbe() {
-  const { signIn, status, user } = useAuth();
+  const { profile, signIn, status, user } = useAuth();
 
   return (
     <div>
       <p>{status}</p>
       <p>{user?.email ?? 'no-user'}</p>
+      <p>{profile?.displayName ?? 'no-profile'}</p>
       <button
         type="button"
         onClick={() => signIn({ email: 'owner@studio37.id', password: 'secret-password' })}
@@ -22,7 +30,7 @@ function SessionProbe() {
   );
 }
 
-function createGateway() {
+function createAuthGateway() {
   return {
     configurePersistence: vi.fn().mockResolvedValue(undefined),
     observeSession: vi.fn(),
@@ -31,68 +39,160 @@ function createGateway() {
   };
 }
 
-describe('AuthProvider', () => {
-  it('configures persistence before observing and resolving the current session', async () => {
-    const gateway = createGateway();
-    const unsubscribe = vi.fn();
+function createProfileRepository() {
+  return {
+    observeByUid: vi.fn(),
+  };
+}
+
+describe('AuthProvider profile access boundary', () => {
+  it('waits for an active users/{uid} profile before authenticating the app session', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const unsubscribeAuth = vi.fn();
+    const unsubscribeProfile = vi.fn();
     let onUserChanged;
+    let onProfileChanged;
     gateway.observeSession.mockImplementation((nextUser) => {
       onUserChanged = nextUser;
-      return unsubscribe;
+      return unsubscribeAuth;
+    });
+    profileRepository.observeByUid.mockImplementation((...args) => {
+      onProfileChanged = args[1];
+      return unsubscribeProfile;
     });
 
     const { unmount } = render(
-      <AuthProvider gateway={gateway}>
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
         <SessionProbe />
       </AuthProvider>,
     );
 
-    expect(screen.getByText('loading')).toBeInTheDocument();
     await waitFor(() => expect(gateway.observeSession).toHaveBeenCalledOnce());
     expect(gateway.configurePersistence.mock.invocationCallOrder[0]).toBeLessThan(
       gateway.observeSession.mock.invocationCallOrder[0],
     );
 
-    act(() => onUserChanged({ email: 'owner@studio37.id', uid: 'owner-1' }));
+    act(() => onUserChanged(firebaseUser));
+
+    expect(screen.getByText('loading')).toBeInTheDocument();
+    expect(profileRepository.observeByUid).toHaveBeenCalledWith(
+      'owner-1',
+      expect.any(Function),
+      expect.any(Function),
+    );
+
+    act(() => onProfileChanged(activeProfile));
 
     expect(screen.getByText('authenticated')).toBeInTheDocument();
     expect(screen.getByText('owner@studio37.id')).toBeInTheDocument();
+    expect(screen.getByText('Studio37 Owner')).toBeInTheDocument();
 
     unmount();
-    expect(unsubscribe).toHaveBeenCalledOnce();
+    expect(unsubscribeProfile).toHaveBeenCalledOnce();
+    expect(unsubscribeAuth).toHaveBeenCalledOnce();
   });
 
-  it('updates session state after a successful explicit login', async () => {
-    const gateway = createGateway();
-    const user = { email: 'owner@studio37.id', uid: 'owner-1' };
+  it('reacts live to missing, disabled, and reactivated profiles', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    let onProfileChanged;
     gateway.observeSession.mockImplementation((onUserChanged) => {
-      onUserChanged(null);
+      onUserChanged(firebaseUser);
       return vi.fn();
     });
-    gateway.signIn.mockResolvedValue(user);
-    const interaction = userEvent.setup();
+    profileRepository.observeByUid.mockImplementation((...args) => {
+      onProfileChanged = args[1];
+      return vi.fn();
+    });
 
     render(
-      <AuthProvider gateway={gateway}>
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(profileRepository.observeByUid).toHaveBeenCalledOnce());
+
+    act(() => onProfileChanged(null));
+    expect(screen.getByText('profile-missing')).toBeInTheDocument();
+
+    act(() => onProfileChanged({ ...activeProfile, status: 'disabled' }));
+    expect(screen.getByText('disabled')).toBeInTheDocument();
+
+    act(() => onProfileChanged(activeProfile));
+    expect(screen.getByText('authenticated')).toBeInTheDocument();
+  });
+
+  it('fails closed when the profile listener cannot verify access', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    let onProfileError;
+    gateway.observeSession.mockImplementation((onUserChanged) => {
+      onUserChanged(firebaseUser);
+      return vi.fn();
+    });
+    profileRepository.observeByUid.mockImplementation((...args) => {
+      onProfileError = args[2];
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(profileRepository.observeByUid).toHaveBeenCalledOnce());
+    act(() => onProfileError(new Error('permission denied')));
+
+    expect(screen.getByText('profile-error')).toBeInTheDocument();
+    expect(screen.getByText('no-profile')).toBeInTheDocument();
+  });
+
+  it('does not grant app access after sign-in until the profile observer resolves active', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const interaction = userEvent.setup();
+    let onUserChanged;
+    let onProfileChanged;
+    gateway.observeSession.mockImplementation((nextUser) => {
+      onUserChanged = nextUser;
+      nextUser(null);
+      return vi.fn();
+    });
+    gateway.signIn.mockResolvedValue(firebaseUser);
+    profileRepository.observeByUid.mockImplementation((...args) => {
+      onProfileChanged = args[1];
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
         <SessionProbe />
       </AuthProvider>,
     );
 
     expect(await screen.findByText('unauthenticated')).toBeInTheDocument();
     await interaction.click(screen.getByRole('button', { name: 'Sign in probe' }));
+    expect(screen.getByText('loading')).toBeInTheDocument();
 
-    expect(await screen.findByText('authenticated')).toBeInTheDocument();
-    expect(screen.getByText('owner@studio37.id')).toBeInTheDocument();
+    act(() => onUserChanged(firebaseUser));
+    expect(screen.getByText('loading')).toBeInTheDocument();
+
+    act(() => onProfileChanged(activeProfile));
+    expect(screen.getByText('authenticated')).toBeInTheDocument();
   });
 
   it('fails closed when persistence initialization fails', async () => {
-    const gateway = createGateway();
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
     gateway.configurePersistence.mockRejectedValue(
       Object.assign(new Error('Not configured'), { code: 'studio37/auth-not-configured' }),
     );
 
     render(
-      <AuthProvider gateway={gateway}>
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
         <SessionProbe />
       </AuthProvider>,
     );
@@ -100,5 +200,6 @@ describe('AuthProvider', () => {
     expect(await screen.findByText('unauthenticated')).toBeInTheDocument();
     expect(screen.getByText('no-user')).toBeInTheDocument();
     expect(gateway.observeSession).not.toHaveBeenCalled();
+    expect(profileRepository.observeByUid).not.toHaveBeenCalled();
   });
 });
