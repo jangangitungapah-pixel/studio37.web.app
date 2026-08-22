@@ -98,7 +98,7 @@ Phase 1 progress on 2026-08-21:
 
 ### Phase 2 gate
 
-- [ ] Firebase dev connection works.
+- [x] Firebase dev connection works.
 - [x] Emulator/dev strategy documented.
 - [ ] Core data utilities have tests.
 - [x] Lint/test/build pass.
@@ -110,7 +110,7 @@ Phase 2 progress on 2026-08-21:
 - GitHub Actions Quality run `32492423270` passed formatting, lint, Firebase/component tests, production build, and Vite development-server smoke after Phase 2A implementation.
 - Phase 2B configured Auth/Firestore emulator routing with a production guard, documented the real-project vs emulator strategy, added a manual Firestore connectivity probe, and established a shared focused document repository without a generic full-collection list operation.
 - Phase 2B connectivity/repository unit tests and the synchronized Firebase package lock passed GitHub Actions Quality run `32494354595` with formatting, lint, tests, production build, and Vite development-server smoke.
-- Firebase backend connectivity confirmation remains pending a manual `/dev/firebase` probe; converters, core data utilities, and Firestore index documentation remain for Phase 2C.
+- On 2026-08-22, the project owner reran the fixed manual `/dev/firebase` probe against Firebase project `studio37webapp` and confirmed `Connected`; the Firebase development connectivity gate is accepted. Converters, core data utilities, and Firestore index documentation remain for Phase 2C.
 
 ---
 
@@ -587,4 +587,4 @@ Implementation status:
 - [ ] Phase 2 — Firebase & Data Foundation in progress.
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
-  - [ ] Remaining Phase 2 connectivity confirmation, converters, data utilities, and index work.
+  - [ ] Remaining Phase 2 converters, data utilities, and index work.
