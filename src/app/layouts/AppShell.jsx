@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { canAccessPolicy } from '../../features/auth/capabilities.js';
+import { ROUTE_POLICIES } from '../../features/auth/routePolicies.js';
+import { useAuth } from '../../features/auth/useAuth.js';
 import './app-shell.css';
 
 const navigationItems = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/calendar', label: 'Booking Calendar' },
-  { to: '/fees-commissions', label: 'Fee & Commission' },
-  { to: '/bookkeeping', label: 'Pembukuan' },
-  { to: '/settings/account', label: 'Settings' },
+  { to: '/dashboard', label: 'Dashboard', policy: ROUTE_POLICIES.DASHBOARD },
+  { to: '/calendar', label: 'Booking Calendar', policy: ROUTE_POLICIES.CALENDAR },
+  {
+    to: '/fees-commissions',
+    label: 'Fee & Commission',
+    policy: ROUTE_POLICIES.FEES_COMMISSIONS,
+  },
+  { to: '/bookkeeping', label: 'Pembukuan', policy: ROUTE_POLICIES.BOOKKEEPING },
+  { to: '/settings/account', label: 'Settings', policy: ROUTE_POLICIES.ACCOUNT },
 ];
 
 const pageLabels = [
@@ -39,13 +46,17 @@ function Brand() {
 }
 
 function Navigation({ ariaLabel, onNavigate }) {
+  const access = useAuth();
+
   return (
     <nav aria-label={ariaLabel} className="app-nav">
-      {navigationItems.map((item) => (
-        <NavLink key={item.to} to={item.to} className="app-nav__link" onClick={onNavigate}>
-          {item.label}
-        </NavLink>
-      ))}
+      {navigationItems
+        .filter((item) => canAccessPolicy(access, item.policy))
+        .map((item) => (
+          <NavLink key={item.to} to={item.to} className="app-nav__link" onClick={onNavigate}>
+            {item.label}
+          </NavLink>
+        ))}
     </nav>
   );
 }

@@ -161,6 +161,17 @@ Small global configuration documents, for example:
 ### `permissionSets`
 Configurable Studio Operator permission templates if permissions are not stored directly on user documents.
 
+The initial permission-set document contract contains:
+
+- `name`
+- `status`: `active | disabled`
+- `capabilities`: supported delegable capability strings
+- `createdAt`, `updatedAt`
+
+Unknown capabilities and Owner-only `permissions.manage` / `danger_zone.execute` capabilities are
+invalid in an operator permission set. Runtime resolution reads only the exact referenced
+`permissionSets/{permissionSetId}` document.
+
 ### `auditLogs`
 Append-only-ish operational audit events for sensitive changes.
 

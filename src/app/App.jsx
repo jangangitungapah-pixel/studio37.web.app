@@ -3,9 +3,13 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './providers/AppProviders.jsx';
 import { AppRouter } from './router.jsx';
 
-export function App({ authGateway, userProfileRepository }) {
+export function App({ authGateway, permissionSetRepository, userProfileRepository }) {
   return (
-    <AppProviders authGateway={authGateway} userProfileRepository={userProfileRepository}>
+    <AppProviders
+      authGateway={authGateway}
+      permissionSetRepository={permissionSetRepository}
+      userProfileRepository={userProfileRepository}
+    >
       <BrowserRouter>
         <AppRouter />
       </BrowserRouter>

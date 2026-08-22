@@ -85,6 +85,7 @@ describe('LoginPage', () => {
     ['profile-missing', 'Profil akses belum tersedia'],
     ['disabled', 'Akun dinonaktifkan'],
     ['profile-error', 'Profil akses gagal diverifikasi'],
+    ['permission-error', 'Permission akses gagal diverifikasi'],
   ])('blocks the login form for an authenticated Firebase user with %s access', (status, title) => {
     renderLogin(unauthenticatedValue({ status, user: { uid: 'owner-1' } }));
 

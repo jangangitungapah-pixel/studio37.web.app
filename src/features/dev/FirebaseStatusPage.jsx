@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Badge } from '../../components/feedback/Badge.jsx';
 import { PageContext } from '../../components/navigation/PageContext.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { CapabilityGuard } from '../auth/CapabilityGuard.jsx';
 import { getFirebaseClientStatus } from '../../lib/firebase/client.js';
 import {
   FIRESTORE_CONNECTIVITY_PROBE_PATH,
@@ -120,9 +121,11 @@ export function FirebaseStatusPage() {
               reachable; Phase 3 will establish authenticated access and Security Rules.
             </p>
           </div>
-          <Button onClick={runProbe} loading={probing}>
-            Run Firestore probe
-          </Button>
+          <CapabilityGuard ownerOnly>
+            <Button onClick={runProbe} loading={probing}>
+              Run Firestore probe
+            </Button>
+          </CapabilityGuard>
         </div>
       </article>
     </section>

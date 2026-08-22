@@ -78,7 +78,10 @@ check after the relevant Phase 3 implementation and Security Rules are ready.
 ## Runtime access behavior
 
 - Firebase Authentication identifies the session.
-- Studio37 listens to exactly one document: `users/{authenticatedUid}`.
+- Studio37 always listens to exactly one profile document: `users/{authenticatedUid}`.
+- Owner capabilities are implicit, so Owner sessions do not create a `permissionSets` listener.
+- An assigned Studio Operator additionally listens only to its exact
+  `permissionSets/{permissionSetId}` document.
 - A missing, malformed, unreadable, or disabled profile fails closed and cannot enter protected
   routes.
 - Reactivation through `status: "active"` is observed without requiring a page refresh.

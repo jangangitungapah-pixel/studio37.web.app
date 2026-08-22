@@ -25,6 +25,11 @@ const blockedAccessContent = Object.freeze({
       'Akun Firebase berhasil dikenali, tetapi profil Studio37 belum dibuat. Owner perlu menyelesaikan bootstrap atau menambahkan profil pengguna.',
     title: 'Profil akses belum tersedia',
   },
+  'permission-error': {
+    description:
+      'Studio37 tidak dapat memverifikasi permission akun operator ini. Owner perlu memeriksa permission set yang ditetapkan.',
+    title: 'Permission akses gagal diverifikasi',
+  },
 });
 
 function validateCredentials(email, password) {

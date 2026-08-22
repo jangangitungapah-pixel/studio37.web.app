@@ -3,23 +3,28 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AuthProvider } from './AuthProvider.jsx';
+import { CAPABILITIES } from './capabilities.js';
 import { useAuth } from './useAuth.js';
 
 const firebaseUser = Object.freeze({ email: 'owner@studio37.id', uid: 'owner-1' });
 const activeProfile = Object.freeze({
   displayName: 'Studio37 Owner',
+  permissionSetId: null,
+  role: 'owner',
   status: 'active',
   uid: 'owner-1',
 });
 
 function SessionProbe() {
-  const { profile, signIn, status, user } = useAuth();
+  const { capabilities, permissionSet, profile, signIn, status, user } = useAuth();
 
   return (
     <div>
       <p>{status}</p>
       <p>{user?.email ?? 'no-user'}</p>
       <p>{profile?.displayName ?? 'no-profile'}</p>
+      <p>{permissionSet?.name ?? 'no-permission-set'}</p>
+      <p>{capabilities.join(',') || 'no-capabilities'}</p>
       <button
         type="button"
         onClick={() => signIn({ email: 'owner@studio37.id', password: 'secret-password' })}
@@ -42,6 +47,12 @@ function createAuthGateway() {
 function createProfileRepository() {
   return {
     observeByUid: vi.fn(),
+  };
+}
+
+function createPermissionRepository() {
+  return {
+    observeById: vi.fn(),
   };
 }
 
@@ -148,6 +159,158 @@ describe('AuthProvider profile access boundary', () => {
 
     expect(screen.getByText('profile-error')).toBeInTheDocument();
     expect(screen.getByText('no-profile')).toBeInTheDocument();
+  });
+
+  it('resolves an operator permission set before authenticating and reacts to live revocation', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const permissionRepository = createPermissionRepository();
+    const unsubscribePermissionSet = vi.fn();
+    let onPermissionSetChanged;
+    gateway.observeSession.mockImplementation((onUserChanged) => {
+      onUserChanged({ email: 'operator@studio37.id', uid: 'operator-1' });
+      return vi.fn();
+    });
+    profileRepository.observeByUid.mockImplementation((uid, onProfileChanged) => {
+      onProfileChanged({
+        displayName: 'Front Desk',
+        permissionSetId: 'front-desk',
+        role: 'studio_operator',
+        status: 'active',
+        uid,
+      });
+      return vi.fn();
+    });
+    permissionRepository.observeById.mockImplementation((...args) => {
+      onPermissionSetChanged = args[1];
+      return unsubscribePermissionSet;
+    });
+
+    const { unmount } = render(
+      <AuthProvider
+        gateway={gateway}
+        permissionRepository={permissionRepository}
+        profileRepository={profileRepository}
+      >
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(permissionRepository.observeById).toHaveBeenCalledOnce());
+    expect(permissionRepository.observeById).toHaveBeenCalledWith(
+      'front-desk',
+      expect.any(Function),
+      expect.any(Function),
+    );
+    expect(screen.getByText('loading')).toBeInTheDocument();
+
+    act(() =>
+      onPermissionSetChanged({
+        capabilities: [CAPABILITIES.BOOKING_VIEW, CAPABILITIES.DASHBOARD_VIEW],
+        id: 'front-desk',
+        name: 'Front Desk Permissions',
+        status: 'active',
+      }),
+    );
+
+    expect(screen.getByText('authenticated')).toBeInTheDocument();
+    expect(screen.getByText('Front Desk Permissions')).toBeInTheDocument();
+    expect(
+      screen.getByText(`${CAPABILITIES.BOOKING_VIEW},${CAPABILITIES.DASHBOARD_VIEW}`),
+    ).toBeInTheDocument();
+
+    act(() =>
+      onPermissionSetChanged({
+        capabilities: [],
+        id: 'front-desk',
+        name: 'Front Desk Permissions',
+        status: 'disabled',
+      }),
+    );
+    expect(screen.getByText('permission-error')).toBeInTheDocument();
+    expect(screen.getByText('no-capabilities')).toBeInTheDocument();
+
+    unmount();
+    expect(unsubscribePermissionSet).toHaveBeenCalledOnce();
+  });
+
+  it('fails closed for a missing or unreadable assigned permission set', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const permissionRepository = createPermissionRepository();
+    let onPermissionSetChanged;
+    let onPermissionSetError;
+    gateway.observeSession.mockImplementation((onUserChanged) => {
+      onUserChanged({ email: 'operator@studio37.id', uid: 'operator-1' });
+      return vi.fn();
+    });
+    profileRepository.observeByUid.mockImplementation((uid, onProfileChanged) => {
+      onProfileChanged({
+        displayName: 'Front Desk',
+        permissionSetId: 'front-desk',
+        role: 'studio_operator',
+        status: 'active',
+        uid,
+      });
+      return vi.fn();
+    });
+    permissionRepository.observeById.mockImplementation((...args) => {
+      onPermissionSetChanged = args[1];
+      onPermissionSetError = args[2];
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider
+        gateway={gateway}
+        permissionRepository={permissionRepository}
+        profileRepository={profileRepository}
+      >
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(permissionRepository.observeById).toHaveBeenCalledOnce());
+    act(() => onPermissionSetChanged(null));
+    expect(screen.getByText('permission-error')).toBeInTheDocument();
+
+    act(() => onPermissionSetError(new Error('permission denied')));
+    expect(screen.getByText('permission-error')).toBeInTheDocument();
+    expect(screen.getByText('no-capabilities')).toBeInTheDocument();
+  });
+
+  it('authenticates an operator with no permission set using an empty capability list', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const permissionRepository = createPermissionRepository();
+    gateway.observeSession.mockImplementation((onUserChanged) => {
+      onUserChanged({ email: 'operator@studio37.id', uid: 'operator-1' });
+      return vi.fn();
+    });
+    profileRepository.observeByUid.mockImplementation((uid, onProfileChanged) => {
+      onProfileChanged({
+        displayName: 'Unassigned Operator',
+        permissionSetId: null,
+        role: 'studio_operator',
+        status: 'active',
+        uid,
+      });
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider
+        gateway={gateway}
+        permissionRepository={permissionRepository}
+        profileRepository={profileRepository}
+      >
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+    expect(screen.getByText('no-capabilities')).toBeInTheDocument();
+    expect(permissionRepository.observeById).not.toHaveBeenCalled();
   });
 
   it('does not grant app access after sign-in until the profile observer resolves active', async () => {
