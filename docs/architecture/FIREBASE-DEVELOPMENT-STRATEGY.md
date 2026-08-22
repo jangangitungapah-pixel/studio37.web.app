@@ -83,12 +83,14 @@ Business calculations and authorization decisions do not belong inside the share
 
 ## Connectivity probe semantics
 
-The manual development probe performs one server document read attempt against:
+The manual development probe performs one server document read attempt against the legal non-reserved path:
 
 ```text
-__studio37_system__/connectivity-probe
+studio37System/connectivity-probe
 ```
 
 No document needs to exist and the probe never writes data.
+
+A previous implementation used `__studio37_system__/connectivity-probe`, which Firestore rejected with `invalid-argument` because identifiers matching `__.*__` are reserved. That implementation was replaced and a regression test now protects the legal probe path.
 
 A successful empty read proves Firestore is reachable. A `permission-denied` or `unauthenticated` response also proves the configured backend is reachable, while correctly showing that authorization has not yet been granted. Other errors remain failures until investigated.
