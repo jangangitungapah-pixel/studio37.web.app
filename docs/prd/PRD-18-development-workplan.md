@@ -266,9 +266,18 @@ Phase 4 progress on 2026-08-22:
   no hard delete, unbounded read, listener, account-link, role, or permission mutation. GitHub
   Actions Quality run `32564907232` passed formatting, lint, 172 unit/component tests, 26 Firestore
   Emulator authorization tests, production build, and Vite development-server smoke.
-- Booking/calendar consumption of active rooms, operator/user login linking, permission
-  administration, and final Phase 4 integration/responsive gates remain pending; Phase 4 remains
-  in progress.
+- Phase 4C3 implemented the exact-document operator/account-link repository and reciprocal
+  `operators.linkedUserUid` / `users.operatorId` invariant through one active-Owner-only atomic
+  transaction. It exposes no user collection scan, Authentication-user enumeration, hard delete,
+  direct reassignment, or account-provisioning path and requires no composite index.
+- Firestore Security Rules reject one-sided writes, pre-linked user creation, delegated linking,
+  spoofed actor/time metadata, and non-null direct reassignment while requiring reciprocal
+  post-commit state for link and unlink. GitHub Actions Quality run `32566431990` passed formatting,
+  lint, 178 unit/component tests, 28 Firestore Emulator authorization tests, production build, and
+  Vite development-server smoke.
+- Booking/calendar consumption of active rooms, the operator/account-link browser workflow,
+  permission administration, and final Phase 4 integration/responsive gates remain pending; Phase
+  4 remains in progress.
 
 ---
 
@@ -700,4 +709,5 @@ Implementation status:
   - [x] Phase 4B — room create/edit, soft activation/deactivation, and display ordering implemented and quality-gated.
   - [x] Phase 4C1 — bounded operator domain/repository, operator types, no-login profiles, and Security Rules implemented and quality-gated.
   - [x] Phase 4C2 — bounded Operator Settings UI, add/edit, and soft activation/deactivation implemented and quality-gated.
-  - [ ] Operator/user login linking, permission management, and final integration/responsive gates pending.
+  - [x] Phase 4C3 — exact-document atomic operator/account-link repository and Security Rules foundation implemented and quality-gated.
+  - [ ] Operator/account-link browser workflow, permission management, and final integration/responsive gates pending.
