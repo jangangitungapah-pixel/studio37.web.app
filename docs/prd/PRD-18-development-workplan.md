@@ -129,7 +129,7 @@ Phase 2 progress on 2026-08-21:
 - [x] Implement capability-based permission helpers.
 - [x] Implement route-level permission guards.
 - [x] Implement feature/action-level permission guards.
-- [ ] Implement logout/user menu.
+- [x] Implement logout/user menu.
 - [ ] Add initial Firestore Security Rules.
 - [ ] Add auth/permission emulator tests.
 
@@ -169,8 +169,16 @@ Phase 3 progress on 2026-08-22:
   state for unauthorized direct URLs, and provides an independent all-of/any-of/Owner-only action
   guard. GitHub Actions Quality run `32551197015` passed formatting, lint, 107 tests, production
   build, and Vite development-server smoke.
-- The app-shell user menu/logout UI, Firestore Security Rules, emulator rule tests, manual Owner
-  login acceptance, and every final Phase 3 gate remain pending.
+- At the Phase 3C checkpoint, the app-shell user menu/logout UI, Firestore Security Rules, emulator
+  rule tests, manual Owner login acceptance, and every final Phase 3 gate remained pending.
+- Phase 3D replaced the temporary topbar status with a responsive authenticated-user disclosure
+  showing identity and role context. The menu supports Escape/outside dismissal plus logout loading
+  and recoverable error states.
+- Successful Phase 3D logout immediately stops profile/permission listeners, clears application
+  session state, and returns protected routes to Login. GitHub Actions Quality run `32552628384`
+  passed formatting, lint, 115 tests, production build, and Vite development-server smoke.
+- Initial Firestore Security Rules, emulator authorization tests, manual Owner login acceptance,
+  and every final Phase 3 gate remain pending.
 
 ---
 
@@ -626,3 +634,4 @@ Implementation status:
   - [x] Phase 3A — Login, Firebase session persistence, and authenticated-route foundation implemented and quality-gated.
   - [x] Phase 3B — user profile model, manual Owner bootstrap strategy, and active/disabled access enforcement implemented and quality-gated.
   - [x] Phase 3C — capability resolution plus route, navigation, and action guards implemented and quality-gated.
+  - [x] Phase 3D — responsive authenticated-user menu and fail-safe logout flow implemented and quality-gated.
