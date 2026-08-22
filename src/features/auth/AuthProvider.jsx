@@ -254,12 +254,54 @@ export function AuthProvider({
     [gateway],
   );
 
+  const createAccount = useCallback(
+    async (credentials) => {
+      setSession(loadingSession);
+
+      try {
+        return await gateway.createAccount(credentials);
+      } catch (error) {
+        setSession(unauthenticatedSession);
+        throw error;
+      }
+    },
+    [gateway],
+  );
+
+  const sendVerificationEmail = useCallback(
+    (user, options) => gateway.sendVerificationEmail(user, options),
+    [gateway],
+  );
+
+  const refreshUser = useCallback(
+    async (user) => {
+      const refreshedUser = await gateway.refreshUser(user);
+
+      setSession((current) =>
+        current.user?.uid === refreshedUser.uid ? { ...current, user: refreshedUser } : current,
+      );
+
+      return refreshedUser;
+    },
+    [gateway],
+  );
+
   const signOut = useCallback(async () => {
     await gateway.signOut();
     clearAuthenticatedSessionRef.current();
   }, [gateway]);
 
-  const value = useMemo(() => ({ ...session, signIn, signOut }), [session, signIn, signOut]);
+  const value = useMemo(
+    () => ({
+      ...session,
+      createAccount,
+      refreshUser,
+      sendVerificationEmail,
+      signIn,
+      signOut,
+    }),
+    [createAccount, refreshUser, sendVerificationEmail, session, signIn, signOut],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

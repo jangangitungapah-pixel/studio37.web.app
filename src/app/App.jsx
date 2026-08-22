@@ -5,6 +5,7 @@ import { AppRouter } from './router.jsx';
 
 export function App({
   authGateway,
+  operatorAccountInvitationRepository,
   operatorRepository,
   permissionSetRepository,
   studioRoomRepository,
@@ -19,6 +20,7 @@ export function App({
     >
       <BrowserRouter>
         <AppRouter
+          operatorAccountInvitationRepository={operatorAccountInvitationRepository}
           operatorRepository={operatorRepository}
           studioRoomRepository={studioRoomRepository}
           studioSettingsRepository={studioSettingsRepository}

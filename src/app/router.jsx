@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './layouts/AppShell.jsx';
 import { CapabilityRoute } from '../features/auth/CapabilityRoute.jsx';
 import { LoginPage } from '../features/auth/LoginPage.jsx';
+import { OperatorAccountInvitationPage } from '../features/auth/OperatorAccountInvitationPage.jsx';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute.jsx';
 import { ROUTE_POLICIES } from '../features/auth/routePolicies.js';
 import { BookingDetailPage } from '../features/booking/BookingDetailPage.jsx';
@@ -16,10 +17,19 @@ import { OperatorSettingsPage } from '../features/settings/OperatorSettingsPage.
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
-export function AppRouter({ operatorRepository, studioRoomRepository, studioSettingsRepository }) {
+export function AppRouter({
+  operatorAccountInvitationRepository,
+  operatorRepository,
+  studioRoomRepository,
+  studioSettingsRepository,
+}) {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/invite/:operatorId/:invitationId"
+        element={<OperatorAccountInvitationPage repository={operatorAccountInvitationRepository} />}
+      />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
@@ -65,7 +75,12 @@ export function AppRouter({ operatorRepository, studioRoomRepository, studioSett
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.OPERATORS} />}>
             <Route
               path="settings/operators"
-              element={<OperatorSettingsPage repository={operatorRepository} />}
+              element={
+                <OperatorSettingsPage
+                  invitationRepository={operatorAccountInvitationRepository}
+                  repository={operatorRepository}
+                />
+              }
             />
           </Route>
 

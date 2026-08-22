@@ -165,6 +165,17 @@ Admin SDK, or service-account credentials. The contract is:
 docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md
 ```
 
+Phase 4C5B exposes that exact-path boundary through an Owner copy/share dialog and the public
+`/invite/:operatorId/:invitationId` onboarding shell. Firebase email/password sign-up creates only
+the Authentication identity. Firebase's verification email returns to the same invitation route;
+the client then reloads the user and forces a fresh ID token before the matching-email Firestore
+read. The UI adds no invitation list/query, Auth-user administration, automatic background read,
+or paid delivery service. Its workflow contract is:
+
+```text
+docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

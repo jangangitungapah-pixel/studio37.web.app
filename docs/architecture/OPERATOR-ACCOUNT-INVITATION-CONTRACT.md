@@ -9,8 +9,9 @@ redeem operation creates or links the application profile without manual `users/
 work while keeping Owner authority and permission assignment out of the invitation path.
 
 This slice implements the data model, exact-document repository, Security Rules, and automated
-tests. Authentication-provider UI, invitation delivery, and browser acceptance remain separate
-later checkpoints.
+tests. Phase 4C5B consumes it through the email/password provider, manual copy/share delivery, and
+browser acceptance workflow documented in
+`docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md`.
 
 ## Eligibility boundary
 
@@ -147,10 +148,9 @@ Admin SDK. Creation reads the operator plus one collision path. Redemption reads
 and one own-profile path before its three-document write batch. These operations need no composite
 index and remain compatible with the Spark/client-first development architecture.
 
-## Deferred scope
+## Deferred scope after Phase 4C5B
 
-- sign-up/provider and invitation-acceptance browser UI;
-- email or other invitation delivery;
+- automated invitation-link email or other notification delivery;
 - invitation resend/rotation and Owner invitation-status UI;
 - permission-set administration and assignment;
 - Firebase Authentication administrative provisioning or deletion;
