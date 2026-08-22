@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { probeFirestoreConnectivity } from './connectivity.js';
+import {
+  FIRESTORE_CONNECTIVITY_PROBE_PATH,
+  probeFirestoreConnectivity,
+} from './connectivity.js';
 
 function createAdapter({ exists = false, error = null } = {}) {
   return {
-    doc: (_db, collectionName, documentId) => ({ collectionName, documentId }),
+    doc: vi.fn((_db, collectionName, documentId) => ({ collectionName, documentId })),
     getDocFromServer: async () => {
       if (error) {
         throw error;
@@ -18,6 +21,19 @@ function createAdapter({ exists = false, error = null } = {}) {
 }
 
 describe('probeFirestoreConnectivity', () => {
+  it('uses a legal non-reserved Firestore document path', async () => {
+    const adapter = createAdapter();
+
+    await probeFirestoreConnectivity({ adapter, db: {} });
+
+    expect(FIRESTORE_CONNECTIVITY_PROBE_PATH).toEqual({
+      collection: 'studio37System',
+      document: 'connectivity-probe',
+    });
+    expect(FIRESTORE_CONNECTIVITY_PROBE_PATH.collection).not.toMatch(/^__.*__$/);
+    expect(adapter.doc).toHaveBeenCalledWith({}, 'studio37System', 'connectivity-probe');
+  });
+
   it('reports a successful server response without requiring the probe document to exist', async () => {
     const result = await probeFirestoreConnectivity({
       adapter: createAdapter({ exists: false }),
