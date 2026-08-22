@@ -16,7 +16,8 @@ Phase 2. Production index review and deployment remain part of Phase 17.
 
 ## Current implemented-query state
 
-The application currently performs only document-addressed Firestore operations:
+The application performs document-addressed operations plus one feature-owned bounded collection
+query:
 
 | Operation             | Shape                                        | Composite index |
 | --------------------- | -------------------------------------------- | --------------- |
@@ -27,9 +28,11 @@ The application currently performs only document-addressed Firestore operations:
 | User profile observer | One explicit `users/{uid}` document listener | Not required    |
 | Permission observer   | One explicit `permissionSets/{id}` listener  | Not required    |
 | Studio settings load  | One explicit `appSettings/studio` read       | Not required    |
+| Studio rooms admin    | Ordered `studios` query capped at 50 docs    | Not required    |
 
-There are no implemented collection queries and therefore no required composite indexes yet.
-`firestore.indexes.json` intentionally begins with empty `indexes` and `fieldOverrides` arrays.
+The Studio Rooms query uses an automatically indexed single field, so there are still no required
+composite indexes. `firestore.indexes.json` intentionally retains empty `indexes` and
+`fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
 configuration resolves to an unsaved UI draft and does not trigger a collection fallback or an
@@ -49,8 +52,16 @@ changes, the user signs out, or the Auth provider unmounts.
 
 ## Active query registry
 
-No bounded collection query has been implemented yet. Add an active row only in the same focused
-change that introduces or materially changes the corresponding feature-repository query.
+| Query ID                     | Repository                | Collection | Purpose                    | Filters | Ordering           | Bound    | Listener | Index                               | Phase |
+| ---------------------------- | ------------------------- | ---------- | -------------------------- | ------- | ------------------ | -------- | -------- | ----------------------------------- | ----- |
+| `settings.studio-rooms-list` | `studioRoomRepository.js` | `studios`  | Studio Settings room admin | None    | `displayOrder` asc | Limit 50 | One-shot | Automatic single-field; no manifest | 4B    |
+
+Equal display-order values are sorted by room name and document ID after decoding. Callers cannot
+remove or raise the repository bound, and Firestore Security Rules reject unbounded or over-limit
+queries.
+
+Add another active row only in the same focused change that introduces or materially changes the
+corresponding feature-repository query.
 
 Required columns for future entries:
 

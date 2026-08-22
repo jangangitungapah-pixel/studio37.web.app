@@ -3,8 +3,8 @@
 ## Purpose
 
 Define the Phase 4A persisted boundary for the Studio37 business profile and booking defaults.
-Room CRUD and Operator Settings are intentionally outside this slice and remain scheduled for
-later Phase 4 sub-phases.
+Room configuration is owned separately by the Phase 4B contract; Operator Settings remains a later
+Phase 4 sub-phase.
 
 ## Firestore path
 
@@ -81,11 +81,13 @@ The Studio Settings page handles:
 
 The following remain incomplete after Phase 4A:
 
-- studio room add/edit/deactivate and display ordering,
 - room-specific operating overrides,
 - Operator model/repository,
 - operators with and without login,
 - Operator Settings and permission-management UI.
+
+Studio room add/edit/deactivate and display ordering are specified separately in
+`docs/architecture/STUDIO-ROOMS-CONTRACT.md`.
 
 No Firebase rules, indexes, or Hosting resources are deployed by this implementation. Production
 review and deployment remain Phase 17.

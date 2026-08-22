@@ -13,6 +13,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -91,6 +94,32 @@ function createStudioSettings({
     timeZone,
     operatingHours,
     bookingIntervalMinutes,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
+    ...overrides,
+  };
+}
+
+function createStudioRoom({
+  code = 'ST-A',
+  name = 'Studio A',
+  description = 'Ruang latihan utama',
+  displayOrder = 1,
+  status = 'active',
+  createdAt = FIXTURE_TIMESTAMP,
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  ...overrides
+} = {}) {
+  return {
+    code,
+    name,
+    description,
+    displayOrder,
+    status,
     createdAt,
     createdByUid,
     updatedAt,
@@ -564,10 +593,137 @@ describe('initial Firestore authorization boundary', () => {
     );
   });
 
+  test('allows only bounded room lists to users with studio-settings view access', async () => {
+    await seedDocuments([
+      ['studios/room-a', createStudioRoom()],
+      ['studios/room-b', createStudioRoom({ code: 'ST-B', name: 'Studio B', displayOrder: 2 })],
+    ]);
+
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const editorDb = authenticatedDb(STUDIO_EDITOR_UID);
+    const disabledDb = authenticatedDb(DISABLED_UID);
+    const ownerQuery = query(
+      collection(ownerDb, 'studios'),
+      orderBy('displayOrder', 'asc'),
+      limit(50),
+    );
+    const editorQuery = query(
+      collection(editorDb, 'studios'),
+      orderBy('displayOrder', 'asc'),
+      limit(50),
+    );
+
+    await assertSucceeds(getDocs(ownerQuery));
+    await assertSucceeds(getDocs(editorQuery));
+    await assertSucceeds(getDoc(doc(editorDb, 'studios/room-a')));
+    await assertFails(getDocs(collection(ownerDb, 'studios')));
+    await assertFails(
+      getDocs(query(collection(ownerDb, 'studios'), orderBy('displayOrder', 'asc'), limit(51))),
+    );
+    await assertFails(
+      getDocs(query(collection(operatorDb, 'studios'), orderBy('displayOrder', 'asc'), limit(50))),
+    );
+    await assertFails(getDoc(doc(operatorDb, 'studios/room-a')));
+    await assertFails(
+      getDocs(query(collection(disabledDb, 'studios'), orderBy('displayOrder', 'asc'), limit(50))),
+    );
+  });
+
+  test('allows validated room create, edit, and soft-disable only to delegated editors', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const editorDb = authenticatedDb(STUDIO_EDITOR_UID);
+    const ownerReference = doc(ownerDb, 'studios/room-a');
+
+    await assertSucceeds(
+      setDoc(
+        ownerReference,
+        createStudioRoom({ createdAt: serverTimestamp(), updatedAt: serverTimestamp() }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'studios/room-a'), {
+        name: 'Studio Utama',
+        displayOrder: 2,
+        updatedAt: serverTimestamp(),
+        updatedByUid: STUDIO_EDITOR_UID,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'studios/room-a'), {
+        status: 'disabled',
+        updatedAt: serverTimestamp(),
+        updatedByUid: STUDIO_EDITOR_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(operatorDb, 'studios/room-a'), {
+        name: 'Unauthorized edit',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+    await assertFails(deleteDoc(ownerReference));
+  });
+
+  test('rejects malformed rooms and spoofed creation metadata', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+
+    for (const [roomId, invalidRoom] of [
+      ['lowercase-code', { code: 'studio-a' }],
+      ['invalid-order', { displayOrder: 0 }],
+      ['invalid-status', { status: 'archived' }],
+      ['long-description', { description: 'x'.repeat(241) }],
+      ['spoofed-creator', { createdByUid: OPERATOR_UID }],
+      ['spoofed-updater', { updatedByUid: OPERATOR_UID }],
+      ['unknown-field', { capacity: 10 }],
+    ]) {
+      await assertFails(
+        setDoc(
+          doc(ownerDb, `studios/${roomId}`),
+          createStudioRoom({
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            ...invalidRoom,
+          }),
+        ),
+      );
+    }
+  });
+
+  test('preserves room creation history and requires server update metadata', async () => {
+    await seedDocuments([['studios/room-a', createStudioRoom()]]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'studios/room-a');
+
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: recentTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        name: 'Client-clock update',
+        updatedAt: recentTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        name: 'Spoofed actor',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+  });
+
   test('keeps not-yet-implemented domain collections default-deny', async () => {
     await seedDocuments([
       ['pricingRules/standard', { amount: 100_000 }],
-      ['studios/room-a', { active: true, name: 'Studio A' }],
+      ['sessionTypes/rehearsal', { active: true, name: 'Rehearsal' }],
       ['commissionEntries/paid-1', { amount: 50_000, status: 'paid' }],
       ['bookings/booking-1', { status: 'confirmed' }],
     ]);
@@ -578,7 +734,7 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));
     await assertFails(getDoc(doc(operatorDb, 'bookings/booking-1')));
     await assertFails(updateDoc(doc(operatorDb, 'pricingRules/standard'), { amount: 1 }));
-    await assertFails(updateDoc(doc(operatorDb, 'studios/room-a'), { name: 'Hijacked' }));
+    await assertFails(updateDoc(doc(operatorDb, 'sessionTypes/rehearsal'), { name: 'Hijacked' }));
     await assertFails(updateDoc(doc(operatorDb, 'commissionEntries/paid-1'), { amount: 0 }));
   });
 

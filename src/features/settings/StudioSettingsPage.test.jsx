@@ -32,6 +32,16 @@ function createRepository(settings = null) {
   };
 }
 
+function createRoomRepository(rooms = []) {
+  return {
+    createStudioRoom: vi.fn(async () => 'room-created'),
+    listLimit: 50,
+    listStudioRooms: vi.fn(async () => rooms),
+    setStudioRoomStatus: vi.fn(async (roomId) => roomId),
+    updateStudioRoom: vi.fn(async (roomId) => roomId),
+  };
+}
+
 function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {}) {
   return {
     capabilities,
@@ -47,12 +57,16 @@ function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {
   };
 }
 
-function renderPage({ access = createAccess(), repository = createRepository() } = {}) {
+function renderPage({
+  access = createAccess(),
+  repository = createRepository(),
+  roomRepository = createRoomRepository(),
+} = {}) {
   return render(
     <ToastProvider>
       <AuthContext.Provider value={access}>
         <MemoryRouter initialEntries={['/settings/studio']}>
-          <StudioSettingsPage repository={repository} />
+          <StudioSettingsPage repository={repository} roomRepository={roomRepository} />
         </MemoryRouter>
       </AuthContext.Provider>
     </ToastProvider>,

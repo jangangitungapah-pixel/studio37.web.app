@@ -8,7 +8,7 @@ describe('Firestore index registry foundation', () => {
     expect(firebaseConfig.firestore.indexes).toBe('firestore.indexes.json');
   });
 
-  it('starts without speculative composite indexes or field overrides', () => {
+  it('retains no speculative composite indexes or field overrides', () => {
     expect(firestoreIndexes).toEqual({
       fieldOverrides: [],
       indexes: [],

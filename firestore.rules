@@ -246,6 +246,51 @@ service cloud.firestore {
         && data.updatedByUid.size() <= 128;
     }
 
+    function isValidStudioRoom(data) {
+      return data.keys().hasAll([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.code is string
+        && data.code.matches('^[A-Z0-9][A-Z0-9-]{0,23}$')
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 80
+        && data.description is string
+        && data.description.size() <= 240
+        && data.displayOrder is int
+        && data.displayOrder >= 1
+        && data.displayOrder <= 999
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
     function usesCurrentWriteTime(data) {
       return data.createdAt <= request.time && data.updatedAt <= request.time;
     }
@@ -268,6 +313,21 @@ service cloud.firestore {
     }
 
     function preservesStudioSettingsHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function usesStudioRoomCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesStudioRoomHistory() {
       return request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.createdByUid == resource.data.createdByUid
         && request.resource.data.updatedAt == request.time
@@ -326,6 +386,23 @@ service cloud.firestore {
       allow update: if hasCapability('settings.studio.edit')
         && isValidStudioSettings(request.resource.data)
         && preservesStudioSettingsHistory();
+
+      allow delete: if false;
+    }
+
+    match /studios/{studioRoomId} {
+      allow get: if hasCapability('settings.studio.view');
+      allow list: if hasCapability('settings.studio.view')
+        && request.query.limit != null
+        && request.query.limit <= 50;
+
+      allow create: if hasCapability('settings.studio.edit')
+        && isValidStudioRoom(request.resource.data)
+        && usesStudioRoomCreateMetadata();
+
+      allow update: if hasCapability('settings.studio.edit')
+        && isValidStudioRoom(request.resource.data)
+        && preservesStudioRoomHistory();
 
       allow delete: if false;
     }
