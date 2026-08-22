@@ -90,8 +90,8 @@ Phase 1 progress on 2026-08-21:
 - [x] Configure Cloud Firestore.
 - [x] Configure Firebase Emulator Suite where practical.
 - [x] Implement repository/service layer conventions.
-- [ ] Define Firestore converters/normalizers if used.
-- [ ] Implement timestamp/timezone utilities.
+- [x] Define Firestore converters/normalizers if used.
+- [x] Implement timestamp/timezone utilities.
 - [ ] Implement integer-IDR money utilities.
 - [ ] Implement phone normalization utility.
 - [ ] Document required Firestore indexes as queries emerge.
@@ -110,7 +110,8 @@ Phase 2 progress on 2026-08-21:
 - GitHub Actions Quality run `32492423270` passed formatting, lint, Firebase/component tests, production build, and Vite development-server smoke after Phase 2A implementation.
 - Phase 2B configured Auth/Firestore emulator routing with a production guard, documented the real-project vs emulator strategy, added a manual Firestore connectivity probe, and established a shared focused document repository without a generic full-collection list operation.
 - Phase 2B connectivity/repository unit tests and the synchronized Firebase package lock passed GitHub Actions Quality run `32494354595` with formatting, lint, tests, production build, and Vite development-server smoke.
-- On 2026-08-22, the project owner reran the fixed manual `/dev/firebase` probe against Firebase project `studio37webapp` and confirmed `Connected`; the Firebase development connectivity gate is accepted. Converters, core data utilities, and Firestore index documentation remain for Phase 2C.
+- On 2026-08-22, the project owner reran the fixed manual `/dev/firebase` probe against Firebase project `studio37webapp` and confirmed `Connected`; the Firebase development connectivity gate is accepted.
+- Phase 2C slice 1 defined explicit Firestore encode/decode conventions, added centralized Firestore Timestamp/JavaScript Date and IANA timezone utilities, and passed GitHub Actions Quality run `32546928867` with formatting, lint, tests, production build, and Vite development-server smoke.
 
 ---
 
@@ -587,4 +588,4 @@ Implementation status:
 - [ ] Phase 2 — Firebase & Data Foundation in progress.
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
-  - [ ] Remaining Phase 2 converters, data utilities, and index work.
+  - [ ] Remaining Phase 2 integer-IDR money utilities, phone normalization, index documentation, and final gate.
