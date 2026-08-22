@@ -13,7 +13,7 @@ import {
 describe('timestamp and timezone utilities', () => {
   const instant = new Date('2026-08-22T07:05:09.000Z');
 
-  it('normalizes Date and Firestore Timestamp values without sharing mutable Date objects', () => {
+  it('normalizes Date and Firestore Timestamp values as cloned Date objects', () => {
     const fromDate = toJavaScriptDate(instant);
     const fromTimestamp = toJavaScriptDate(Timestamp.fromDate(instant));
 
