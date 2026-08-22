@@ -4,7 +4,10 @@ import { Badge } from '../../components/feedback/Badge.jsx';
 import { PageContext } from '../../components/navigation/PageContext.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { getFirebaseClientStatus } from '../../lib/firebase/client.js';
-import { probeFirestoreConnectivity } from '../../lib/firebase/connectivity.js';
+import {
+  FIRESTORE_CONNECTIVITY_PROBE_PATH,
+  probeFirestoreConnectivity,
+} from '../../lib/firebase/connectivity.js';
 
 import './firebase-status.css';
 
@@ -108,9 +111,13 @@ export function FirebaseStatusPage() {
           <div>
             <strong>Manual backend probe</strong>
             <p>
-              Reads the reserved <code>__studio37_system__/connectivity-probe</code> path once. A
-              permission-denied response still proves the configured Firestore backend is reachable;
-              Phase 3 will establish authenticated access and Security Rules.
+              Reads the legal Firestore path{' '}
+              <code>
+                {FIRESTORE_CONNECTIVITY_PROBE_PATH.collection}/
+                {FIRESTORE_CONNECTIVITY_PROBE_PATH.document}
+              </code>{' '}
+              once. A permission-denied response still proves the configured Firestore backend is
+              reachable; Phase 3 will establish authenticated access and Security Rules.
             </p>
           </div>
           <Button onClick={runProbe} loading={probing}>
