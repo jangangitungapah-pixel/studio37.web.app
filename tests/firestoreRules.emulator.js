@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
@@ -16,9 +17,11 @@ import {
   limit,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 const TEST_PROJECT_ID = 'studio37-rules-test';
@@ -379,6 +382,17 @@ describe('initial Firestore authorization boundary', () => {
           uid: 'future-timestamp',
           createdAt: Timestamp.fromMillis(Date.now() + 60_000),
           updatedAt: Timestamp.fromMillis(Date.now() + 60_000),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(ownerDb, 'users/prelinked-user'),
+        createUserProfile({
+          uid: 'prelinked-user',
+          operatorId: 'operator-budi',
+          createdAt,
+          updatedAt: createdAt,
         }),
       ),
     );
@@ -849,6 +863,105 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(deleteDoc(reference));
   });
 
+  test('allows an active Owner to atomically link and unlink reciprocal operator/user records', async () => {
+    await seedDocuments([['operators/operator-budi', createOperator()]]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorReference = doc(ownerDb, 'operators/operator-budi');
+    const userReference = doc(ownerDb, `users/${UNASSIGNED_UID}`);
+
+    await assertSucceeds(
+      runTransaction(ownerDb, async (transaction) => {
+        await transaction.get(operatorReference);
+        await transaction.get(userReference);
+        transaction.update(operatorReference, {
+          linkedUserUid: UNASSIGNED_UID,
+          updatedAt: serverTimestamp(),
+          updatedByUid: OWNER_UID,
+        });
+        transaction.update(userReference, {
+          operatorId: 'operator-budi',
+          updatedAt: serverTimestamp(),
+        });
+      }),
+    );
+
+    const linkedOperator = await getDoc(operatorReference);
+    const linkedUser = await getDoc(userReference);
+    assert.equal(linkedOperator.data().linkedUserUid, UNASSIGNED_UID);
+    assert.equal(linkedUser.data().operatorId, 'operator-budi');
+
+    await assertSucceeds(
+      runTransaction(ownerDb, async (transaction) => {
+        await transaction.get(operatorReference);
+        await transaction.get(userReference);
+        transaction.update(operatorReference, {
+          linkedUserUid: null,
+          updatedAt: serverTimestamp(),
+          updatedByUid: OWNER_UID,
+        });
+        transaction.update(userReference, {
+          operatorId: null,
+          updatedAt: serverTimestamp(),
+        });
+      }),
+    );
+  });
+
+  test('rejects one-sided links, direct reassignment, and delegated account linking', async () => {
+    await seedDocuments([['operators/operator-budi', createOperator()]]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const managerDb = authenticatedDb(OPERATOR_MANAGER_UID);
+
+    await assertFails(
+      updateDoc(doc(ownerDb, 'operators/operator-budi'), {
+        linkedUserUid: UNASSIGNED_UID,
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDb, `users/${UNASSIGNED_UID}`), {
+        operatorId: 'operator-budi',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+
+    const delegatedBatch = writeBatch(managerDb);
+    delegatedBatch.update(doc(managerDb, 'operators/operator-budi'), {
+      linkedUserUid: UNASSIGNED_UID,
+      updatedAt: serverTimestamp(),
+      updatedByUid: OPERATOR_MANAGER_UID,
+    });
+    delegatedBatch.update(doc(managerDb, `users/${UNASSIGNED_UID}`), {
+      operatorId: 'operator-budi',
+      updatedAt: serverTimestamp(),
+    });
+    await assertFails(delegatedBatch.commit());
+
+    await seedDocuments([
+      ['operators/operator-budi', createOperator({ linkedUserUid: OPERATOR_UID })],
+      [
+        `users/${OPERATOR_UID}`,
+        createUserProfile({
+          uid: OPERATOR_UID,
+          permissionSetId: DELEGATED_SET_ID,
+          operatorId: 'operator-budi',
+        }),
+      ],
+    ]);
+    const reassignmentBatch = writeBatch(ownerDb);
+    reassignmentBatch.update(doc(ownerDb, 'operators/operator-budi'), {
+      linkedUserUid: UNASSIGNED_UID,
+      updatedAt: serverTimestamp(),
+      updatedByUid: OWNER_UID,
+    });
+    reassignmentBatch.update(doc(ownerDb, `users/${UNASSIGNED_UID}`), {
+      operatorId: 'operator-budi',
+      updatedAt: serverTimestamp(),
+    });
+    await assertFails(reassignmentBatch.commit());
+  });
+
   test('rejects malformed operators, duplicate types, account links, and spoofed metadata', async () => {
     const ownerDb = authenticatedDb(OWNER_UID);
 
@@ -878,7 +991,7 @@ describe('initial Firestore authorization boundary', () => {
     }
   });
 
-  test('preserves operator creation history and keeps account linking closed in Phase 4C1', async () => {
+  test('preserves operator creation history and rejects one-sided account unlinking', async () => {
     await seedDocuments([
       ['operators/operator-budi', createOperator({ linkedUserUid: 'firebase-user' })],
     ]);

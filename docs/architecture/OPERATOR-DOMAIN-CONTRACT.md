@@ -6,7 +6,8 @@ Define the Phase 4C1 persisted, query, authorization, and repository boundary fo
 operators. This slice establishes operational people independently from Firebase Authentication;
 account linking, permission-set administration, and compensation defaults remain separate
 checkpoints. The Phase 4C2 browser workflow is specified in
-`docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`.
+`docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`; the subsequent Phase 4C3 atomic relationship
+foundation is specified in `docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`.
 
 ## Firestore path
 
@@ -52,11 +53,10 @@ Creating an operator always persists `linkedUserUid: null`. No Firebase Authenti
 created. This supports recording engineers and other operational personnel who need assignment and
 future compensation references but do not need application access.
 
-The Phase 4C1 repository deliberately exposes no account-link mutation. Security Rules also keep
-`linkedUserUid` immutable on updates, including Owner writes. A later account-linking slice must
-define and test the bidirectional invariant with `users/{uid}.operatorId`, authorization,
-uniqueness limitations, account provisioning workflow, and partial-failure handling before opening
-that field.
+The Phase 4C1 operator repository deliberately exposes no account-link mutation. Phase 4C3 later
+opens the field only through a separate Owner-only transaction repository that enforces the
+bidirectional invariant with `users/{uid}.operatorId`. Ordinary operator detail/status mutations
+continue to preserve the link, and delegated operator managers cannot change it.
 
 ## Bounded list query
 
@@ -102,7 +102,7 @@ authorization boundary.
 The following are intentionally not implemented in Phase 4C1:
 
 - Firebase Authentication account creation or invitation,
-- bidirectional operator/user account linking,
+- account-link/unlink browser UI,
 - permission-set list and management UI,
 - operator compensation defaults and rules,
 - assignment availability and booking integration,
@@ -111,4 +111,6 @@ The following are intentionally not implemented in Phase 4C1:
 Production review and deployment remain Phase 17.
 
 Phase 4C2 subsequently implements the bounded list, add/edit, and soft-status browser workflows.
-Final manual responsive QA remains open until accepted by the project owner.
+Phase 4C3 subsequently implements the exact-document, atomic account-link repository and Security
+Rules foundation. Final linking UI, permission administration, and manual responsive QA remain
+open until their later checkpoints are accepted by the project owner.

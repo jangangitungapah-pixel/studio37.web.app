@@ -138,6 +138,16 @@ The initial manual Owner procedure and its Security Rules dependency are documen
 docs/architecture/OWNER-BOOTSTRAP-STRATEGY.md
 ```
 
+Phase 4C3 account linking does not enumerate Authentication users or scan the `users` collection.
+An active Owner explicitly resolves one existing `users/{uid}` profile and the focused repository
+links or unlinks that profile with one exact operator document in a reciprocal Firestore
+transaction. Firebase Authentication identity provisioning, passwords, Admin SDK credentials, and
+service-account keys remain outside the browser repository. The relationship contract is:
+
+```text
+docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:
