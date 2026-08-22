@@ -45,12 +45,14 @@ name/contact data, one or both `studio_operator | recording_engineer` domain typ
 creation/server-controlled update metadata. Domain types never grant application capabilities.
 
 The feature repository owns one one-shot `displayName`-ordered query capped at 100 documents and
-exposes no generic collection read, hard delete, or account-link mutation. New records start with
-`linkedUserUid: null`, allowing operational profiles without a Firebase login. The finalized
-Phase 4C1 schema, query, authorization, and account-link deferral are documented in
-`docs/architecture/OPERATOR-DOMAIN-CONTRACT.md`.
+exposes no generic collection read or hard delete. New records start with `linkedUserUid: null`,
+allowing operational profiles without a Firebase login. Phase 4C3 adds a separate Owner-only
+transaction repository that changes `operators.linkedUserUid` and `users.operatorId` together from
+exact known document IDs; one-sided links and direct reassignment are denied. The finalized
+contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
+`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`.
 
-Compensation defaults, account linking, permission administration, assignment behavior, and UI are
+Compensation defaults, account-link UI, permission administration, assignment behavior, and UI are
 implemented in their owning later slices.
 
 ### `studios`

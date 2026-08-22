@@ -68,6 +68,10 @@ or removes `linkedUserUid`, `users/{uid}.operatorId`, Firebase Authentication id
 permission sets. The form explains this boundary instead of presenting a disabled fake account
 provisioning flow.
 
+Phase 4C3 subsequently establishes the atomic Owner-only repository and Security Rules foundation
+for the reciprocal Firestore relationship. Phase 4C2 UI remains unchanged and still exposes no
+link/unlink control until the dedicated browser workflow is implemented.
+
 ## Responsive and accessibility behavior
 
 - Desktop uses compact operator rows with identity, types, contact, status, and adjacent actions.
@@ -83,7 +87,7 @@ component coverage.
 ## Deferred scope
 
 - Firebase Authentication account provisioning or invitation,
-- bidirectional operator/user linking,
+- account-link/unlink browser UI,
 - permission-set listing and administration,
 - operator compensation defaults and rules,
 - booking assignment consumption,

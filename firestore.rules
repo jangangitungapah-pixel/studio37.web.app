@@ -2,12 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
     function currentUserPath() {
-      return /databases/$(database)/documents/users/$(request.auth.uid);
+      return userPath(request.auth.uid);
     }
 
     function permissionSetPath(permissionSetId) {
       return /databases/$(database)/documents/permissionSets/$(permissionSetId);
+    }
+
+    function operatorPath(operatorId) {
+      return /databases/$(database)/documents/operators/$(operatorId);
     }
 
     function isSignedIn() {
@@ -412,6 +420,58 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == request.auth.uid;
     }
 
+    function preservesOperatorHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function linkedOperatorAfter(operatorId, expectedUserUid) {
+      let linkedOperator = getAfter(operatorPath(operatorId)).data;
+      return linkedOperator.linkedUserUid == expectedUserUid
+        && linkedOperator.updatedAt == request.time
+        && linkedOperator.updatedByUid == request.auth.uid;
+    }
+
+    function linkedUserAfter(userUid, expectedOperatorId) {
+      let linkedUser = getAfter(userPath(userUid)).data;
+      return linkedUser.operatorId == expectedOperatorId
+        && linkedUser.updatedAt == request.time;
+    }
+
+    function isAtomicUserOperatorLink(uid) {
+      let previousOperatorId = resource.data.operatorId;
+      let nextOperatorId = request.resource.data.operatorId;
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['operatorId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && ((previousOperatorId == null
+            && nextOperatorId is string
+            && existsAfter(operatorPath(nextOperatorId))
+            && linkedOperatorAfter(nextOperatorId, uid))
+          || (previousOperatorId is string
+            && nextOperatorId == null
+            && existsAfter(operatorPath(previousOperatorId))
+            && linkedOperatorAfter(previousOperatorId, null)));
+    }
+
+    function isAtomicOperatorUserLink(operatorId) {
+      let previousUserUid = resource.data.linkedUserUid;
+      let nextUserUid = request.resource.data.linkedUserUid;
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
+        && ((previousUserUid == null
+            && nextUserUid is string
+            && existsAfter(userPath(nextUserUid))
+            && linkedUserAfter(nextUserUid, operatorId))
+          || (previousUserUid is string
+            && nextUserUid == null
+            && existsAfter(userPath(previousUserUid))
+            && linkedUserAfter(previousUserUid, null)));
+    }
+
     function preservesOwnOwnerAccess(uid) {
       return uid != request.auth.uid
         || (request.resource.data.role == 'owner'
@@ -425,13 +485,16 @@ service cloud.firestore {
 
       allow create: if canCreateUserProfile(uid)
         && isValidUserProfile(uid, request.resource.data)
+        && request.resource.data.operatorId == null
         && usesCurrentWriteTime(request.resource.data);
 
       allow update: if canUpdateUserProfile(uid, resource.data)
         && isValidUserProfile(uid, request.resource.data)
         && usesCurrentWriteTime(request.resource.data)
         && preservesUserHistory()
-        && preservesOwnOwnerAccess(uid);
+        && preservesOwnOwnerAccess(uid)
+        && (request.resource.data.operatorId == resource.data.operatorId
+          || (isActiveOwner() && isAtomicUserOperatorLink(uid)));
 
       allow delete: if false;
     }
@@ -494,9 +557,12 @@ service cloud.firestore {
         && isValidOperator(request.resource.data)
         && usesOperatorCreateMetadata();
 
-      allow update: if hasCapability('settings.operators.manage')
-        && isValidOperator(request.resource.data)
-        && preservesOperatorHistoryAndAccountLink();
+      allow update: if isValidOperator(request.resource.data)
+        && ((hasCapability('settings.operators.manage')
+            && preservesOperatorHistoryAndAccountLink())
+          || (isActiveOwner()
+            && preservesOperatorHistory()
+            && isAtomicOperatorUserLink(operatorId)));
 
       allow delete: if false;
     }

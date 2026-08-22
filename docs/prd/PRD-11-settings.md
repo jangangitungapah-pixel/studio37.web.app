@@ -109,9 +109,13 @@ Recording operators/engineers can exist without login accounts.
 Phase 4C1 establishes the underlying bounded `operators/{operatorId}` domain/repository and keeps
 new records intentionally unlinked from Firebase Authentication. Phase 4C2 adds the responsive
 bounded-list, add/edit, and soft activation/deactivation UI while retaining that account boundary.
+Phase 4C3 establishes the reciprocal Owner-only account-link transaction and rules foundation for
+an already provisioned exact user profile; it does not create Firebase Authentication identities
+or expose link/permission controls yet.
 The detailed contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
-`docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`; permission and account-link workflows remain
-separate implementation checkpoints.
+`docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`, with the account relationship in
+`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`; permission and account-link UI workflows
+remain separate implementation checkpoints.
 
 ## 6.1 Permissions UI
 
