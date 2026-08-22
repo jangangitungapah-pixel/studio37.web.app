@@ -16,11 +16,28 @@ function createAuthGateway(user = { email: 'owner@studio37.id', uid: 'owner-1' }
   };
 }
 
+function createUserProfileRepository(
+  profile = { displayName: 'Studio37 Owner', status: 'active', uid: 'owner-1' },
+) {
+  return {
+    observeByUid: vi.fn((uid, onProfileChanged) => {
+      if (uid !== profile.uid) throw new Error('Unexpected profile uid.');
+      onProfileChanged(profile);
+      return vi.fn();
+    }),
+  };
+}
+
 describe('Studio37 application shell', () => {
   it('renders the dashboard inside the semantic application shell for an authenticated session', async () => {
     window.history.pushState({}, '', '/dashboard');
 
-    const { container } = render(<App authGateway={createAuthGateway()} />);
+    const { container } = render(
+      <App
+        authGateway={createAuthGateway()}
+        userProfileRepository={createUserProfileRepository()}
+      />,
+    );
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
     expect(container.querySelector('.app-shell__sidebar')).toBeInTheDocument();
@@ -36,7 +53,12 @@ describe('Studio37 application shell', () => {
     const user = userEvent.setup();
     window.history.pushState({}, '', '/calendar');
 
-    render(<App authGateway={createAuthGateway()} />);
+    render(
+      <App
+        authGateway={createAuthGateway()}
+        userProfileRepository={createUserProfileRepository()}
+      />,
+    );
 
     const openButton = await screen.findByRole('button', { name: 'Buka menu' });
     expect(openButton).toHaveAttribute('aria-expanded', 'false');
@@ -57,9 +79,33 @@ describe('Studio37 application shell', () => {
   it('redirects an unauthenticated protected URL to login', async () => {
     window.history.pushState({}, '', '/calendar');
 
-    render(<App authGateway={createAuthGateway(null)} />);
+    render(
+      <App
+        authGateway={createAuthGateway(null)}
+        userProfileRepository={createUserProfileRepository()}
+      />,
+    );
 
     expect(await screen.findByRole('heading', { name: 'Masuk ke Studio37' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/login');
+  });
+
+  it('blocks the shell when the live application profile is disabled', async () => {
+    window.history.pushState({}, '', '/dashboard');
+
+    render(
+      <App
+        authGateway={createAuthGateway()}
+        userProfileRepository={createUserProfileRepository({
+          displayName: 'Studio37 Owner',
+          status: 'disabled',
+          uid: 'owner-1',
+        })}
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Akun dinonaktifkan' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument();
     expect(window.location.pathname).toBe('/login');
   });
 });

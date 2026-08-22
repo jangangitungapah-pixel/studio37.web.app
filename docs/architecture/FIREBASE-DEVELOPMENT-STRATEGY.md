@@ -98,6 +98,24 @@ firestore.indexes.json
 
 Phase 2 has no collection query yet, so the manifest intentionally contains no speculative composite indexes or field overrides. Index deployment to a production Firebase project remains deferred to Phase 17.
 
+## Authenticated user-profile access
+
+Phase 3 resolves application access through one explicit real-time document listener at:
+
+```text
+users/{firebaseAuthUid}
+```
+
+The listener is created only after Firebase Authentication supplies a user and is removed when the
+identity changes or signs out. Missing, malformed, unreadable, and disabled profiles fail closed.
+This is a document-addressed listener, not a collection query, and it requires no composite index.
+
+The initial manual Owner procedure and its Security Rules dependency are documented in:
+
+```text
+docs/architecture/OWNER-BOOTSTRAP-STRATEGY.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

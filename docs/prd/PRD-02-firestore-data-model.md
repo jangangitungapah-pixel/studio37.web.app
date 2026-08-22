@@ -19,6 +19,8 @@ Define Firestore collections, record ownership, historical snapshots, and query 
 ### `users`
 Application login profiles.
 
+Document ID: exact Firebase Authentication `uid`.
+
 Key fields:
 - `uid`
 - `displayName`
@@ -29,6 +31,10 @@ Key fields:
 - `permissionSetId` or normalized permissions
 - `operatorId`
 - `createdAt`, `updatedAt`
+
+The initial implementation uses nullable `permissionSetId`; Owner capabilities are implicit and
+the capability-resolution layer is introduced separately. A missing, malformed, unreadable, or
+disabled profile must not enter protected application routes.
 
 ### `operators`
 Operational/personnel entity used for assignments and compensation, including people who may not have a login.

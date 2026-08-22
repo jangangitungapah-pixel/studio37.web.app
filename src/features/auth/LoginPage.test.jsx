@@ -23,6 +23,7 @@ function renderLogin(authValue, initialEntry = '/login') {
 function unauthenticatedValue(overrides = {}) {
   return {
     error: null,
+    profile: null,
     signIn: vi.fn(),
     signOut: vi.fn(),
     status: 'unauthenticated',
@@ -63,13 +64,48 @@ describe('LoginPage', () => {
   });
 
   it('returns an authenticated user to the originally requested internal route', () => {
-    renderLogin(unauthenticatedValue({ status: 'authenticated', user: { uid: 'owner-1' } }), {
-      pathname: '/login',
-      state: { from: { pathname: '/calendar' } },
-    });
+    renderLogin(
+      unauthenticatedValue({
+        profile: { status: 'active', uid: 'owner-1' },
+        status: 'authenticated',
+        user: { uid: 'owner-1' },
+      }),
+      {
+        pathname: '/login',
+        state: { from: { pathname: '/calendar' } },
+      },
+    );
 
     expect(
       screen.getByRole('heading', { name: 'Booking Calendar destination' }),
     ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['profile-missing', 'Profil akses belum tersedia'],
+    ['disabled', 'Akun dinonaktifkan'],
+    ['profile-error', 'Profil akses gagal diverifikasi'],
+  ])('blocks the login form for an authenticated Firebase user with %s access', (status, title) => {
+    renderLogin(unauthenticatedValue({ status, user: { uid: 'owner-1' } }));
+
+    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Login Studio37' })).not.toBeInTheDocument();
+  });
+
+  it('lets a blocked user end the Firebase session and choose another account', async () => {
+    const signOut = vi.fn().mockResolvedValue(undefined);
+    const interaction = userEvent.setup();
+    renderLogin(
+      unauthenticatedValue({
+        profile: { status: 'disabled', uid: 'owner-1' },
+        signOut,
+        status: 'disabled',
+        user: { uid: 'owner-1' },
+      }),
+    );
+
+    await interaction.click(screen.getByRole('button', { name: 'Keluar dan gunakan akun lain' }));
+
+    expect(signOut).toHaveBeenCalledOnce();
   });
 });
