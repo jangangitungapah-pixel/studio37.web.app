@@ -29,7 +29,8 @@ query, normalization, and index requirements.
 
 - Convert domain `Date` values to Firestore `Timestamp` values with
   `toFirestoreTimestamp()`.
-- Store money as integer IDR; money helpers are added in the next Phase 2C slice.
+- Store money as validated safe integer IDR with `requireIntegerIdr()`; fractional values are
+  rejected.
 - Do not persist the synthetic document `id` inside a payload unless a domain requirement
   explicitly calls for it.
 - Do not mutate the caller's object.
@@ -62,6 +63,47 @@ Central utilities live in:
 
 ```text
 src/lib/datetime/timestamps.js
+```
+
+## Integer-IDR rules
+
+- Domain and persisted money values use JavaScript safe integers representing whole rupiah.
+- Strings, fractional values, `NaN`, infinities, and unsafe integers are rejected at the domain
+  boundary.
+- Negative values are rejected by default. Refund or adjustment flows must opt in explicitly with
+  `{ allowNegative: true }`.
+- Zero is valid by default and may be rejected explicitly with `{ allowZero: false }` where a
+  transaction requires a positive amount.
+- Use `sumIntegerIdr()` for checked addition so an unsafe total fails rather than silently losing
+  precision.
+- `formatIntegerIdr()` is presentation-only and never changes the stored amount.
+- Percentage and duration calculations must define their own rounding rule in the owning pricing
+  or commission engine before the result crosses the integer-IDR boundary.
+
+Central utilities live in:
+
+```text
+src/lib/money/idr.js
+```
+
+## Indonesian phone rules
+
+- Customer phone input is stored separately from its display form when the original formatting
+  needs to be preserved.
+- `normalizeIndonesianPhone()` produces one canonical E.164 value using the `+62` country code.
+- Common `0`, `62`, and `+62` prefixes and harmless spaces, parentheses, dots, or hyphens normalize
+  to the same value.
+- A mobile number entered without a prefix is accepted only when it starts with `8`.
+- Foreign country codes, unsupported characters, ambiguous prefixless values, and invalid lengths
+  are rejected.
+- Optional phone fields must opt in with `{ allowNull: true }`.
+- Exact customer matching queries use the canonical value; the UI may retain a separate display
+  value for readability and historical snapshots.
+
+Central utilities live in:
+
+```text
+src/lib/validation/indonesianPhone.js
 ```
 
 ## Feature-repository example
