@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  FIRESTORE_CONNECTIVITY_PROBE_PATH,
-  probeFirestoreConnectivity,
-} from './connectivity.js';
+import { FIRESTORE_CONNECTIVITY_PROBE_PATH, probeFirestoreConnectivity } from './connectivity.js';
 
 function createAdapter({ exists = false, error = null } = {}) {
   return {
@@ -34,11 +31,7 @@ describe('probeFirestoreConnectivity', () => {
       document: 'connectivity-probe',
     });
     expect(FIRESTORE_CONNECTIVITY_PROBE_PATH.collection).not.toMatch(/^__.*__$/);
-    expect(adapter.doc).toHaveBeenCalledWith(
-      {},
-      'studio37System',
-      'connectivity-probe',
-    );
+    expect(adapter.doc).toHaveBeenCalledWith({}, 'studio37System', 'connectivity-probe');
   });
 
   it('reports a successful server response without requiring the probe document to exist', async () => {
