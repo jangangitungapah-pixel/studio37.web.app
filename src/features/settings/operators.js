@@ -14,7 +14,22 @@ export const OPERATOR_TYPES = Object.freeze({
   STUDIO_OPERATOR: 'studio_operator',
 });
 
+export const DEFAULT_OPERATOR_FORM_VALUES = Object.freeze({
+  displayName: '',
+  email: '',
+  phone: '',
+  recordingEngineer: false,
+  studioOperator: false,
+});
+
 const mutableFieldNames = Object.freeze(['displayName', 'email', 'operatorTypes', 'phone']);
+const formFieldNames = Object.freeze([
+  'displayName',
+  'email',
+  'phone',
+  'recordingEngineer',
+  'studioOperator',
+]);
 const persistedFieldNames = Object.freeze([
   'createdAt',
   'createdByUid',
@@ -193,4 +208,85 @@ export function compareOperators(left, right) {
   if (nameDifference !== 0) return nameDifference;
 
   return left.id.localeCompare(right.id);
+}
+
+export function toOperatorFormValues(operator = null) {
+  if (!operator) return { ...DEFAULT_OPERATOR_FORM_VALUES };
+
+  const details = normalizeOperatorDetails({
+    displayName: operator.displayName,
+    email: operator.email,
+    operatorTypes: operator.operatorTypes,
+    phone: operator.phone,
+  });
+
+  return {
+    displayName: details.displayName,
+    email: details.email ?? '',
+    phone: details.phone ?? '',
+    recordingEngineer: details.operatorTypes.includes(OPERATOR_TYPES.RECORDING_ENGINEER),
+    studioOperator: details.operatorTypes.includes(OPERATOR_TYPES.STUDIO_OPERATOR),
+  };
+}
+
+export function validateOperatorForm(value) {
+  const form = requireRecord(value, 'operator form');
+  requireExactFields(form, formFieldNames, 'operator form');
+
+  const errors = {};
+  let displayName;
+  let email;
+  let operatorTypes;
+  let phone;
+
+  try {
+    displayName = requireTrimmedString(form.displayName, 'operator.displayName', {
+      maxLength: 100,
+    });
+  } catch (error) {
+    errors.displayName = error.message;
+  }
+
+  try {
+    if (typeof form.email !== 'string') {
+      throw new TypeError('operator.email must be a string.');
+    }
+    email = normalizeOperatorEmail(form.email.trim() || null);
+  } catch (error) {
+    errors.email = error.message;
+  }
+
+  try {
+    if (typeof form.phone !== 'string') {
+      throw new TypeError('operator.phone must be a string.');
+    }
+    phone = normalizeIndonesianPhone(form.phone.trim() || null, {
+      allowNull: true,
+      label: 'operator.phone',
+    });
+  } catch (error) {
+    errors.phone = error.message;
+  }
+
+  try {
+    if (typeof form.studioOperator !== 'boolean' || typeof form.recordingEngineer !== 'boolean') {
+      throw new TypeError('operator type selections must be boolean values.');
+    }
+
+    operatorTypes = normalizeOperatorTypes([
+      ...(form.studioOperator ? [OPERATOR_TYPES.STUDIO_OPERATOR] : []),
+      ...(form.recordingEngineer ? [OPERATOR_TYPES.RECORDING_ENGINEER] : []),
+    ]);
+  } catch (error) {
+    errors.operatorTypes = error.message;
+  }
+
+  const hasErrors = Object.keys(errors).length > 0;
+
+  return Object.freeze({
+    errors: Object.freeze(errors),
+    value: hasErrors
+      ? null
+      : normalizeOperatorDetails({ displayName, email, operatorTypes, phone }),
+  });
 }

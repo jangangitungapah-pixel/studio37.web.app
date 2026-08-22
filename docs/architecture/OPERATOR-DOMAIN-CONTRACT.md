@@ -4,8 +4,9 @@
 
 Define the Phase 4C1 persisted, query, authorization, and repository boundary for Studio37
 operators. This slice establishes operational people independently from Firebase Authentication;
-Operator Settings UI, account linking, permission-set administration, and compensation defaults
-remain separate checkpoints.
+account linking, permission-set administration, and compensation defaults remain separate
+checkpoints. The Phase 4C2 browser workflow is specified in
+`docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`.
 
 ## Firestore path
 
@@ -100,8 +101,6 @@ authorization boundary.
 
 The following are intentionally not implemented in Phase 4C1:
 
-- Operator Settings list/form UI,
-- add/edit/activate/deactivate browser workflows and responsive QA,
 - Firebase Authentication account creation or invitation,
 - bidirectional operator/user account linking,
 - permission-set list and management UI,
@@ -110,3 +109,6 @@ The following are intentionally not implemented in Phase 4C1:
 - Firebase Rules/index/Hosting deployment.
 
 Production review and deployment remain Phase 17.
+
+Phase 4C2 subsequently implements the bounded list, add/edit, and soft-status browser workflows.
+Final manual responsive QA remains open until accepted by the project owner.

@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   compareOperators,
+  DEFAULT_OPERATOR_FORM_VALUES,
   decodeOperatorDocument,
   normalizeOperatorDetails,
   normalizeOperatorTypes,
   OPERATOR_LIST_LIMIT,
   OPERATOR_TYPES,
+  toOperatorFormValues,
+  validateOperatorForm,
 } from './operators.js';
 
 function createDetails(overrides = {}) {
@@ -124,5 +127,58 @@ describe('operator domain contract', () => {
       'operator-b',
       'operator-c',
     ]);
+  });
+
+  it('maps persisted details to editable form values without exposing account fields', () => {
+    expect(toOperatorFormValues()).toEqual(DEFAULT_OPERATOR_FORM_VALUES);
+    expect(
+      toOperatorFormValues(
+        createDocument({
+          email: null,
+          operatorTypes: [OPERATOR_TYPES.STUDIO_OPERATOR, OPERATOR_TYPES.RECORDING_ENGINEER],
+          phone: null,
+        }),
+      ),
+    ).toEqual({
+      displayName: 'Budi Engineer',
+      email: '',
+      phone: '',
+      recordingEngineer: true,
+      studioOperator: true,
+    });
+  });
+
+  it('validates UI form input into canonical nullable contact and operator types', () => {
+    const valid = validateOperatorForm({
+      displayName: '  Budi Engineer  ',
+      email: '',
+      phone: '0812-3456-7890',
+      recordingEngineer: true,
+      studioOperator: false,
+    });
+    const invalid = validateOperatorForm({
+      displayName: '',
+      email: 'not-email',
+      phone: '+441234',
+      recordingEngineer: false,
+      studioOperator: false,
+    });
+
+    expect(valid.errors).toEqual({});
+    expect(valid.value).toEqual({
+      displayName: 'Budi Engineer',
+      email: null,
+      operatorTypes: [OPERATOR_TYPES.RECORDING_ENGINEER],
+      phone: '+6281234567890',
+    });
+    expect(invalid.value).toBeNull();
+    expect(invalid.errors).toEqual(
+      expect.objectContaining({
+        displayName: expect.any(String),
+        email: expect.any(String),
+        operatorTypes: expect.any(String),
+        phone: expect.any(String),
+      }),
+    );
   });
 });
