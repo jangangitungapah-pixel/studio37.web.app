@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { permissionSetRepository } from '../../services/permissionSetRepository.js';
 import { userProfileRepository } from '../../services/userProfileRepository.js';
@@ -81,6 +81,7 @@ export function AuthProvider({
   profileRepository = userProfileRepository,
 }) {
   const [session, setSession] = useState(loadingSession);
+  const clearAuthenticatedSessionRef = useRef(() => {});
 
   useEffect(() => {
     let active = true;
@@ -102,6 +103,13 @@ export function AuthProvider({
       unsubscribeProfile = () => {};
       observedUid = null;
     }
+
+    function clearAuthenticatedSession() {
+      stopObservingProfile();
+      setSession(unauthenticatedSession);
+    }
+
+    clearAuthenticatedSessionRef.current = clearAuthenticatedSession;
 
     function observePermissionSet(user, profile) {
       stopObservingPermissionSet();
@@ -226,6 +234,7 @@ export function AuthProvider({
 
     return () => {
       active = false;
+      clearAuthenticatedSessionRef.current = () => {};
       stopObservingProfile();
       unsubscribeAuth();
     };
@@ -247,7 +256,7 @@ export function AuthProvider({
 
   const signOut = useCallback(async () => {
     await gateway.signOut();
-    setSession(unauthenticatedSession);
+    clearAuthenticatedSessionRef.current();
   }, [gateway]);
 
   const value = useMemo(() => ({ ...session, signIn, signOut }), [session, signIn, signOut]);

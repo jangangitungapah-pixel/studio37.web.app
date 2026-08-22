@@ -16,7 +16,7 @@ const activeProfile = Object.freeze({
 });
 
 function SessionProbe() {
-  const { capabilities, permissionSet, profile, signIn, status, user } = useAuth();
+  const { capabilities, permissionSet, profile, signIn, signOut, status, user } = useAuth();
 
   return (
     <div>
@@ -30,6 +30,9 @@ function SessionProbe() {
         onClick={() => signIn({ email: 'owner@studio37.id', password: 'secret-password' })}
       >
         Sign in probe
+      </button>
+      <button type="button" onClick={signOut}>
+        Sign out probe
       </button>
     </div>
   );
@@ -364,5 +367,41 @@ describe('AuthProvider profile access boundary', () => {
     expect(screen.getByText('no-user')).toBeInTheDocument();
     expect(gateway.observeSession).not.toHaveBeenCalled();
     expect(profileRepository.observeByUid).not.toHaveBeenCalled();
+  });
+
+  it('clears profile access and stops its listener after logout succeeds', async () => {
+    const gateway = createAuthGateway();
+    const profileRepository = createProfileRepository();
+    const interaction = userEvent.setup();
+    const unsubscribeProfile = vi.fn();
+    let onProfileChanged;
+    gateway.observeSession.mockImplementation((onUserChanged) => {
+      onUserChanged(firebaseUser);
+      return vi.fn();
+    });
+    gateway.signOut.mockResolvedValue(undefined);
+    profileRepository.observeByUid.mockImplementation((...args) => {
+      onProfileChanged = args[1];
+      onProfileChanged(activeProfile);
+      return unsubscribeProfile;
+    });
+
+    render(
+      <AuthProvider gateway={gateway} profileRepository={profileRepository}>
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+    await interaction.click(screen.getByRole('button', { name: 'Sign out probe' }));
+
+    expect(gateway.signOut).toHaveBeenCalledOnce();
+    expect(unsubscribeProfile).toHaveBeenCalledOnce();
+    expect(screen.getByText('unauthenticated')).toBeInTheDocument();
+    expect(screen.getByText('no-user')).toBeInTheDocument();
+    expect(screen.getByText('no-profile')).toBeInTheDocument();
+
+    act(() => onProfileChanged(activeProfile));
+    expect(screen.getByText('unauthenticated')).toBeInTheDocument();
   });
 });

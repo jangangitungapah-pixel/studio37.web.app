@@ -230,23 +230,6 @@
   white-space: nowrap;
 }
 
-.app-shell__status {
-  display: none;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-.app-shell__status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--color-success);
-  box-shadow: 0 0 0 4px var(--color-success-soft);
-}
-
 .app-shell__content {
   width: 100%;
   max-width: var(--content-max-width);
@@ -315,10 +298,6 @@
   .app-shell__content {
     padding-right: var(--space-6);
     padding-left: var(--space-6);
-  }
-
-  .app-shell__status {
-    display: flex;
   }
 }
 

@@ -59,6 +59,13 @@ describe('Firebase Auth gateway', () => {
     );
   });
 
+  it('delegates logout to the configured Firebase Auth instance', async () => {
+    authSdk.signOut.mockResolvedValue(undefined);
+
+    await expect(firebaseAuthGateway.signOut()).resolves.toBeUndefined();
+    expect(authSdk.signOut).toHaveBeenCalledWith(configuredAuth);
+  });
+
   it('fails closed when Firebase Authentication is not configured', async () => {
     const gateway = createFirebaseAuthGateway(null);
 

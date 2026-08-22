@@ -198,4 +198,36 @@ describe('Studio37 application shell', () => {
       screen.queryByRole('heading', { name: 'Akses tidak diizinkan' }),
     ).not.toBeInTheDocument();
   });
+
+  it('logs out from the app-shell user menu and returns to Login', async () => {
+    const interaction = userEvent.setup();
+    const gateway = createAuthGateway();
+    window.history.pushState({}, '', '/dashboard');
+
+    render(
+      <App
+        authGateway={gateway}
+        userProfileRepository={createUserProfileRepository({
+          displayName: 'Studio37 Owner',
+          email: 'owner@studio37.id',
+          permissionSetId: null,
+          role: 'owner',
+          status: 'active',
+          uid: 'owner-1',
+        })}
+      />,
+    );
+
+    await interaction.click(
+      await screen.findByRole('button', {
+        name: 'Buka menu pengguna: Studio37 Owner',
+      }),
+    );
+    expect(screen.getByText('owner@studio37.id')).toBeInTheDocument();
+    await interaction.click(screen.getByRole('button', { name: 'Keluar dari Studio37' }));
+
+    expect(gateway.signOut).toHaveBeenCalledOnce();
+    expect(await screen.findByRole('heading', { name: 'Masuk ke Studio37' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/login');
+  });
 });
