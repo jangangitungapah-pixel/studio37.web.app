@@ -53,6 +53,41 @@ describe('createDocumentRepository', () => {
     );
   });
 
+  it('applies explicit encode and decode hooks at the repository boundary', async () => {
+    const adapter = createAdapter({ data: { name: 'STUDIO A' } });
+    const encode = vi.fn((record) => ({
+      ...record,
+      name: record.name.toUpperCase(),
+    }));
+    const decode = vi.fn((record) => ({
+      ...record,
+      name: record.name.toLowerCase(),
+    }));
+    const repository = createDocumentRepository({
+      adapter,
+      collectionName: 'studios',
+      db: {},
+      decode,
+      encode,
+    });
+
+    await expect(repository.getById('studio-a')).resolves.toEqual({
+      id: 'studio-a',
+      name: 'studio a',
+    });
+    expect(decode).toHaveBeenCalledWith({
+      id: 'studio-a',
+      name: 'STUDIO A',
+    });
+
+    await repository.setById('studio-a', { name: 'Studio Utama' });
+    expect(encode).toHaveBeenCalledWith({ name: 'Studio Utama' });
+    expect(adapter.setDoc).toHaveBeenCalledWith(
+      { collectionName: 'studios', documentId: 'studio-a' },
+      { name: 'STUDIO UTAMA' },
+    );
+  });
+
   it('rejects invalid repository names and payloads before touching Firestore', async () => {
     expect(() =>
       createDocumentRepository({
