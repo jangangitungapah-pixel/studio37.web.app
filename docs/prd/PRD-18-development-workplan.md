@@ -84,10 +84,10 @@ Phase 1 progress on 2026-08-21:
 
 # Phase 2 — Firebase & Data Foundation
 
-- [ ] Create/connect Firebase development project.
-- [ ] Configure Firebase client initialization.
-- [ ] Configure Firebase Authentication.
-- [ ] Configure Cloud Firestore.
+- [x] Create/connect Firebase development project.
+- [x] Configure Firebase client initialization.
+- [x] Configure Firebase Authentication.
+- [x] Configure Cloud Firestore.
 - [ ] Configure Firebase Emulator Suite where practical.
 - [ ] Implement repository/service layer conventions.
 - [ ] Define Firestore converters/normalizers if used.
@@ -101,7 +101,14 @@ Phase 1 progress on 2026-08-21:
 - [ ] Firebase dev connection works.
 - [ ] Emulator/dev strategy documented.
 - [ ] Core data utilities have tests.
-- [ ] Lint/test/build pass.
+- [x] Lint/test/build pass.
+
+Phase 2 progress on 2026-08-21:
+
+- Phase 2A connected the application configuration to Firebase project `studio37webapp`, selected Firestore Standard Edition, added Firebase Web SDK `12.18.0`, and initialized singleton Firebase App, Authentication, and Cloud Firestore clients.
+- Phase 2A added Vite environment overrides, lazy production-only Analytics eligibility, Firebase client tests, and development-only `/dev/firebase` status UI that performs no Firestore reads or writes.
+- GitHub Actions Quality run `32492423270` passed formatting, lint, Firebase/component tests, production build, and Vite development-server smoke after Phase 2A implementation.
+- Backend connectivity, Emulator Suite strategy, repository/service conventions, converters, data utilities, and Firestore index documentation remain open for later Phase 2 slices.
 
 ---
 
@@ -575,3 +582,6 @@ Implementation status:
   - [x] Phase 1B — Button, Input/Textarea, and Badge/Status primitives completed and quality-gated.
   - [x] Phase 1C — Select/Combobox, Dialog, and Toast/feedback primitives completed and quality-gated.
   - [x] Final Phase 1 shared-component visual consistency and desktop/mobile manual browser QA accepted.
+- [ ] Phase 2 — Firebase & Data Foundation in progress.
+  - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
+  - [ ] Remaining Phase 2 emulator, repository, converters, data utilities, connectivity, and index work.
