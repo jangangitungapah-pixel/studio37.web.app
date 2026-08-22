@@ -216,6 +216,7 @@ Phase 3 progress on 2026-08-22:
 - [x] Support operator without login.
 - [x] Link operator to user account where applicable.
 - [x] Add scoped operator account invitation/self-registration foundation.
+- [x] Add email/password invitation onboarding and manual copy/share delivery UI.
 - [ ] Configure operator permissions.
 - [x] Activate/deactivate operator.
 
@@ -293,9 +294,19 @@ Phase 4 progress on 2026-08-22:
   one-sided writes, injected permissions, and every invitation/Owner role escalation path.
 - GitHub Actions Quality run `32579690151` passed formatting, lint, 196 unit/component tests, 34
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Booking/calendar consumption of active rooms/hours, permission administration, invitation
-  provider/delivery and browser UI, final real-Firebase account-link acceptance, and final Phase 4
-  responsive/integration gates remain pending; Phase 4 remains in progress.
+- Phase 4C5B added the Owner-only invitation creation/copy workflow and public exact-path onboarding
+  route. Invitees can create or reuse a Firebase email/password identity, receive Firebase email
+  verification with the invitation return URL, refresh the verified ID token, review one exact
+  invitation, and atomically establish the Phase 4C5A relationship.
+- The browser flow preserves the exact-UID fallback, gives every newly invited user zero delegated
+  permissions, exposes no invitation/Auth-user collection read, and adds no paid delivery service,
+  Cloud Function, Admin SDK, composite index, or deployment. GitHub Actions Quality run
+  `32581224908` passed formatting, lint, 213 unit/component tests, 34 Firestore Emulator
+  authorization tests, production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms/hours, permission administration, automated
+  invitation delivery/resend/status administration, final real-Firebase invitation/account-link
+  acceptance, and final Phase 4 responsive/integration gates remain pending; Phase 4 remains in
+  progress.
 
 ---
 
@@ -730,4 +741,5 @@ Implementation status:
   - [x] Phase 4C3 — exact-document atomic operator/account-link repository and Security Rules foundation implemented and quality-gated.
   - [x] Phase 4C4 — Owner-only exact-UID operator/account-link review, link, and unlink UI implemented and quality-gated.
   - [x] Phase 4C5A — exact-path verified-email invitation/self-registration model, repository, atomic Rules, and automated coverage implemented and quality-gated.
-  - [ ] Invitation provider/delivery and browser UI, permission management, real-Firebase account-link acceptance, and final integration/responsive gates pending.
+  - [x] Phase 4C5B — email/password provider, Firebase verification, Owner copy/share invitation, and browser acceptance UI implemented and automated quality-gated.
+  - [ ] Permission management, automated invitation delivery/status administration, real-Firebase invitation/account-link acceptance, and final integration/responsive gates pending.
