@@ -81,6 +81,12 @@ src/services/bookingRepository.js
 
 Business calculations and authorization decisions do not belong inside the shared Firestore repository.
 
+Field-level encoding, decoding, partial-update, timestamp, and timezone conventions are defined in:
+
+```text
+docs/architecture/FIRESTORE-DATA-CONVENTIONS.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:
