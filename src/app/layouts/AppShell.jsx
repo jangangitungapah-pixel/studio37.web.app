@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { canAccessPolicy } from '../../features/auth/capabilities.js';
 import { ROUTE_POLICIES } from '../../features/auth/routePolicies.js';
+import { UserMenu } from '../../features/auth/UserMenu.jsx';
 import { useAuth } from '../../features/auth/useAuth.js';
 import './app-shell.css';
 
@@ -171,10 +172,7 @@ export function AppShell() {
               </div>
             </div>
 
-            <div className="app-shell__status" aria-label="Status aplikasi">
-              <span className="app-shell__status-dot" aria-hidden="true" />
-              Foundation ready
-            </div>
+            <UserMenu />
           </div>
         </header>
 
