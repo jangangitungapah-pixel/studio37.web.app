@@ -49,7 +49,8 @@ npm run firebase:emulators
 npm run dev
 ```
 
-The Firebase CLI may download tooling through `npx`; Firestore Emulator also requires the Firebase CLI's supported local Java runtime prerequisites.
+Firebase CLI is pinned as a development dependency, so the emulator command does not float to an
+unreviewed CLI release. The current Firestore Emulator toolchain requires Java 21 or newer.
 
 ## Safety rules
 
@@ -57,7 +58,28 @@ The Firebase CLI may download tooling through `npx`; Firestore Emulator also req
 2. Switching emulator mode requires restarting the Vite dev server.
 3. The emulator is disposable local state unless an explicit import/export workflow is added later.
 4. Production Hosting configuration remains deferred to Phase 17.
-5. Firestore Security Rules are implemented and tested in Phase 3; Phase 2 does not treat client configuration as authorization.
+5. Initial Firestore Security Rules are source-controlled and emulator-tested in Phase 3. Client
+   configuration and UI guards are never treated as authorization.
+
+## Security Rules verification
+
+The initial rules and their detailed scope are:
+
+```text
+firestore.rules
+docs/architecture/FIRESTORE-SECURITY-RULES.md
+```
+
+Run the isolated emulator authorization suite with:
+
+```powershell
+npm run test:rules
+```
+
+The command uses only the Firestore Emulator and the synthetic project ID
+`studio37-rules-test`. It does not contact or mutate the real development Firestore database.
+Product collections that have not yet reached their implementation phase remain default-deny.
+Rules deployment is still deferred to the production review in Phase 17.
 
 ## Data-access convention
 

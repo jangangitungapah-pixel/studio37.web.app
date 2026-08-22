@@ -4,7 +4,7 @@
 
 Create the first Studio37 Owner identity without adding public sign-up, client-side role claims,
 Admin SDK credentials, or a Blaze-only backend. This procedure is for the Firebase development
-project and remains subject to the Phase 3 Firestore Security Rules gate.
+project and is protected at runtime by the initial Phase 3 Firestore Security Rules.
 
 ## Security decision
 
@@ -88,16 +88,26 @@ check after the relevant Phase 3 implementation and Security Rules are ready.
 - The listener is unsubscribed when the Firebase user changes, signs out, or the provider unmounts.
 - No collection scan or generic `listAll()` operation is used.
 
-## Security Rules dependency
+## Security Rules boundary
 
 Client-side profile enforcement improves application behavior but is not the authorization
-boundary. Initial Firestore Security Rules and emulator tests remain a later Phase 3 sub-phase and
-must ensure that:
+boundary. The initial Firestore Security Rules and emulator suite ensure that:
 
 - ordinary users cannot create an Owner profile,
 - operators cannot change protected role, status, or permission fields,
 - disabled users cannot read protected studio data,
 - Owner-managed profile changes are explicitly authorized.
+
+A signed-in user may read only its own exact profile so missing, malformed, or disabled state can
+fail closed in the application. That narrow self-read does not grant permission-set or operational
+data access. The rules also prevent an Owner from accidentally disabling or demoting its own
+profile through a client write.
+
+The complete initial access matrix is documented in:
+
+```text
+docs/architecture/FIRESTORE-SECURITY-RULES.md
+```
 
 Do not use this development bootstrap procedure as a production launch approval. Production
 Firebase review and deployment remain Phase 17 work.
