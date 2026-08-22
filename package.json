@@ -10,7 +10,7 @@
     "firebase:emulators": "npx --yes firebase-tools emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier src/lib/firebase/connectivity.test.js && exit 1",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
