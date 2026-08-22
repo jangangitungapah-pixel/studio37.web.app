@@ -27,14 +27,15 @@ generic unbounded read path.
 
 ## Initial access matrix
 
-| Resource                            | Read                                                                     | List/query                              | Create/update                                                      | Delete                          |
-| ----------------------------------- | ------------------------------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------ | ------------------------------- |
-| `users/{uid}`                       | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                 | Active Owner only, with canonical schema and monotonic timestamps. | Denied; use status changes.     |
-| `permissionSets/{id}`               | Active Owner, or active Operator whose exact profile references this ID. | Denied.                                 | Active Owner only, with supported delegable capabilities.          | Denied; use `status: disabled`. |
-| `appSettings/studio`                | Any exact valid active Studio37 user profile.                            | Denied.                                 | Owner or active Operator with `settings.studio.edit`; validated.   | Denied.                         |
-| `studios/{roomId}`                  | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50. | Owner or `settings.studio.edit`; validated.                        | Denied; use `status: disabled`. |
-| `studio37System/connectivity-probe` | Active Owner exact-document read only.                                   | Denied.                                 | Denied.                                                            | Denied.                         |
-| Every other path                    | Denied.                                                                  | Denied.                                 | Denied.                                                            | Denied.                         |
+| Resource                            | Read                                                                     | List/query                               | Create/update                                                            | Delete                          |
+| ----------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------ | ------------------------------- |
+| `users/{uid}`                       | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                  | Active Owner only, with canonical schema and monotonic timestamps.       | Denied; use status changes.     |
+| `permissionSets/{id}`               | Active Owner, or active Operator whose exact profile references this ID. | Denied.                                  | Active Owner only, with supported delegable capabilities.                | Denied; use `status: disabled`. |
+| `appSettings/studio`                | Any exact valid active Studio37 user profile.                            | Denied.                                  | Owner or active Operator with `settings.studio.edit`; validated.         | Denied.                         |
+| `studios/{roomId}`                  | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.  | Owner or `settings.studio.edit`; validated.                              | Denied; use `status: disabled`. |
+| `operators/{operatorId}`            | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100. | Owner or `settings.operators.manage`; validated, account link protected. | Denied; use `status: disabled`. |
+| `studio37System/connectivity-probe` | Active Owner exact-document read only.                                   | Denied.                                  | Denied.                                                                  | Denied.                         |
+| Every other path                    | Denied.                                                                  | Denied.                                  | Denied.                                                                  | Denied.                         |
 
 The self-profile read exception is deliberate. A signed-in identity must be able to observe that
 its own profile is missing, malformed, or disabled so the application can fail closed and present
@@ -93,11 +94,28 @@ delete remains denied. The detailed contract is documented in:
 docs/architecture/STUDIO-ROOMS-CONTRACT.md
 ```
 
+## Operator domain invariants
+
+Phase 4C1 opens `operators/{operatorId}` only to active Owners or Operators with the relevant
+Operator Settings capability. List access requires an explicit query limit of at most 100; the
+repository fixes one `displayName`-ordered, one-shot query at that bound.
+
+Writes require implicit Owner access or `settings.operators.manage`. Rules enforce the exact field
+set, supported unique `studio_operator | recording_engineer` domain types, canonical nullable
+contact fields, `active | disabled` status, immutable creation metadata, server update metadata,
+and current actor. New records must have `linkedUserUid: null`, and the field remains immutable for
+every Phase 4C1 update so account linking cannot bypass its later dedicated workflow. Hard delete
+remains denied. The detailed contract is documented in:
+
+```text
+docs/architecture/OPERATOR-DOMAIN-CONTRACT.md
+```
+
 ## Deferred product collections
 
 Bookings, customers, remaining settings documents, session/pricing configuration, payments,
-commissions, ledger entries, and audit logs remain default-deny. Their later phases must add the
-smallest required access with:
+commissions, ledger entries, audit logs, and operator account-link mutations remain default-deny.
+Their later phases must add the smallest required access with:
 
 1. a finalized document contract,
 2. explicit capability and field-level constraints,

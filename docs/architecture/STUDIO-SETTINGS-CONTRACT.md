@@ -82,9 +82,11 @@ The Studio Settings page handles:
 The following remain incomplete after Phase 4A:
 
 - room-specific operating overrides,
-- Operator model/repository,
-- operators with and without login,
-- Operator Settings and permission-management UI.
+- Operator Settings UI and responsive workflows,
+- operator account linking and permission-management UI.
+
+The Phase 4C1 operator model/repository and no-login contract are now defined separately in
+`docs/architecture/OPERATOR-DOMAIN-CONTRACT.md`.
 
 Studio room add/edit/deactivate and display ordering are specified separately in
 `docs/architecture/STUDIO-ROOMS-CONTRACT.md`.

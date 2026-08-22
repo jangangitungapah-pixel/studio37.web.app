@@ -24,6 +24,14 @@ service cloud.firestore {
         || (value is string && value.matches('^\\+62[0-9]{8,13}$'));
     }
 
+    function hasValidOptionalEmail(value) {
+      return value == null
+        || (value is string
+          && value.size() > 2
+          && value.size() <= 254
+          && value.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'));
+    }
+
     function isValidUserProfile(uid, data) {
       return data.keys().hasAll([
           'uid',
@@ -291,6 +299,58 @@ service cloud.firestore {
         && data.updatedByUid.size() <= 128;
     }
 
+    function hasValidOperatorTypes(value) {
+      return value is list
+        && value.size() >= 1
+        && value.size() <= 2
+        && value.hasOnly(['studio_operator', 'recording_engineer'])
+        && (value.size() == 1 || value[0] != value[1]);
+    }
+
+    function isValidOperator(data) {
+      return data.keys().hasAll([
+          'displayName',
+          'email',
+          'phone',
+          'operatorTypes',
+          'linkedUserUid',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'displayName',
+          'email',
+          'phone',
+          'operatorTypes',
+          'linkedUserUid',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 100
+        && hasValidOptionalEmail(data.email)
+        && hasValidOptionalPhone(data.phone)
+        && hasValidOperatorTypes(data.operatorTypes)
+        && hasValidOptionalReference(data.linkedUserUid)
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
     function usesCurrentWriteTime(data) {
       return data.createdAt <= request.time && data.updatedAt <= request.time;
     }
@@ -329,6 +389,23 @@ service cloud.firestore {
 
     function preservesStudioRoomHistory() {
       return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function usesOperatorCreateMetadata() {
+      return request.resource.data.linkedUserUid == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesOperatorHistoryAndAccountLink() {
+      return request.resource.data.linkedUserUid == resource.data.linkedUserUid
+        && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.createdByUid == resource.data.createdByUid
         && request.resource.data.updatedAt == request.time
         && request.resource.data.updatedAt >= resource.data.updatedAt
@@ -403,6 +480,23 @@ service cloud.firestore {
       allow update: if hasCapability('settings.studio.edit')
         && isValidStudioRoom(request.resource.data)
         && preservesStudioRoomHistory();
+
+      allow delete: if false;
+    }
+
+    match /operators/{operatorId} {
+      allow get: if hasCapability('settings.operators.view');
+      allow list: if hasCapability('settings.operators.view')
+        && request.query.limit != null
+        && request.query.limit <= 100;
+
+      allow create: if hasCapability('settings.operators.manage')
+        && isValidOperator(request.resource.data)
+        && usesOperatorCreateMetadata();
+
+      allow update: if hasCapability('settings.operators.manage')
+        && isValidOperator(request.resource.data)
+        && preservesOperatorHistoryAndAccountLink();
 
       allow delete: if false;
     }

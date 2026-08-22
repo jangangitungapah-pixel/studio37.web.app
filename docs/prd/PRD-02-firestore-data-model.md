@@ -39,7 +39,19 @@ disabled profile must not enter protected application routes.
 ### `operators`
 Operational/personnel entity used for assignments and compensation, including people who may not have a login.
 
-Fields include identity, operator type/capabilities, active state, optional linked `uid`, compensation defaults, timestamps.
+Phase 4C1 implements immutable auto-ID `operators/{operatorId}` documents with normalized display
+name/contact data, one or both `studio_operator | recording_engineer` domain types,
+`active | disabled` status, nullable protected `linkedUserUid`, and immutable
+creation/server-controlled update metadata. Domain types never grant application capabilities.
+
+The feature repository owns one one-shot `displayName`-ordered query capped at 100 documents and
+exposes no generic collection read, hard delete, or account-link mutation. New records start with
+`linkedUserUid: null`, allowing operational profiles without a Firebase login. The finalized
+Phase 4C1 schema, query, authorization, and account-link deferral are documented in
+`docs/architecture/OPERATOR-DOMAIN-CONTRACT.md`.
+
+Compensation defaults, account linking, permission administration, assignment behavior, and UI are
+implemented in their owning later slices.
 
 ### `studios`
 Studio rooms/resources that can be booked.
