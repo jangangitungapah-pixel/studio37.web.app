@@ -753,12 +753,12 @@ service cloud.firestore {
       allow update: if isValidUserProfile(uid, request.resource.data)
         && usesCurrentWriteTime(request.resource.data)
         && preservesUserHistory()
-        && ((canUpdateUserProfile(uid, resource.data)
+        && (isInvitationUserLinkUpdate(uid)
+          || (canUpdateUserProfile(uid, resource.data)
             && preservesOwnOwnerAccess(uid)
             && preservesUserRoleAndActivationSource()
             && (request.resource.data.operatorId == resource.data.operatorId
-              || (isActiveOwner() && isAtomicUserOperatorLink(uid))))
-          || isInvitationUserLinkUpdate(uid));
+              || (isActiveOwner() && isAtomicUserOperatorLink(uid)))));
 
       allow delete: if false;
     }
@@ -822,13 +822,13 @@ service cloud.firestore {
         && usesOperatorCreateMetadata();
 
       allow update: if isValidOperator(request.resource.data)
-        && ((hasCapability('settings.operators.manage')
+        && ((preservesOperatorHistory()
+            && isInvitationOperatorLink(operatorId))
+          || (hasCapability('settings.operators.manage')
             && preservesOperatorHistoryAndAccountLink())
           || (isActiveOwner()
             && preservesOperatorHistory()
-            && isAtomicOperatorUserLink(operatorId))
-          || (preservesOperatorHistory()
-            && isInvitationOperatorLink(operatorId)));
+            && isAtomicOperatorUserLink(operatorId)));
 
       allow delete: if false;
 
@@ -844,8 +844,8 @@ service cloud.firestore {
           && usesAccountInvitationCreateMetadata(operatorId, request.resource.data);
 
         allow update: if isValidAccountInvitationId(invitationId)
-          && (isAccountInvitationRevocation(operatorId)
-            || isAccountInvitationAcceptance(operatorId, invitationId));
+          && (isAccountInvitationAcceptance(operatorId, invitationId)
+            || isAccountInvitationRevocation(operatorId));
 
         allow delete: if false;
       }
