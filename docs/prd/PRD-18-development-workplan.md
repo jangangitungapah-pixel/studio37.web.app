@@ -94,7 +94,7 @@ Phase 1 progress on 2026-08-21:
 - [x] Implement timestamp/timezone utilities.
 - [x] Implement integer-IDR money utilities.
 - [x] Implement phone normalization utility.
-- [ ] Document required Firestore indexes as queries emerge.
+- [x] Document required Firestore indexes as queries emerge.
 
 ### Phase 2 gate
 
@@ -113,6 +113,8 @@ Phase 2 progress on 2026-08-21:
 - On 2026-08-22, the project owner reran the fixed manual `/dev/firebase` probe against Firebase project `studio37webapp` and confirmed `Connected`; the Firebase development connectivity gate is accepted.
 - Phase 2C slice 1 defined explicit Firestore encode/decode conventions, added centralized Firestore Timestamp/JavaScript Date and IANA timezone utilities, and passed GitHub Actions Quality run `32546928867` with formatting, lint, tests, production build, and Vite development-server smoke.
 - Phase 2C slice 2 added strict safe-integer IDR validation, checked IDR addition/formatting, canonical Indonesian E.164 phone normalization, and focused unit tests. GitHub Actions Quality run `32547371906` passed formatting, lint, tests, production build, and Vite development-server smoke.
+- Phase 2C final slice added the bounded-query/index registry, linked an intentionally empty source-controlled composite-index manifest from `firebase.json`, and added contract coverage preventing speculative Phase 2 indexes. GitHub Actions Quality run `32547796710` passed formatting, lint, tests, production build, and Vite development-server smoke.
+- Phase 2 Firebase & Data Foundation completed on 2026-08-22 after all implementation items and required gates passed.
 
 ---
 
@@ -586,7 +588,7 @@ Implementation status:
   - [x] Phase 1B — Button, Input/Textarea, and Badge/Status primitives completed and quality-gated.
   - [x] Phase 1C — Select/Combobox, Dialog, and Toast/feedback primitives completed and quality-gated.
   - [x] Final Phase 1 shared-component visual consistency and desktop/mobile manual browser QA accepted.
-- [ ] Phase 2 — Firebase & Data Foundation in progress.
+- [x] Phase 2 — Firebase & Data Foundation completed and quality-gated.
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
-  - [ ] Remaining Phase 2 Firestore query/index documentation and final closure.
+  - [x] Phase 2C — converters, timestamp/timezone, integer-IDR, phone normalization, and query/index registry completed and quality-gated.
