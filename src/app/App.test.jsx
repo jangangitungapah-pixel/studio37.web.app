@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { ToastProvider } from '../components/feedback/ToastProvider.jsx';
 import { CAPABILITIES } from '../features/auth/capabilities.js';
 import { App } from './App.jsx';
 
@@ -197,6 +198,46 @@ describe('Studio37 application shell', () => {
     expect(
       screen.queryByRole('heading', { name: 'Akses tidak diizinkan' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders the real Operator Settings workflow with the injected bounded repository', async () => {
+    window.history.pushState({}, '', '/settings/operators');
+    const operatorRepository = {
+      createOperator: vi.fn(),
+      listLimit: 100,
+      listOperators: vi.fn(async () => [
+        {
+          createdAt: new Date('2026-08-22T01:00:00.000Z'),
+          createdByUid: 'owner-1',
+          displayName: 'Budi Engineer',
+          email: null,
+          id: 'operator-budi',
+          linkedUserUid: null,
+          operatorTypes: ['recording_engineer'],
+          phone: '+6281234567890',
+          status: 'active',
+          updatedAt: new Date('2026-08-22T02:00:00.000Z'),
+          updatedByUid: 'owner-1',
+        },
+      ]),
+      setOperatorStatus: vi.fn(),
+      updateOperator: vi.fn(),
+    };
+
+    render(
+      <ToastProvider>
+        <App
+          authGateway={createAuthGateway()}
+          operatorRepository={operatorRepository}
+          userProfileRepository={createUserProfileRepository()}
+        />
+      </ToastProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Operator Settings' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Budi Engineer' })).toBeInTheDocument();
+    expect(screen.queryByText('Fondasi halaman siap')).not.toBeInTheDocument();
+    expect(operatorRepository.listOperators).toHaveBeenCalledOnce();
   });
 
   it('logs out from the app-shell user menu and returns to Login', async () => {

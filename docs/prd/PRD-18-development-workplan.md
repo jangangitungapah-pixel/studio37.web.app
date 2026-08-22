@@ -210,13 +210,13 @@ Phase 3 progress on 2026-08-22:
 ## 4.2 Operator Settings
 
 - [x] Implement operator data model/repository.
-- [ ] Add/edit operator.
+- [x] Add/edit operator.
 - [x] Support Studio Operator type.
 - [x] Support Recording Operator/Engineer type.
 - [x] Support operator without login.
 - [ ] Link operator to user account where applicable.
 - [ ] Configure operator permissions.
-- [ ] Activate/deactivate operator.
+- [x] Activate/deactivate operator.
 
 ### Phase 4 gate
 
@@ -259,9 +259,16 @@ Phase 4 progress on 2026-08-22:
   hard delete, spoofed metadata, and every Phase 4C1 account-link mutation. GitHub Actions Quality
   run `32563791689` passed formatting, lint, 162 unit/component tests, 26 Firestore Emulator
   authorization tests, production build, and Vite development-server smoke.
-- Booking/calendar consumption of active rooms, Operator Settings UI, login linking, permission
-  administration, activation UI, and final Phase 4 integration/responsive gates remain pending;
-  Phase 4 remains in progress.
+- Phase 4C2 replaced the Operator Settings placeholder with a responsive bounded list, validated
+  add/edit dialogs, explicit soft activation/deactivation confirmation, capability-aware
+  view/manage states, and clear no-login versus login-linked context.
+- The UI consumes only the Phase 4C1 `displayName asc + limit(100)` repository contract and exposes
+  no hard delete, unbounded read, listener, account-link, role, or permission mutation. GitHub
+  Actions Quality run `32564907232` passed formatting, lint, 172 unit/component tests, 26 Firestore
+  Emulator authorization tests, production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms, operator/user login linking, permission
+  administration, and final Phase 4 integration/responsive gates remain pending; Phase 4 remains
+  in progress.
 
 ---
 
@@ -692,4 +699,5 @@ Implementation status:
   - [x] Phase 4A — studio profile, timezone, operating hours, and booking defaults implemented and quality-gated.
   - [x] Phase 4B — room create/edit, soft activation/deactivation, and display ordering implemented and quality-gated.
   - [x] Phase 4C1 — bounded operator domain/repository, operator types, no-login profiles, and Security Rules implemented and quality-gated.
-  - [ ] Operator Settings UI, login linking, permissions, activation workflow, and final gates pending.
+  - [x] Phase 4C2 — bounded Operator Settings UI, add/edit, and soft activation/deactivation implemented and quality-gated.
+  - [ ] Operator/user login linking, permission management, and final integration/responsive gates pending.
