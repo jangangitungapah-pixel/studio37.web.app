@@ -7,7 +7,10 @@ import {
 
 function createAdapter({ exists = false, error = null } = {}) {
   return {
-    doc: vi.fn((_db, collectionName, documentId) => ({ collectionName, documentId })),
+    doc: vi.fn((_db, collectionName, documentId) => ({
+      collectionName,
+      documentId,
+    })),
     getDocFromServer: async () => {
       if (error) {
         throw error;
