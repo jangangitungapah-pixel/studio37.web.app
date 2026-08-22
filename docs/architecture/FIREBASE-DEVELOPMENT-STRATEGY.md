@@ -87,6 +87,17 @@ Field-level encoding, decoding, partial-update, timestamp, and timezone conventi
 docs/architecture/FIRESTORE-DATA-CONVENTIONS.md
 ```
 
+## Query and index registry
+
+Every implemented collection query must be bounded and registered with its exact filters, ordering, limit or window, listener strategy, and composite-index requirement. The registry and source-controlled manifest are:
+
+```text
+docs/architecture/FIRESTORE-QUERY-INDEX-REGISTRY.md
+firestore.indexes.json
+```
+
+Phase 2 has no collection query yet, so the manifest intentionally contains no speculative composite indexes or field overrides. Index deployment to a production Firebase project remains deferred to Phase 17.
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

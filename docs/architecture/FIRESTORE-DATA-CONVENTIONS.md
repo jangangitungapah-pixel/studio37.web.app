@@ -144,3 +144,10 @@ implemented in their scheduled feature phases.
 - Feature repositories own filters, ordering, limits, pagination, and composite-index needs.
 - Indexes are recorded only when actual query shapes emerge.
 - React components do not construct raw Firestore queries.
+
+The query registry and source-controlled composite-index manifest conventions are defined in:
+
+```text
+docs/architecture/FIRESTORE-QUERY-INDEX-REGISTRY.md
+firestore.indexes.json
+```
