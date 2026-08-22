@@ -34,7 +34,11 @@ describe('probeFirestoreConnectivity', () => {
       document: 'connectivity-probe',
     });
     expect(FIRESTORE_CONNECTIVITY_PROBE_PATH.collection).not.toMatch(/^__.*__$/);
-    expect(adapter.doc).toHaveBeenCalledWith({}, 'studio37System', 'connectivity-probe');
+    expect(adapter.doc).toHaveBeenCalledWith(
+      {},
+      'studio37System',
+      'connectivity-probe',
+    );
   });
 
   it('reports a successful server response without requiring the probe document to exist', async () => {
