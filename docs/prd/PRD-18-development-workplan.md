@@ -135,7 +135,7 @@ Phase 2 progress on 2026-08-21:
 
 ### Phase 3 gate
 
-- [ ] Owner can log in.
+- [x] Owner can log in.
 - [x] Operator restrictions are enforceable.
 - [x] Operator cannot self-promote.
 - [x] Direct URL cannot bypass permission checks.
@@ -189,8 +189,10 @@ Phase 3 progress on 2026-08-22:
 - GitHub Actions Quality run `32553953356` passed formatting, lint, 116 unit/component tests, 14
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
 - The automated Operator restriction, self-promotion, direct-URL, Security Rules, and quality gates
-  are accepted. Manual Owner login acceptance is the only remaining Phase 3 gate; Phase 3 remains
-  open until the project owner confirms that browser check.
+  are accepted.
+- On 2026-08-22, the project owner confirmed a successful browser login using the manually
+  bootstrapped Owner account. Phase 3 Authentication, Owner Bootstrap & Permissions is complete
+  after all implementation items and required gates passed.
 
 ---
 
@@ -642,9 +644,10 @@ Implementation status:
   - [x] Phase 2A — Firebase App/Auth/Firestore client foundation implemented and quality-gated.
   - [x] Phase 2B — emulator routing, connectivity probe, and repository foundation implemented and quality-gated.
   - [x] Phase 2C — converters, timestamp/timezone, integer-IDR, phone normalization, and query/index registry completed and quality-gated.
-- [ ] Phase 3 — Authentication, Owner Bootstrap & Permissions in progress.
+- [x] Phase 3 — Authentication, Owner Bootstrap & Permissions completed and quality-gated.
   - [x] Phase 3A — Login, Firebase session persistence, and authenticated-route foundation implemented and quality-gated.
   - [x] Phase 3B — user profile model, manual Owner bootstrap strategy, and active/disabled access enforcement implemented and quality-gated.
   - [x] Phase 3C — capability resolution plus route, navigation, and action guards implemented and quality-gated.
   - [x] Phase 3D — responsive authenticated-user menu and fail-safe logout flow implemented and quality-gated.
   - [x] Phase 3E — initial Firestore Security Rules and emulator authorization coverage implemented and quality-gated.
+  - [x] Final Phase 3 manual Owner login browser QA accepted.
