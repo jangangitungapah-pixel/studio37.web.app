@@ -1,0 +1,228 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function currentUserPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasValidOptionalReference(value) {
+      return value == null
+        || (value is string && value.size() > 0 && value.size() <= 128 && value.matches('^[^/]+$'));
+    }
+
+    function hasValidOptionalPhone(value) {
+      return value == null
+        || (value is string && value.matches('^\\+62[0-9]{8,13}$'));
+    }
+
+    function isValidUserProfile(uid, data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'email',
+          'phone',
+          'role',
+          'status',
+          'permissionSetId',
+          'operatorId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'phone',
+          'role',
+          'status',
+          'permissionSetId',
+          'operatorId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid == uid
+        && data.uid.size() > 0
+        && data.uid.size() <= 128
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 120
+        && data.email is string
+        && data.email.size() > 2
+        && data.email.size() <= 254
+        && hasValidOptionalPhone(data.phone)
+        && data.role in ['owner', 'studio_operator']
+        && data.status in ['active', 'disabled']
+        && hasValidOptionalReference(data.permissionSetId)
+        && hasValidOptionalReference(data.operatorId)
+        && (data.role != 'owner' || data.permissionSetId == null)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt;
+    }
+
+    function isActiveOwnerProfile(uid, data) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active'
+        && data.role == 'owner';
+    }
+
+    function isActiveOwner() {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveOwnerProfile(request.auth.uid, get(currentUserPath()).data);
+    }
+
+    function canProfileReadPermissionSet(uid, data, permissionSetId) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active'
+        && (data.role == 'owner'
+          || (data.role == 'studio_operator'
+            && data.permissionSetId is string
+            && data.permissionSetId == permissionSetId));
+    }
+
+    function canReadPermissionSet(permissionSetId) {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && canProfileReadPermissionSet(
+          request.auth.uid,
+          get(currentUserPath()).data,
+          permissionSetId
+        );
+    }
+
+    function canCreateUserProfile(uid) {
+      return isSignedIn() && uid != request.auth.uid && isActiveOwner();
+    }
+
+    function canUpdateUserProfile(uid, existingData) {
+      return isSignedIn()
+        && ((uid == request.auth.uid && isActiveOwnerProfile(uid, existingData))
+          || (uid != request.auth.uid && isActiveOwner()));
+    }
+
+    function hasOnlyDelegableCapabilities(capabilities) {
+      return capabilities is list
+        && capabilities.size() <= 23
+        && capabilities.hasOnly([
+          'booking.cancel',
+          'booking.create',
+          'booking.edit',
+          'booking.override_price',
+          'booking.view',
+          'bookkeeping.create',
+          'bookkeeping.view',
+          'commission.adjust',
+          'commission.payout',
+          'commission.view_all',
+          'commission.view_own',
+          'customer.edit',
+          'customer.view',
+          'dashboard.view',
+          'payment.adjust',
+          'payment.create',
+          'payment.view',
+          'settings.operators.manage',
+          'settings.operators.view',
+          'settings.pricing.edit',
+          'settings.pricing.view',
+          'settings.studio.edit',
+          'settings.studio.view'
+        ]);
+    }
+
+    function isValidPermissionSet(data) {
+      return data.keys().hasAll([
+          'name',
+          'status',
+          'capabilities',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name',
+          'status',
+          'capabilities',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.status in ['active', 'disabled']
+        && hasOnlyDelegableCapabilities(data.capabilities)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt;
+    }
+
+    function usesCurrentWriteTime(data) {
+      return data.createdAt <= request.time && data.updatedAt <= request.time;
+    }
+
+    function preservesUserHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt;
+    }
+
+    function preservesPermissionSetHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt;
+    }
+
+    function preservesOwnOwnerAccess(uid) {
+      return uid != request.auth.uid
+        || (request.resource.data.role == 'owner'
+          && request.resource.data.status == 'active'
+          && request.resource.data.permissionSetId == null);
+    }
+
+    match /users/{uid} {
+      allow get: if isSignedIn() && (request.auth.uid == uid || isActiveOwner());
+      allow list: if false;
+
+      allow create: if canCreateUserProfile(uid)
+        && isValidUserProfile(uid, request.resource.data)
+        && usesCurrentWriteTime(request.resource.data);
+
+      allow update: if canUpdateUserProfile(uid, resource.data)
+        && isValidUserProfile(uid, request.resource.data)
+        && usesCurrentWriteTime(request.resource.data)
+        && preservesUserHistory()
+        && preservesOwnOwnerAccess(uid);
+
+      allow delete: if false;
+    }
+
+    match /permissionSets/{permissionSetId} {
+      allow get: if canReadPermissionSet(permissionSetId);
+      allow list: if false;
+
+      allow create: if isActiveOwner()
+        && isValidPermissionSet(request.resource.data)
+        && usesCurrentWriteTime(request.resource.data);
+
+      allow update: if isActiveOwner()
+        && isValidPermissionSet(request.resource.data)
+        && usesCurrentWriteTime(request.resource.data)
+        && preservesPermissionSetHistory();
+
+      allow delete: if false;
+    }
+
+    match /studio37System/connectivity-probe {
+      allow get: if isActiveOwner();
+      allow list, create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

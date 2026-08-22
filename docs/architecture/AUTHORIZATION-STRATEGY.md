@@ -93,10 +93,19 @@ guard even when their parent route is allowed. For example, `booking.view` must 
 The reusable action guard accepts all-of, any-of, and Owner-only policies. Future feature phases
 must apply it at the relevant action boundary and still enforce matching Firestore Security Rules.
 
-## Deferred security boundary
+## Firestore security boundary
 
-Phase 3C does not add or deploy Security Rules. Until the Phase 3 rules sub-phase and emulator tests
-are complete, operator restrictions are a tested client boundary only and must not be described as
-protection against direct Firestore SDK calls.
+Phase 3E adds the initial source-controlled Firestore Security Rules and emulator authorization
+suite for the resources currently used by authentication and permission resolution. The rules
+protect canonical `users/{uid}` and `permissionSets/{id}` documents, reject collection scans, and
+keep every not-yet-implemented product collection default-deny.
 
-Production rule/index deployment and Firebase Hosting remain Phase 17 work.
+The exact access matrix and deferred-collection policy are documented in:
+
+```text
+docs/architecture/FIRESTORE-SECURITY-RULES.md
+```
+
+Future capability-backed data access must extend both the rules and emulator tests in the feature
+phase that introduces the relevant schema and bounded queries. Production rule/index deployment and
+Firebase Hosting remain Phase 17 work.
