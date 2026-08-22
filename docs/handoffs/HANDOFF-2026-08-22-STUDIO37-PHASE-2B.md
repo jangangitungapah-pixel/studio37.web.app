@@ -5,7 +5,7 @@
 **Current implementation branch:** `phase/2b-firebase-connectivity-foundation`  
 **Current stacked PR:** PR #7 — `feat(phase-2b): add Firebase connectivity and repository foundation`  
 **PR base:** `phase/2a-firebase-client-foundation`  
-**PR state at handover:** open, draft, mergeable  
+**PR state at handover:** open, draft, mergeable
 
 This document is the resume point for a new ChatGPT/Codex session. Read it together with `docs/prd/PRD-18-development-workplan.md` before making changes.
 
