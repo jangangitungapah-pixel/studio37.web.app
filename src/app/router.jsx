@@ -15,7 +15,7 @@ import { FirebaseStatusPage } from '../features/dev/FirebaseStatusPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
-export function AppRouter({ studioSettingsRepository }) {
+export function AppRouter({ studioRoomRepository, studioSettingsRepository }) {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -48,7 +48,12 @@ export function AppRouter({ studioSettingsRepository }) {
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.STUDIO} />}>
             <Route
               path="settings/studio"
-              element={<StudioSettingsPage repository={studioSettingsRepository} />}
+              element={
+                <StudioSettingsPage
+                  repository={studioSettingsRepository}
+                  roomRepository={studioRoomRepository}
+                />
+              }
             />
           </Route>
 

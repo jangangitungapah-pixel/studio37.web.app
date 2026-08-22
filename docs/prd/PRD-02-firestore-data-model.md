@@ -52,6 +52,13 @@ Fields:
 - optional capacity/equipment metadata
 - optional room-specific operating overrides
 
+Phase 4B implements `studios/{roomId}` with an immutable auto-generated document ID, uppercase
+display code, name, description, integer display order, `active | disabled` status, and immutable
+creation/server-controlled update metadata. Studio Settings reads the collection with one one-shot
+`displayOrder`-ordered query capped at 50 documents. The finalized schema, query, soft-disable,
+authorization, and deferred-field contract is documented in
+`docs/architecture/STUDIO-ROOMS-CONTRACT.md`.
+
 ### `sessionTypes`
 Owner-configurable services such as Rehearsal, Recording, Mixing, Mastering.
 

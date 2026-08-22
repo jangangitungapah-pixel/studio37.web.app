@@ -5,9 +5,11 @@ import { Input } from '../../components/forms/Field.jsx';
 import { Select } from '../../components/forms/Select.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { formatDateTimeInTimeZone } from '../../lib/datetime/timestamps.js';
+import { studioRoomRepository } from '../../services/studioRoomRepository.js';
 import { studioSettingsRepository } from '../../services/studioSettingsRepository.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
+import { StudioRoomsSection } from './StudioRoomsSection.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import {
   STUDIO_BOOKING_INTERVALS,
@@ -64,7 +66,10 @@ function formValuesEqual(left, right) {
   return Object.keys(left).every((key) => left[key] === right[key]);
 }
 
-export function StudioSettingsPage({ repository = studioSettingsRepository }) {
+export function StudioSettingsPage({
+  repository = studioSettingsRepository,
+  roomRepository = studioRoomRepository,
+}) {
   const access = useAuth();
   const { pushToast } = useToast();
   const canEdit = hasCapability(access, CAPABILITIES.SETTINGS_STUDIO_EDIT);
@@ -198,7 +203,7 @@ export function StudioSettingsPage({ repository = studioSettingsRepository }) {
   return (
     <SettingsWorkspace
       title="Studio Settings"
-      description="Atur identitas studio dan batas waktu yang akan menjadi sumber konfigurasi booking berikutnya."
+      description="Atur identitas, ruang, dan batas waktu yang menjadi sumber konfigurasi booking berikutnya."
       actions={
         <span className="settings-access-badge" data-editable={canEdit || undefined}>
           {accessLabel}
@@ -366,6 +371,12 @@ export function StudioSettingsPage({ repository = studioSettingsRepository }) {
           </form>
         </>
       ) : null}
+
+      <StudioRoomsSection
+        actorUid={access.user?.uid}
+        canEdit={canEdit}
+        repository={roomRepository}
+      />
     </SettingsWorkspace>
   );
 }

@@ -6,6 +6,7 @@ import { AppRouter } from './router.jsx';
 export function App({
   authGateway,
   permissionSetRepository,
+  studioRoomRepository,
   studioSettingsRepository,
   userProfileRepository,
 }) {
@@ -16,7 +17,10 @@ export function App({
       userProfileRepository={userProfileRepository}
     >
       <BrowserRouter>
-        <AppRouter studioSettingsRepository={studioSettingsRepository} />
+        <AppRouter
+          studioRoomRepository={studioRoomRepository}
+          studioSettingsRepository={studioSettingsRepository}
+        />
       </BrowserRouter>
     </AppProviders>
   );

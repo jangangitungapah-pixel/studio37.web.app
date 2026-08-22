@@ -201,8 +201,8 @@ Phase 3 progress on 2026-08-22:
 ## 4.1 Studio Settings
 
 - [x] Implement Studio Settings page.
-- [ ] Add/edit studio rooms.
-- [ ] Activate/deactivate studio rooms.
+- [x] Add/edit studio rooms.
+- [x] Activate/deactivate studio rooms.
 - [x] Configure operating hours.
 - [x] Configure booking interval/granularity.
 - [x] Configure timezone/basic studio profile.
@@ -236,8 +236,20 @@ Phase 4 progress on 2026-08-22:
   all deferred collections as default-deny.
 - GitHub Actions Quality run `32558100901` passed formatting, lint, 131 unit/component tests, 18
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Studio room CRUD, Operator Settings, and Phase 4 integration/responsive gates remain pending;
-  Phase 4 remains in progress.
+- At the Phase 4A checkpoint, studio room CRUD, Operator Settings, and Phase 4
+  integration/responsive gates remained pending.
+- Phase 4B implemented immutable-ID `studios/{roomId}` documents, room add/edit dialogs,
+  explicit soft activation/deactivation, deterministic display ordering, and responsive
+  permission-aware room management inside Studio Settings.
+- The Studio Rooms repository owns one `displayOrder`-ordered one-shot query capped at 50
+  documents. It exposes no generic `listAll()` or delete operation and requires no composite index.
+- Firestore Security Rules require `settings.studio.view` for bounded room reads and
+  `settings.studio.edit` for validated writes, reject unbounded/over-limit queries and hard delete,
+  and preserve server actor/timestamp metadata. GitHub Actions Quality run `32559335130` passed
+  formatting, lint, 149 unit/component tests, 22 Firestore Emulator authorization tests,
+  production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms, Operator Settings, and final Phase 4
+  integration/responsive gates remain pending; Phase 4 remains in progress.
 
 ---
 
@@ -666,5 +678,5 @@ Implementation status:
   - [x] Final Phase 3 manual Owner login browser QA accepted.
 - [ ] Phase 4 — Studio & Operator Configuration in progress.
   - [x] Phase 4A — studio profile, timezone, operating hours, and booking defaults implemented and quality-gated.
-  - [ ] Studio room CRUD/deactivation and display ordering pending.
+  - [x] Phase 4B — room create/edit, soft activation/deactivation, and display ordering implemented and quality-gated.
   - [ ] Operator model, login linking, permissions, and settings UI pending.
