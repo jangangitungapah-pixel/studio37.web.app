@@ -26,6 +26,23 @@ function createOperator(overrides = {}) {
   };
 }
 
+function createUserProfile(overrides = {}) {
+  return {
+    createdAt: new Date('2026-08-22T01:00:00.000Z'),
+    displayName: 'Dina Operator',
+    email: 'dina@studio37.id',
+    id: 'user-dina',
+    operatorId: null,
+    permissionSetId: null,
+    phone: '+6281234567800',
+    role: 'studio_operator',
+    status: 'active',
+    uid: 'user-dina',
+    updatedAt: new Date('2026-08-22T02:00:00.000Z'),
+    ...overrides,
+  };
+}
+
 function createRepository(operators = []) {
   return {
     createOperator: vi.fn(async () => 'operator-created'),
@@ -33,6 +50,14 @@ function createRepository(operators = []) {
     listOperators: vi.fn(async () => operators),
     setOperatorStatus: vi.fn(async (operatorId) => operatorId),
     updateOperator: vi.fn(async (operatorId) => operatorId),
+  };
+}
+
+function createAccountRepository(profile = createUserProfile()) {
+  return {
+    getUserByUid: vi.fn(async () => profile),
+    linkOperatorToUser: vi.fn(async (operatorId, userUid) => ({ operatorId, userUid })),
+    unlinkOperatorFromUser: vi.fn(async (operatorId) => ({ operatorId, userUid: profile?.uid })),
   };
 }
 
@@ -51,12 +76,16 @@ function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {
   };
 }
 
-function renderPage({ access = createAccess(), repository = createRepository() } = {}) {
+function renderPage({
+  access = createAccess(),
+  accountRepository = createAccountRepository(),
+  repository = createRepository(),
+} = {}) {
   return render(
     <ToastProvider>
       <AuthContext.Provider value={access}>
         <MemoryRouter initialEntries={['/settings/operators']}>
-          <OperatorSettingsPage repository={repository} />
+          <OperatorSettingsPage accountRepository={accountRepository} repository={repository} />
         </MemoryRouter>
       </AuthContext.Provider>
     </ToastProvider>,
@@ -177,6 +206,134 @@ describe('OperatorSettingsPage', () => {
     expect(screen.getByText(/Pilih minimal satu jenis operator/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email kontak/)).toHaveValue('email-salah');
     expect(repository.createOperator).not.toHaveBeenCalled();
+  });
+
+  it('lets an Owner review one exact user profile before linking it atomically', async () => {
+    const interaction = userEvent.setup();
+    const repository = createRepository([createOperator()]);
+    const accountRepository = createAccountRepository();
+    renderPage({ accountRepository, repository });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+    );
+    await interaction.type(screen.getByLabelText(/Firebase user UID/), ' user-dina ');
+    await interaction.click(screen.getByRole('button', { name: 'Cari profil' }));
+
+    expect(accountRepository.getUserByUid).toHaveBeenCalledWith('user-dina');
+    expect(await screen.findByText('dina@studio37.id')).toBeInTheDocument();
+    expect(screen.getByText('Belum ditetapkan')).toBeInTheDocument();
+    expect(screen.getByText('Belum terhubung')).toBeInTheDocument();
+    await interaction.click(screen.getByRole('button', { name: 'Hubungkan akun' }));
+
+    await waitFor(() => {
+      expect(accountRepository.linkOperatorToUser).toHaveBeenCalledWith(
+        'operator-budi',
+        'user-dina',
+        { actorUid: 'owner-1' },
+      );
+    });
+    expect(await screen.findByText('Akun terhubung')).toBeInTheDocument();
+    expect(repository.listOperators).toHaveBeenCalledTimes(2);
+    expect(accountRepository).not.toHaveProperty('listUsers');
+    expect(accountRepository).not.toHaveProperty('setPermissionSet');
+  });
+
+  it('blocks direct reassignment while preserving the exact UID for correction', async () => {
+    const interaction = userEvent.setup();
+    const accountRepository = createAccountRepository(
+      createUserProfile({ operatorId: 'operator-lain' }),
+    );
+    renderPage({
+      accountRepository,
+      repository: createRepository([createOperator()]),
+    });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+    );
+    await interaction.type(screen.getByLabelText(/Firebase user UID/), 'user-dina');
+    await interaction.click(screen.getByRole('button', { name: 'Cari profil' }));
+
+    expect(await screen.findByText('Profil tidak dapat dipilih.')).toBeInTheDocument();
+    expect(screen.getAllByText(/operator-lain/)).toHaveLength(2);
+    expect(screen.getByLabelText(/Firebase user UID/)).toHaveValue('user-dina');
+    expect(screen.getByRole('button', { name: 'Hubungkan akun' })).toBeDisabled();
+    expect(accountRepository.linkOperatorToUser).not.toHaveBeenCalled();
+  });
+
+  it('loads the reciprocal profile and requires confirmation before unlinking', async () => {
+    const interaction = userEvent.setup();
+    const linkedOperator = createOperator({ linkedUserUid: 'user-dina' });
+    const accountRepository = createAccountRepository(
+      createUserProfile({ operatorId: 'operator-budi' }),
+    );
+    const repository = createRepository([linkedOperator]);
+    renderPage({ accountRepository, repository });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Kelola akun Budi Engineer' }),
+    );
+
+    expect(await screen.findByText('dina@studio37.id')).toBeInTheDocument();
+    expect(accountRepository.getUserByUid).toHaveBeenCalledWith('user-dina');
+    await interaction.click(screen.getByRole('button', { name: 'Putuskan akun' }));
+
+    await waitFor(() => {
+      expect(accountRepository.unlinkOperatorFromUser).toHaveBeenCalledWith('operator-budi', {
+        actorUid: 'owner-1',
+      });
+    });
+    expect(await screen.findByText('Hubungan akun diputuskan')).toBeInTheDocument();
+    expect(repository.listOperators).toHaveBeenCalledTimes(2);
+  });
+
+  it('offers a recoverable retry when the linked profile read is unavailable', async () => {
+    const interaction = userEvent.setup();
+    const accountRepository = createAccountRepository(
+      createUserProfile({ operatorId: 'operator-budi' }),
+    );
+    accountRepository.getUserByUid
+      .mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'unavailable' }))
+      .mockResolvedValueOnce(createUserProfile({ operatorId: 'operator-budi' }));
+    renderPage({
+      accountRepository,
+      repository: createRepository([createOperator({ linkedUserUid: 'user-dina' })]),
+    });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Kelola akun Budi Engineer' }),
+    );
+    expect(await screen.findByText(/Firestore sedang tidak tersedia/)).toBeInTheDocument();
+    await interaction.click(screen.getByRole('button', { name: 'Coba lagi' }));
+
+    expect(await screen.findByText('dina@studio37.id')).toBeInTheDocument();
+    expect(accountRepository.getUserByUid).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps account linking Owner-only even for delegated operator managers', async () => {
+    const repository = createRepository([createOperator()]);
+    const accountRepository = createAccountRepository();
+    renderPage({
+      access: createAccess({
+        capabilities: [
+          CAPABILITIES.SETTINGS_OPERATORS_MANAGE,
+          CAPABILITIES.SETTINGS_OPERATORS_VIEW,
+        ],
+        role: 'studio_operator',
+        uid: 'operator-manager',
+      }),
+      accountRepository,
+      repository,
+    });
+
+    expect(await screen.findByRole('button', { name: 'Edit Budi Engineer' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nonaktifkan Budi Engineer' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+    ).not.toBeInTheDocument();
+    expect(accountRepository.getUserByUid).not.toHaveBeenCalled();
+    expect(accountRepository.linkOperatorToUser).not.toHaveBeenCalled();
   });
 
   it('keeps view-only users away from mutations and supports a recoverable reload', async () => {

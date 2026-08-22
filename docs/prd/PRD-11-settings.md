@@ -111,11 +111,13 @@ new records intentionally unlinked from Firebase Authentication. Phase 4C2 adds 
 bounded-list, add/edit, and soft activation/deactivation UI while retaining that account boundary.
 Phase 4C3 establishes the reciprocal Owner-only account-link transaction and rules foundation for
 an already provisioned exact user profile; it does not create Firebase Authentication identities
-or expose link/permission controls yet.
+or expose permission controls. Phase 4C4 adds the Owner-only exact-UID profile review plus atomic
+link/unlink UI while preserving the no-provisioning and separate-permission boundaries.
 The detailed contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
 `docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`, with the account relationship in
-`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`; permission and account-link UI workflows
-remain separate implementation checkpoints.
+`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md` and its browser workflow in
+`docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`; permission administration remains a
+separate implementation checkpoint.
 
 ## 6.1 Permissions UI
 

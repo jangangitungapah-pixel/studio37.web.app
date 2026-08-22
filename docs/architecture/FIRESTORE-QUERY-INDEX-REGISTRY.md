@@ -33,8 +33,9 @@ queries:
 | Operator account link | Exact user lookup + exact two-doc transaction | Not required    |
 
 The Studio Rooms and Operator queries use automatically indexed single fields. Phase 4C3 account
-linking addresses only known operator/user document paths, so there are still no required composite
-indexes. `firestore.indexes.json` intentionally retains empty `indexes` and `fieldOverrides` arrays.
+linking addresses only known operator/user document paths, and Phase 4C4 exposes only that same
+exact-UID workflow, so there are still no required composite indexes. `firestore.indexes.json`
+intentionally retains empty `indexes` and `fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
 configuration resolves to an unsaved UI draft and does not trigger a collection fallback or an
@@ -65,8 +66,9 @@ queries.
 
 Equal operator display names are sorted by immutable operator document ID after decoding. The
 operator query likewise has a fixed repository bound and matching Rules limit. Phase 4C3 keeps
-account linking in a separate exact-document transaction repository; neither repository exposes a
-collection listener or generic collection read.
+account linking in a separate exact-document transaction repository, and Phase 4C4 calls it only
+after an explicit Owner interaction; neither repository exposes a collection listener or generic
+collection read.
 
 Add another active row only in the same focused change that introduces or materially changes the
 corresponding feature-repository query.
