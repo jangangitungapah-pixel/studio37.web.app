@@ -50,10 +50,12 @@ allowing operational profiles without a Firebase login. Phase 4C3 adds a separat
 transaction repository that changes `operators.linkedUserUid` and `users.operatorId` together from
 exact known document IDs; one-sided links and direct reassignment are denied. The finalized
 contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
-`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`.
+`docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`. Phase 4C4 consumes the same exact-document
+boundary in an Owner-only review/link/unlink browser workflow without adding a user collection
+query or Authentication provisioning path.
 
-Compensation defaults, account-link UI, permission administration, assignment behavior, and UI are
-implemented in their owning later slices.
+Compensation defaults, permission administration, assignment behavior, and their owning UI are
+implemented in later slices.
 
 ### `studios`
 Studio rooms/resources that can be booked.

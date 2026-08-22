@@ -69,8 +69,10 @@ permission sets. The form explains this boundary instead of presenting a disable
 provisioning flow.
 
 Phase 4C3 subsequently establishes the atomic Owner-only repository and Security Rules foundation
-for the reciprocal Firestore relationship. Phase 4C2 UI remains unchanged and still exposes no
-link/unlink control until the dedicated browser workflow is implemented.
+for the reciprocal Firestore relationship. Phase 4C4 subsequently adds the Owner-only exact-UID
+review, link, and unlink browser workflow specified in
+`docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`. Ordinary delegated operator managers
+retain profile/status controls but never receive account-link controls.
 
 ## Responsive and accessibility behavior
 
@@ -87,11 +89,10 @@ component coverage.
 ## Deferred scope
 
 - Firebase Authentication account provisioning or invitation,
-- account-link/unlink browser UI,
 - permission-set listing and administration,
 - operator compensation defaults and rules,
 - booking assignment consumption,
-- final Phase 4 responsive/integration acceptance,
+- final Phase 4 real-Firebase responsive/integration acceptance,
 - Firebase Rules/index/Hosting deployment.
 
 Production review and deployment remain Phase 17.

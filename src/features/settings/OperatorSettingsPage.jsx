@@ -6,8 +6,9 @@ import { Dialog } from '../../components/feedback/Dialog.jsx';
 import { Input } from '../../components/forms/Field.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { operatorRepository } from '../../services/operatorRepository.js';
-import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
+import { CAPABILITIES, hasCapability, isOwner } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
+import { OperatorAccountLinkDialog } from './OperatorAccountLinkDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import {
   DEFAULT_OPERATOR_FORM_VALUES,
@@ -66,11 +67,13 @@ function getOperatorInitials(displayName) {
     .join('');
 }
 
-export function OperatorSettingsPage({ repository = operatorRepository }) {
+export function OperatorSettingsPage({ accountRepository, repository = operatorRepository }) {
   const access = useAuth();
   const { pushToast } = useToast();
   const canManage = hasCapability(access, CAPABILITIES.SETTINGS_OPERATORS_MANAGE);
+  const canManageAccountLinks = isOwner(access.profile);
   const actorUid = access.user?.uid;
+  const [accountTarget, setAccountTarget] = useState(null);
   const [dialogError, setDialogError] = useState('');
   const [editingOperator, setEditingOperator] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -117,6 +120,18 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
       active = false;
     };
   }, [reloadKey, repository]);
+
+  const openAccountDialog = (operator) => {
+    if (!canManageAccountLinks) return;
+    setAccountTarget(operator);
+  };
+
+  const closeAccountDialog = useCallback(() => setAccountTarget(null), []);
+
+  const finishAccountMutation = useCallback(() => {
+    setAccountTarget(null);
+    setReloadKey((value) => value + 1);
+  }, []);
 
   const openCreateDialog = () => {
     if (!canManage || operatorLimitReached) return;
@@ -251,7 +266,7 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
   return (
     <SettingsWorkspace
       title="Operator Settings"
-      description="Kelola profil operasional untuk assignment dan komisi tanpa mencampurnya dengan akun login atau permission."
+      description="Kelola profil operasional, status, dan hubungan akun login tanpa mencampurkannya dengan permission."
       actions={
         <span className="settings-access-badge" data-editable={canManage || undefined}>
           {canManage ? 'Dapat mengelola' : 'Lihat saja'}
@@ -261,8 +276,8 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
       <div className="settings-notice" role="status">
         <strong>Jenis operator bukan hak akses.</strong>
         <span>
-          Studio Operator dan Recording Engineer hanya menentukan fungsi operasional. Login dan
-          permission dikelola pada phase terpisah.
+          Studio Operator dan Recording Engineer hanya menentukan fungsi operasional. Owner dapat
+          menghubungkan profil user yang sudah ada; permission tetap dikelola terpisah.
         </span>
       </div>
 
@@ -401,6 +416,16 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
                       >
                         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                       </Button>
+                      {canManageAccountLinks ? (
+                        <Button
+                          size="sm"
+                          variant={operator.linkedUserUid ? 'secondary' : 'ghost'}
+                          aria-label={`${operator.linkedUserUid ? 'Kelola akun' : 'Hubungkan akun'} ${operator.displayName}`}
+                          onClick={() => openAccountDialog(operator)}
+                        >
+                          {operator.linkedUserUid ? 'Kelola akun' : 'Hubungkan akun'}
+                        </Button>
+                      ) : null}
                     </div>
                   ) : null}
                 </article>
@@ -409,6 +434,16 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
           </div>
         ) : null}
       </section>
+
+      {accountTarget ? (
+        <OperatorAccountLinkDialog
+          actorUid={actorUid}
+          operator={accountTarget}
+          repository={accountRepository}
+          onClose={closeAccountDialog}
+          onSaved={finishAccountMutation}
+        />
+      ) : null}
 
       <Dialog
         open={Boolean(operatorDialogMode)}
@@ -516,8 +551,10 @@ export function OperatorSettingsPage({ repository = operatorRepository }) {
             <strong>Status akun aplikasi</strong>
             <span>
               {editingOperator?.linkedUserUid
-                ? 'Akun login sudah terhubung dan tidak dapat diubah dari form profil ini.'
-                : 'Profil ini tersimpan tanpa login. Account linking tersedia pada phase terpisah.'}
+                ? 'Akun login sudah terhubung. Gunakan aksi Kelola akun pada daftar operator untuk memutuskan hubungan.'
+                : canManageAccountLinks
+                  ? 'Profil ini tersimpan tanpa login. Gunakan aksi Hubungkan akun setelah profil operator disimpan.'
+                  : 'Profil ini tersimpan tanpa login. Hanya Owner yang dapat menghubungkan akun.'}
             </span>
           </div>
         </form>

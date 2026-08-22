@@ -214,17 +214,17 @@ Phase 3 progress on 2026-08-22:
 - [x] Support Studio Operator type.
 - [x] Support Recording Operator/Engineer type.
 - [x] Support operator without login.
-- [ ] Link operator to user account where applicable.
+- [x] Link operator to user account where applicable.
 - [ ] Configure operator permissions.
 - [x] Activate/deactivate operator.
 
 ### Phase 4 gate
 
 - [ ] Studio configuration drives available rooms/hours.
-- [ ] Operator profiles can exist with or without login.
-- [ ] Protected operator/account fields pass security tests.
+- [x] Operator profiles can exist with or without login.
+- [x] Protected operator/account fields pass security tests.
 - [ ] Responsive QA passes.
-- [ ] Lint/test/build pass.
+- [x] Lint/test/build pass.
 
 Phase 4 progress on 2026-08-22:
 
@@ -275,9 +275,15 @@ Phase 4 progress on 2026-08-22:
   post-commit state for link and unlink. GitHub Actions Quality run `32566431990` passed formatting,
   lint, 178 unit/component tests, 28 Firestore Emulator authorization tests, production build, and
   Vite development-server smoke.
-- Booking/calendar consumption of active rooms, the operator/account-link browser workflow,
-  permission administration, and final Phase 4 integration/responsive gates remain pending; Phase
-  4 remains in progress.
+- Phase 4C4 added the Owner-only exact-UID review, link, and unlink workflow inside Operator
+  Settings. Missing profiles, existing links, broken backlinks, and delegated operator managers
+  fail closed; successful mutations reuse the reciprocal Phase 4C3 transaction and refresh the
+  existing bounded list without adding a user query, Auth provisioning, or permission mutation.
+- GitHub Actions Quality run `32575053286` passed formatting, lint, 183 unit/component tests, 28
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms/hours, permission administration, real-Firebase
+  account-link acceptance, and final Phase 4 responsive/integration gates remain pending; Phase 4
+  remains in progress.
 
 ---
 
@@ -710,4 +716,5 @@ Implementation status:
   - [x] Phase 4C1 — bounded operator domain/repository, operator types, no-login profiles, and Security Rules implemented and quality-gated.
   - [x] Phase 4C2 — bounded Operator Settings UI, add/edit, and soft activation/deactivation implemented and quality-gated.
   - [x] Phase 4C3 — exact-document atomic operator/account-link repository and Security Rules foundation implemented and quality-gated.
-  - [ ] Operator/account-link browser workflow, permission management, and final integration/responsive gates pending.
+  - [x] Phase 4C4 — Owner-only exact-UID operator/account-link review, link, and unlink UI implemented and quality-gated.
+  - [ ] Permission management, real-Firebase account-link acceptance, and final integration/responsive gates pending.

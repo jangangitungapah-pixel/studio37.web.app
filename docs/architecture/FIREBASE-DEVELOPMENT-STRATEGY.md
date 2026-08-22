@@ -148,6 +148,11 @@ service-account keys remain outside the browser repository. The relationship con
 docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md
 ```
 
+Phase 4C4 exposes that same boundary only after an explicit Owner action in Operator Settings. The
+Owner enters an immutable UID, reviews the one exact profile read, and confirms the transaction.
+The UI never accepts email as an identity lookup, lists Authentication users, or changes permission
+sets. Its workflow contract is `docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`.
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

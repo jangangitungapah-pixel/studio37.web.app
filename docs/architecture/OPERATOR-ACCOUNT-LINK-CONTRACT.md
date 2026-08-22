@@ -4,8 +4,9 @@
 
 Define the Phase 4C3 foundation for safely connecting an existing Studio37 user profile to one
 operational operator profile. This slice opens only the bidirectional Firestore relationship and
-its Owner-only repository/rules boundary; account provisioning, permission administration UI, and
-the Operator Settings linking UI remain later checkpoints.
+its Owner-only repository/rules boundary. Phase 4C4 subsequently consumes that boundary in the
+Operator Settings linking UI; account provisioning and permission administration remain later
+checkpoints.
 
 ## Relationship invariant
 
@@ -92,10 +93,21 @@ remains a distinct Owner action and is not silently inferred from operator types
 Every Phase 4C3 operation addresses at most two known document paths. There is no collection query,
 listener, composite index, or Authentication-user enumeration. No index manifest change is needed.
 
+## Browser consumer
+
+Phase 4C4 exposes the repository through an Owner-only, exact-UID review and confirmation workflow
+inside Operator Settings. The UI contract, error states, and responsive behavior are documented in:
+
+```text
+docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md
+```
+
+The browser workflow does not widen this repository or Security Rules contract.
+
 ## Deferred scope
 
 - Firebase Authentication identity creation/invitation,
-- account-link/unlink browser UI and manual responsive acceptance,
+- final real-Firebase account-link and responsive browser acceptance,
 - permission-set bounded administration repository and UI,
 - user status/permission assignment workflow,
 - compensation defaults and booking assignment consumption,
