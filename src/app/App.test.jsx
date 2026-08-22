@@ -235,7 +235,7 @@ describe('Studio37 application shell', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'Operator Settings' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Budi Engineer' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Budi Engineer' })).toBeInTheDocument();
     expect(screen.queryByText('Fondasi halaman siap')).not.toBeInTheDocument();
     expect(operatorRepository.listOperators).toHaveBeenCalledOnce();
   });
