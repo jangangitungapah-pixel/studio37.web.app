@@ -16,8 +16,8 @@ Phase 2. Production index review and deployment remain part of Phase 17.
 
 ## Current implemented-query state
 
-The application performs document-addressed operations plus one feature-owned bounded collection
-query:
+The application performs document-addressed operations plus feature-owned bounded collection
+queries:
 
 | Operation             | Shape                                        | Composite index |
 | --------------------- | -------------------------------------------- | --------------- |
@@ -29,9 +29,10 @@ query:
 | Permission observer   | One explicit `permissionSets/{id}` listener  | Not required    |
 | Studio settings load  | One explicit `appSettings/studio` read       | Not required    |
 | Studio rooms admin    | Ordered `studios` query capped at 50 docs    | Not required    |
+| Operator admin        | Ordered `operators` query capped at 100 docs | Not required    |
 
-The Studio Rooms query uses an automatically indexed single field, so there are still no required
-composite indexes. `firestore.indexes.json` intentionally retains empty `indexes` and
+The Studio Rooms and Operator queries use automatically indexed single fields, so there are still
+no required composite indexes. `firestore.indexes.json` intentionally retains empty `indexes` and
 `fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
@@ -52,13 +53,18 @@ changes, the user signs out, or the Auth provider unmounts.
 
 ## Active query registry
 
-| Query ID                     | Repository                | Collection | Purpose                    | Filters | Ordering           | Bound    | Listener | Index                               | Phase |
-| ---------------------------- | ------------------------- | ---------- | -------------------------- | ------- | ------------------ | -------- | -------- | ----------------------------------- | ----- |
-| `settings.studio-rooms-list` | `studioRoomRepository.js` | `studios`  | Studio Settings room admin | None    | `displayOrder` asc | Limit 50 | One-shot | Automatic single-field; no manifest | 4B    |
+| Query ID                     | Repository                | Collection  | Purpose                          | Filters | Ordering           | Bound     | Listener | Index                               | Phase |
+| ---------------------------- | ------------------------- | ----------- | -------------------------------- | ------- | ------------------ | --------- | -------- | ----------------------------------- | ----- |
+| `settings.studio-rooms-list` | `studioRoomRepository.js` | `studios`   | Studio Settings room admin       | None    | `displayOrder` asc | Limit 50  | One-shot | Automatic single-field; no manifest | 4B    |
+| `settings.operators-list`    | `operatorRepository.js`   | `operators` | Operator domain/admin foundation | None    | `displayName` asc  | Limit 100 | One-shot | Automatic single-field; no manifest | 4C1   |
 
 Equal display-order values are sorted by room name and document ID after decoding. Callers cannot
 remove or raise the repository bound, and Firestore Security Rules reject unbounded or over-limit
 queries.
+
+Equal operator display names are sorted by immutable operator document ID after decoding. The
+operator query likewise has a fixed repository bound and matching Rules limit; Phase 4C1 exposes no
+collection listener, account-link operation, or generic collection read.
 
 Add another active row only in the same focused change that introduces or materially changes the
 corresponding feature-repository query.

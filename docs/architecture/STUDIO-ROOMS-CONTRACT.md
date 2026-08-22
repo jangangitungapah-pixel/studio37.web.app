@@ -99,8 +99,11 @@ The following are intentionally not implemented in Phase 4B:
 - room-specific or day-specific operating-hour overrides,
 - equipment/capacity inventory,
 - drag-and-drop ordering,
-- Operator model and Operator Settings,
+- Operator Settings UI, account linking, and permission-management workflows,
 - booking form or calendar consumption of active rooms,
 - Firebase Rules/index/Hosting deployment.
 
 Production review and deployment remain Phase 17.
+
+The separate Phase 4C1 operator model/repository contract is documented in
+`docs/architecture/OPERATOR-DOMAIN-CONTRACT.md`.

@@ -209,11 +209,11 @@ Phase 3 progress on 2026-08-22:
 
 ## 4.2 Operator Settings
 
-- [ ] Implement operator data model/repository.
+- [x] Implement operator data model/repository.
 - [ ] Add/edit operator.
-- [ ] Support Studio Operator type.
-- [ ] Support Recording Operator/Engineer type.
-- [ ] Support operator without login.
+- [x] Support Studio Operator type.
+- [x] Support Recording Operator/Engineer type.
+- [x] Support operator without login.
 - [ ] Link operator to user account where applicable.
 - [ ] Configure operator permissions.
 - [ ] Activate/deactivate operator.
@@ -248,8 +248,20 @@ Phase 4 progress on 2026-08-22:
   and preserve server actor/timestamp metadata. GitHub Actions Quality run `32559335130` passed
   formatting, lint, 149 unit/component tests, 22 Firestore Emulator authorization tests,
   production build, and Vite development-server smoke.
-- Booking/calendar consumption of active rooms, Operator Settings, and final Phase 4
-  integration/responsive gates remain pending; Phase 4 remains in progress.
+- Phase 4C1 implemented strict immutable-ID `operators/{operatorId}` documents, Studio Operator and
+  Recording Engineer domain types, canonical nullable contact data, and unlinked operational
+  profiles that require no Firebase Authentication account.
+- The Operator repository owns one `displayName`-ordered one-shot query capped at 100 documents,
+  exposes no generic collection read/listener/delete/account-link operation, and supports validated
+  create, detail update, and soft-status mutations behind server actor/timestamp metadata.
+- Firestore Security Rules require `settings.operators.view` for bounded reads and
+  `settings.operators.manage` for validated mutations, while rejecting unbounded/over-limit reads,
+  hard delete, spoofed metadata, and every Phase 4C1 account-link mutation. GitHub Actions Quality
+  run `32563791689` passed formatting, lint, 162 unit/component tests, 26 Firestore Emulator
+  authorization tests, production build, and Vite development-server smoke.
+- Booking/calendar consumption of active rooms, Operator Settings UI, login linking, permission
+  administration, activation UI, and final Phase 4 integration/responsive gates remain pending;
+  Phase 4 remains in progress.
 
 ---
 
@@ -679,4 +691,5 @@ Implementation status:
 - [ ] Phase 4 — Studio & Operator Configuration in progress.
   - [x] Phase 4A — studio profile, timezone, operating hours, and booking defaults implemented and quality-gated.
   - [x] Phase 4B — room create/edit, soft activation/deactivation, and display ordering implemented and quality-gated.
-  - [ ] Operator model, login linking, permissions, and settings UI pending.
+  - [x] Phase 4C1 — bounded operator domain/repository, operator types, no-login profiles, and Security Rules implemented and quality-gated.
+  - [ ] Operator Settings UI, login linking, permissions, activation workflow, and final gates pending.

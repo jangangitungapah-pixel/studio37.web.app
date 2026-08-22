@@ -106,6 +106,12 @@ Owner can:
 
 Recording operators/engineers can exist without login accounts.
 
+Phase 4C1 establishes the underlying bounded `operators/{operatorId}` domain/repository and keeps
+new records intentionally unlinked from Firebase Authentication. Its protected-field and deferred
+account-linking contract is documented in
+`docs/architecture/OPERATOR-DOMAIN-CONTRACT.md`; the settings UI and permission/account workflows
+remain separate implementation checkpoints.
+
 ## 6.1 Permissions UI
 
 Permissions should be grouped by functional domain, for example:

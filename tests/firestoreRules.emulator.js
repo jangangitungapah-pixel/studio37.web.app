@@ -28,9 +28,11 @@ const DISABLED_UID = 'disabled-operator';
 const UNASSIGNED_UID = 'unassigned-operator';
 const DISABLED_SET_UID = 'disabled-set-operator';
 const STUDIO_EDITOR_UID = 'studio-editor';
+const OPERATOR_MANAGER_UID = 'operator-manager';
 const DELEGATED_SET_ID = 'front-desk';
 const DISABLED_SET_ID = 'disabled-template';
 const STUDIO_EDITOR_SET_ID = 'studio-editor-template';
+const OPERATOR_MANAGER_SET_ID = 'operator-manager-template';
 const RULES_PATH = new URL('../firestore.rules', import.meta.url);
 const FIXTURE_TIMESTAMP = Timestamp.fromMillis(Date.UTC(2026, 0, 1));
 
@@ -128,6 +130,34 @@ function createStudioRoom({
   };
 }
 
+function createOperator({
+  displayName = 'Budi Engineer',
+  email = 'budi@studio37.id',
+  phone = '+6281234567890',
+  operatorTypes = ['recording_engineer'],
+  linkedUserUid = null,
+  status = 'active',
+  createdAt = FIXTURE_TIMESTAMP,
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  ...overrides
+} = {}) {
+  return {
+    displayName,
+    email,
+    phone,
+    operatorTypes,
+    linkedUserUid,
+    status,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
+    ...overrides,
+  };
+}
+
 function authenticatedDb(uid) {
   return testEnvironment
     .authenticatedContext(uid, {
@@ -196,6 +226,13 @@ beforeEach(async () => {
       `users/${STUDIO_EDITOR_UID}`,
       createUserProfile({ uid: STUDIO_EDITOR_UID, permissionSetId: STUDIO_EDITOR_SET_ID }),
     ],
+    [
+      `users/${OPERATOR_MANAGER_UID}`,
+      createUserProfile({
+        uid: OPERATOR_MANAGER_UID,
+        permissionSetId: OPERATOR_MANAGER_SET_ID,
+      }),
+    ],
     [`permissionSets/${DELEGATED_SET_ID}`, createPermissionSet()],
     [
       `permissionSets/${DISABLED_SET_ID}`,
@@ -206,6 +243,13 @@ beforeEach(async () => {
       createPermissionSet({
         name: 'Studio settings editor',
         capabilities: ['settings.studio.edit', 'settings.studio.view'],
+      }),
+    ],
+    [
+      `permissionSets/${OPERATOR_MANAGER_SET_ID}`,
+      createPermissionSet({
+        name: 'Operator manager',
+        capabilities: ['settings.operators.manage', 'settings.operators.view'],
       }),
     ],
     ['studio37System/connectivity-probe', { checkedAt: FIXTURE_TIMESTAMP }],
@@ -714,6 +758,157 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(
       updateDoc(reference, {
         name: 'Spoofed actor',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+  });
+
+  test('allows only bounded operator lists to users with operator-settings view access', async () => {
+    await seedDocuments([
+      ['operators/operator-budi', createOperator()],
+      [
+        'operators/operator-citra',
+        createOperator({ displayName: 'Citra Operator', operatorTypes: ['studio_operator'] }),
+      ],
+    ]);
+
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const managerDb = authenticatedDb(OPERATOR_MANAGER_UID);
+    const disabledDb = authenticatedDb(DISABLED_UID);
+    const ownerQuery = query(
+      collection(ownerDb, 'operators'),
+      orderBy('displayName', 'asc'),
+      limit(100),
+    );
+    const managerQuery = query(
+      collection(managerDb, 'operators'),
+      orderBy('displayName', 'asc'),
+      limit(100),
+    );
+
+    await assertSucceeds(getDocs(ownerQuery));
+    await assertSucceeds(getDocs(managerQuery));
+    await assertSucceeds(getDoc(doc(managerDb, 'operators/operator-budi')));
+    await assertFails(getDocs(collection(ownerDb, 'operators')));
+    await assertFails(
+      getDocs(query(collection(ownerDb, 'operators'), orderBy('displayName', 'asc'), limit(101))),
+    );
+    await assertFails(
+      getDocs(
+        query(collection(operatorDb, 'operators'), orderBy('displayName', 'asc'), limit(100)),
+      ),
+    );
+    await assertFails(getDoc(doc(operatorDb, 'operators/operator-budi')));
+    await assertFails(
+      getDocs(
+        query(collection(disabledDb, 'operators'), orderBy('displayName', 'asc'), limit(100)),
+      ),
+    );
+  });
+
+  test('allows validated unlinked operator create, edit, and soft-disable to delegated managers', async () => {
+    const managerDb = authenticatedDb(OPERATOR_MANAGER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const reference = doc(managerDb, 'operators/operator-budi');
+
+    await assertSucceeds(
+      setDoc(
+        reference,
+        createOperator({
+          createdAt: serverTimestamp(),
+          createdByUid: OPERATOR_MANAGER_UID,
+          updatedAt: serverTimestamp(),
+          updatedByUid: OPERATOR_MANAGER_UID,
+        }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        displayName: 'Budi Recording Engineer',
+        operatorTypes: ['studio_operator', 'recording_engineer'],
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_MANAGER_UID,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'disabled',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_MANAGER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(operatorDb, 'operators/operator-budi'), {
+        displayName: 'Unauthorized edit',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+    await assertFails(deleteDoc(reference));
+  });
+
+  test('rejects malformed operators, duplicate types, account links, and spoofed metadata', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+
+    for (const [operatorId, invalidOperator] of [
+      ['empty-name', { displayName: '' }],
+      ['invalid-email', { email: 'not-email' }],
+      ['invalid-phone', { phone: '081234567890' }],
+      ['missing-type', { operatorTypes: [] }],
+      ['duplicate-type', { operatorTypes: ['studio_operator', 'studio_operator'] }],
+      ['invalid-type', { operatorTypes: ['owner'] }],
+      ['linked-on-create', { linkedUserUid: 'firebase-user' }],
+      ['invalid-status', { status: 'archived' }],
+      ['spoofed-creator', { createdByUid: OPERATOR_UID }],
+      ['spoofed-updater', { updatedByUid: OPERATOR_UID }],
+      ['unknown-field', { permissionSetId: DELEGATED_SET_ID }],
+    ]) {
+      await assertFails(
+        setDoc(
+          doc(ownerDb, `operators/${operatorId}`),
+          createOperator({
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            ...invalidOperator,
+          }),
+        ),
+      );
+    }
+  });
+
+  test('preserves operator creation history and keeps account linking closed in Phase 4C1', async () => {
+    await seedDocuments([
+      ['operators/operator-budi', createOperator({ linkedUserUid: 'firebase-user' })],
+    ]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'operators/operator-budi');
+
+    await assertFails(
+      updateDoc(reference, {
+        linkedUserUid: null,
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: recentTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        displayName: 'Client-clock update',
+        updatedAt: recentTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        displayName: 'Spoofed actor',
         updatedAt: serverTimestamp(),
         updatedByUid: OPERATOR_UID,
       }),
