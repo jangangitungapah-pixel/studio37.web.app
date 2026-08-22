@@ -18,6 +18,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/operators/$(operatorId);
     }
 
+    function accountInvitationPath(operatorId, invitationId) {
+      return /databases/$(database)/documents/operators/$(operatorId)/accountInvites/$(invitationId);
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -40,6 +44,15 @@ service cloud.firestore {
           && value.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'));
     }
 
+    function activationInviteId(data) {
+      return data.keys().hasAny(['activationInviteId']) ? data.activationInviteId : null;
+    }
+
+    function hasValidActivationInviteId(data) {
+      return !data.keys().hasAny(['activationInviteId'])
+        || hasValidOptionalReference(data.activationInviteId);
+    }
+
     function isValidUserProfile(uid, data) {
       return data.keys().hasAll([
           'uid',
@@ -54,6 +67,7 @@ service cloud.firestore {
           'updatedAt'
         ])
         && data.keys().hasOnly([
+          'activationInviteId',
           'uid',
           'displayName',
           'email',
@@ -80,7 +94,9 @@ service cloud.firestore {
         && data.status in ['active', 'disabled']
         && hasValidOptionalReference(data.permissionSetId)
         && hasValidOptionalReference(data.operatorId)
-        && (data.role != 'owner' || data.permissionSetId == null)
+        && hasValidActivationInviteId(data)
+        && (data.role != 'owner'
+          || (data.permissionSetId == null && activationInviteId(data) == null))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
         && data.updatedAt >= data.createdAt;
@@ -359,6 +375,171 @@ service cloud.firestore {
         && data.updatedByUid.size() <= 128;
     }
 
+    function isValidAccountInvitationId(invitationId) {
+      return invitationId is string
+        && invitationId.size() >= 20
+        && invitationId.size() <= 128
+        && invitationId.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    function hasVerifiedInvitationEmail(email) {
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == email;
+    }
+
+    function isValidAccountInvitation(operatorId, data) {
+      return data.keys().hasAll([
+          'operatorId',
+          'displayName',
+          'email',
+          'phone',
+          'status',
+          'expiresAt',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid',
+          'acceptedAt',
+          'acceptedByUid'
+        ])
+        && data.keys().hasOnly([
+          'operatorId',
+          'displayName',
+          'email',
+          'phone',
+          'status',
+          'expiresAt',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid',
+          'acceptedAt',
+          'acceptedByUid'
+        ])
+        && data.operatorId == operatorId
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 100
+        && data.email is string
+        && data.email.size() > 2
+        && data.email.size() <= 254
+        && data.email.matches('^[^A-Z\\s@]+@[^A-Z\\s@]+\\.[^A-Z\\s@]+$')
+        && hasValidOptionalPhone(data.phone)
+        && data.status in ['pending', 'accepted', 'revoked']
+        && data.expiresAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.expiresAt > data.createdAt
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128
+        && ((data.status == 'accepted'
+            && data.acceptedAt is timestamp
+            && data.acceptedAt == data.updatedAt
+            && data.acceptedByUid is string
+            && data.acceptedByUid.size() > 0
+            && data.acceptedByUid.size() <= 128)
+          || (data.status in ['pending', 'revoked']
+            && data.acceptedAt == null
+            && data.acceptedByUid == null));
+    }
+
+    function usesAccountInvitationCreateMetadata(operatorId, data) {
+      let operator = get(operatorPath(operatorId)).data;
+      return data.status == 'pending'
+        && data.createdAt == request.time
+        && data.updatedAt == request.time
+        && data.createdByUid == request.auth.uid
+        && data.updatedByUid == request.auth.uid
+        && data.acceptedAt == null
+        && data.acceptedByUid == null
+        && data.expiresAt > request.time
+        && data.expiresAt <= request.time + duration.value(30, 'd')
+        && isValidOperator(operator)
+        && operator.status == 'active'
+        && operator.linkedUserUid == null
+        && operator.email is string
+        && 'studio_operator' in operator.operatorTypes
+        && data.displayName == operator.displayName
+        && data.email == operator.email.lower()
+        && data.phone == operator.phone;
+    }
+
+    function isAccountInvitationRevocation(operatorId) {
+      return isActiveOwner()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt', 'updatedByUid'])
+        && request.resource.data.status == 'revoked'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == request.auth.uid
+        && isValidAccountInvitation(operatorId, request.resource.data);
+    }
+
+    function acceptedInvitationMatchesUser(operatorId, invitationId, uid, user) {
+      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
+      return isValidAccountInvitation(operatorId, invitation)
+        && invitation.status == 'accepted'
+        && invitation.acceptedAt == request.time
+        && invitation.acceptedByUid == uid
+        && invitation.updatedAt == request.time
+        && invitation.updatedByUid == uid
+        && invitation.email == user.email.lower()
+        && hasVerifiedInvitationEmail(invitation.email);
+    }
+
+    function invitationSnapshotMatchesUser(operatorId, invitationId, uid, user) {
+      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
+      return acceptedInvitationMatchesUser(operatorId, invitationId, uid, user)
+        && invitation.displayName == user.displayName
+        && invitation.phone == user.phone;
+    }
+
+    function invitedOperatorAfter(operatorId, uid) {
+      let operator = getAfter(operatorPath(operatorId)).data;
+      return isValidOperator(operator)
+        && operator.linkedUserUid == uid
+        && operator.status == 'active'
+        && 'studio_operator' in operator.operatorTypes
+        && operator.updatedAt == request.time
+        && operator.updatedByUid == uid;
+    }
+
+    function invitedUserAfter(operatorId, invitationId, uid) {
+      let user = getAfter(userPath(uid)).data;
+      return isValidUserProfile(uid, user)
+        && user.role == 'studio_operator'
+        && user.status == 'active'
+        && user.operatorId == operatorId
+        && activationInviteId(user) == invitationId
+        && user.updatedAt == request.time
+        && acceptedInvitationMatchesUser(operatorId, invitationId, uid, user);
+    }
+
+    function isAccountInvitationAcceptance(operatorId, invitationId) {
+      return resource.data.status == 'pending'
+        && request.time < resource.data.expiresAt
+        && hasVerifiedInvitationEmail(resource.data.email)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt', 'updatedByUid', 'acceptedAt', 'acceptedByUid'])
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.acceptedByUid == request.auth.uid
+        && isValidAccountInvitation(operatorId, request.resource.data)
+        && existsAfter(operatorPath(operatorId))
+        && existsAfter(userPath(request.auth.uid))
+        && invitedOperatorAfter(operatorId, request.auth.uid)
+        && invitedUserAfter(operatorId, invitationId, request.auth.uid);
+    }
+
     function usesCurrentWriteTime(data) {
       return data.createdAt <= request.time && data.updatedAt <= request.time;
     }
@@ -472,6 +653,72 @@ service cloud.firestore {
             && linkedUserAfter(previousUserUid, null)));
     }
 
+    function isInvitationUserCreate(uid) {
+      let operatorId = request.resource.data.operatorId;
+      let invitationId = activationInviteId(request.resource.data);
+      return request.auth.uid == uid
+        && operatorId is string
+        && invitationId is string
+        && request.resource.data.role == 'studio_operator'
+        && request.resource.data.status == 'active'
+        && request.resource.data.permissionSetId == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(operatorPath(operatorId))
+        && existsAfter(accountInvitationPath(operatorId, invitationId))
+        && invitedOperatorAfter(operatorId, uid)
+        && invitationSnapshotMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          request.resource.data
+        );
+    }
+
+    function isInvitationUserLinkUpdate(uid) {
+      let operatorId = request.resource.data.operatorId;
+      let invitationId = activationInviteId(request.resource.data);
+      return request.auth.uid == uid
+        && resource.data.role == 'studio_operator'
+        && resource.data.status == 'active'
+        && resource.data.operatorId == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['activationInviteId', 'operatorId', 'updatedAt'])
+        && operatorId is string
+        && invitationId is string
+        && request.resource.data.updatedAt == request.time
+        && hasVerifiedInvitationEmail(request.resource.data.email)
+        && existsAfter(operatorPath(operatorId))
+        && existsAfter(accountInvitationPath(operatorId, invitationId))
+        && invitedOperatorAfter(operatorId, uid)
+        && acceptedInvitationMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          request.resource.data
+        );
+    }
+
+    function isInvitationOperatorLink(operatorId) {
+      let uid = request.auth.uid;
+      let user = getAfter(userPath(uid)).data;
+      let invitationId = activationInviteId(user);
+      return resource.data.linkedUserUid == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
+        && request.resource.data.linkedUserUid == uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == uid
+        && invitationId is string
+        && existsAfter(accountInvitationPath(operatorId, invitationId))
+        && invitedUserAfter(operatorId, invitationId, uid);
+    }
+
+    function preservesUserRoleAndActivationSource() {
+      return request.resource.data.role == resource.data.role
+        && activationInviteId(request.resource.data) == activationInviteId(resource.data);
+    }
+
     function preservesOwnOwnerAccess(uid) {
       return uid != request.auth.uid
         || (request.resource.data.role == 'owner'
@@ -483,18 +730,23 @@ service cloud.firestore {
       allow get: if isSignedIn() && (request.auth.uid == uid || isActiveOwner());
       allow list: if false;
 
-      allow create: if canCreateUserProfile(uid)
-        && isValidUserProfile(uid, request.resource.data)
-        && request.resource.data.operatorId == null
-        && usesCurrentWriteTime(request.resource.data);
+      allow create: if isValidUserProfile(uid, request.resource.data)
+        && ((canCreateUserProfile(uid)
+            && request.resource.data.role == 'studio_operator'
+            && request.resource.data.operatorId == null
+            && activationInviteId(request.resource.data) == null
+            && usesCurrentWriteTime(request.resource.data))
+          || isInvitationUserCreate(uid));
 
-      allow update: if canUpdateUserProfile(uid, resource.data)
-        && isValidUserProfile(uid, request.resource.data)
+      allow update: if isValidUserProfile(uid, request.resource.data)
         && usesCurrentWriteTime(request.resource.data)
         && preservesUserHistory()
-        && preservesOwnOwnerAccess(uid)
-        && (request.resource.data.operatorId == resource.data.operatorId
-          || (isActiveOwner() && isAtomicUserOperatorLink(uid)));
+        && ((canUpdateUserProfile(uid, resource.data)
+            && preservesOwnOwnerAccess(uid)
+            && preservesUserRoleAndActivationSource()
+            && (request.resource.data.operatorId == resource.data.operatorId
+              || (isActiveOwner() && isAtomicUserOperatorLink(uid))))
+          || isInvitationUserLinkUpdate(uid));
 
       allow delete: if false;
     }
@@ -562,9 +814,29 @@ service cloud.firestore {
             && preservesOperatorHistoryAndAccountLink())
           || (isActiveOwner()
             && preservesOperatorHistory()
-            && isAtomicOperatorUserLink(operatorId)));
+            && isAtomicOperatorUserLink(operatorId))
+          || (preservesOperatorHistory()
+            && isInvitationOperatorLink(operatorId)));
 
       allow delete: if false;
+
+      match /accountInvites/{invitationId} {
+        allow get: if isActiveOwner()
+          || (isValidAccountInvitation(operatorId, resource.data)
+            && hasVerifiedInvitationEmail(resource.data.email));
+        allow list: if false;
+
+        allow create: if isActiveOwner()
+          && isValidAccountInvitationId(invitationId)
+          && isValidAccountInvitation(operatorId, request.resource.data)
+          && usesAccountInvitationCreateMetadata(operatorId, request.resource.data);
+
+        allow update: if isValidAccountInvitationId(invitationId)
+          && (isAccountInvitationRevocation(operatorId)
+            || isAccountInvitationAcceptance(operatorId, invitationId));
+
+        allow delete: if false;
+      }
     }
 
     match /studio37System/connectivity-probe {

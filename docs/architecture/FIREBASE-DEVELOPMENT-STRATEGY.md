@@ -153,6 +153,18 @@ Owner enters an immutable UID, reviews the one exact profile read, and confirms 
 The UI never accepts email as an identity lookup, lists Authentication users, or changes permission
 sets. Its workflow contract is `docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`.
 
+Phase 4C5A adds a separate invitation/self-registration foundation without weakening the manual
+exact-UID fallback. An active Owner creates one opaque exact-path invitation beneath an eligible
+unlinked Studio Operator. A Firebase user with the matching verified email may redeem it through
+one atomic user/operator/invitation batch. A new application profile always starts as
+`studio_operator` with `permissionSetId: null`; the path cannot create or promote an Owner. It does
+not create an Authentication identity, enumerate Auth/users, send email, or require Functions,
+Admin SDK, or service-account credentials. The contract is:
+
+```text
+docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

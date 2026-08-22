@@ -5,7 +5,8 @@
 Define the Phase 4C4 browser workflow for linking one existing Studio37 user profile to one
 operator profile and for removing that relationship safely. This UI consumes the exact-document,
 atomic Phase 4C3 repository and Security Rules boundary; it does not provision Firebase
-Authentication identities or administer permission sets.
+Authentication identities or administer permission sets. Phase 4C5A keeps this manual exact-UID
+workflow available as an Owner fallback while introducing a separate invitation repository.
 
 ## Route and authorization
 
@@ -94,7 +95,8 @@ The existing operator list remains a one-shot `displayName asc + limit(100)` que
 
 ## Deferred scope
 
-- Firebase Authentication identity creation/invitation,
+- Firebase Authentication administrative identity creation/deletion,
+- invitation creation/acceptance and delivery UI,
 - permission-set list, create/edit/disable, and assignment UI,
 - user account activation/deactivation workflow,
 - compensation defaults and booking assignment consumption,

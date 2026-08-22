@@ -32,6 +32,11 @@ const UNASSIGNED_UID = 'unassigned-operator';
 const DISABLED_SET_UID = 'disabled-set-operator';
 const STUDIO_EDITOR_UID = 'studio-editor';
 const OPERATOR_MANAGER_UID = 'operator-manager';
+const INVITED_UID = 'invited-operator';
+const EXISTING_INVITED_UID = 'existing-invited-operator';
+const INVITED_OPERATOR_ID = 'operator-invited';
+const INVITATION_ID = 'invite-12345678901234567890';
+const INVITED_EMAIL = 'invitee@studio37.id';
 const DELEGATED_SET_ID = 'front-desk';
 const DISABLED_SET_ID = 'disabled-template';
 const STUDIO_EDITOR_SET_ID = 'studio-editor-template';
@@ -161,12 +166,117 @@ function createOperator({
   };
 }
 
-function authenticatedDb(uid) {
+function createAccountInvitation({
+  operatorId = INVITED_OPERATOR_ID,
+  displayName = 'Invited Operator',
+  email = INVITED_EMAIL,
+  phone = '+6281234567890',
+  status = 'pending',
+  expiresAt = Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  createdAt = recentTimestamp(),
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  acceptedAt = null,
+  acceptedByUid = null,
+  ...overrides
+} = {}) {
+  return {
+    operatorId,
+    displayName,
+    email,
+    phone,
+    status,
+    expiresAt,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
+    acceptedAt,
+    acceptedByUid,
+    ...overrides,
+  };
+}
+
+function authenticatedDb(uid, { email = `${uid}@studio37.test`, emailVerified = false } = {}) {
   return testEnvironment
     .authenticatedContext(uid, {
-      email: `${uid}@studio37.test`,
+      email,
+      email_verified: emailVerified,
     })
     .firestore();
+}
+
+function newUserInvitationRedemptionBatch(
+  firestore,
+  {
+    userUid = INVITED_UID,
+    operatorId = INVITED_OPERATOR_ID,
+    invitationId = INVITATION_ID,
+    profileOverrides = {},
+  } = {},
+) {
+  const batch = writeBatch(firestore);
+
+  batch.set(doc(firestore, `users/${userUid}`), {
+    activationInviteId: invitationId,
+    createdAt: serverTimestamp(),
+    displayName: 'Invited Operator',
+    email: INVITED_EMAIL,
+    operatorId,
+    permissionSetId: null,
+    phone: '+6281234567890',
+    role: 'studio_operator',
+    status: 'active',
+    uid: userUid,
+    updatedAt: serverTimestamp(),
+    ...profileOverrides,
+  });
+  batch.update(doc(firestore, `operators/${operatorId}`), {
+    linkedUserUid: userUid,
+    updatedAt: serverTimestamp(),
+    updatedByUid: userUid,
+  });
+  batch.update(doc(firestore, `operators/${operatorId}/accountInvites/${invitationId}`), {
+    acceptedAt: serverTimestamp(),
+    acceptedByUid: userUid,
+    status: 'accepted',
+    updatedAt: serverTimestamp(),
+    updatedByUid: userUid,
+  });
+
+  return batch;
+}
+
+function existingUserInvitationRedemptionBatch(
+  firestore,
+  {
+    userUid = EXISTING_INVITED_UID,
+    operatorId = INVITED_OPERATOR_ID,
+    invitationId = INVITATION_ID,
+  } = {},
+) {
+  const batch = writeBatch(firestore);
+
+  batch.update(doc(firestore, `users/${userUid}`), {
+    activationInviteId: invitationId,
+    operatorId,
+    updatedAt: serverTimestamp(),
+  });
+  batch.update(doc(firestore, `operators/${operatorId}`), {
+    linkedUserUid: userUid,
+    updatedAt: serverTimestamp(),
+    updatedByUid: userUid,
+  });
+  batch.update(doc(firestore, `operators/${operatorId}/accountInvites/${invitationId}`), {
+    acceptedAt: serverTimestamp(),
+    acceptedByUid: userUid,
+    status: 'accepted',
+    updatedAt: serverTimestamp(),
+    updatedByUid: userUid,
+  });
+
+  return batch;
 }
 
 function recentTimestamp(offsetMilliseconds = 0) {
@@ -960,6 +1070,299 @@ describe('initial Firestore authorization boundary', () => {
       updatedAt: serverTimestamp(),
     });
     await assertFails(reassignmentBatch.commit());
+  });
+
+  test('allows only an active Owner to create and revoke an exact-path account invitation', async () => {
+    await seedDocuments([
+      [
+        `operators/${INVITED_OPERATOR_ID}`,
+        createOperator({
+          displayName: 'Invited Operator',
+          email: INVITED_EMAIL,
+          operatorTypes: ['studio_operator'],
+        }),
+      ],
+    ]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const managerDb = authenticatedDb(OPERATOR_MANAGER_UID);
+    const invitationReference = doc(
+      ownerDb,
+      `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+    );
+
+    await assertSucceeds(
+      setDoc(
+        invitationReference,
+        createAccountInvitation({
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      ),
+    );
+    await assertSucceeds(getDoc(invitationReference));
+    await assertFails(
+      getDocs(collection(ownerDb, `operators/${INVITED_OPERATOR_ID}/accountInvites`)),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          managerDb,
+          `operators/${INVITED_OPERATOR_ID}/accountInvites/invite-09876543210987654321`,
+        ),
+        createAccountInvitation({
+          createdAt: serverTimestamp(),
+          createdByUid: OPERATOR_MANAGER_UID,
+          updatedAt: serverTimestamp(),
+          updatedByUid: OPERATOR_MANAGER_UID,
+        }),
+      ),
+    );
+    await assertFails(
+      updateDoc(
+        doc(
+          authenticatedDb(INVITED_UID, {
+            email: INVITED_EMAIL,
+            emailVerified: true,
+          }),
+          `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        ),
+        {
+          status: 'revoked',
+          updatedAt: serverTimestamp(),
+          updatedByUid: INVITED_UID,
+        },
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(invitationReference, {
+        status: 'revoked',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(deleteDoc(invitationReference));
+  });
+
+  test('allows invitation reads only to the Owner or a verified matching email', async () => {
+    await seedDocuments([
+      [
+        `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        createAccountInvitation(),
+      ],
+    ]);
+    const invitationPath = `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`;
+
+    await assertSucceeds(getDoc(doc(authenticatedDb(OWNER_UID), invitationPath)));
+    await assertSucceeds(
+      getDoc(
+        doc(
+          authenticatedDb(INVITED_UID, {
+            email: INVITED_EMAIL.toUpperCase(),
+            emailVerified: true,
+          }),
+          invitationPath,
+        ),
+      ),
+    );
+    await assertFails(
+      getDoc(
+        doc(
+          authenticatedDb(INVITED_UID, {
+            email: INVITED_EMAIL,
+            emailVerified: false,
+          }),
+          invitationPath,
+        ),
+      ),
+    );
+    await assertFails(
+      getDoc(
+        doc(
+          authenticatedDb('wrong-invitee', {
+            email: 'wrong@studio37.id',
+            emailVerified: true,
+          }),
+          invitationPath,
+        ),
+      ),
+    );
+  });
+
+  test('atomically redeems an invitation into a zero-permission Studio Operator profile', async () => {
+    await seedDocuments([
+      [
+        `operators/${INVITED_OPERATOR_ID}`,
+        createOperator({
+          displayName: 'Invited Operator',
+          email: INVITED_EMAIL,
+          operatorTypes: ['studio_operator'],
+        }),
+      ],
+      [
+        `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        createAccountInvitation(),
+      ],
+    ]);
+    const inviteeDb = authenticatedDb(INVITED_UID, {
+      email: INVITED_EMAIL,
+      emailVerified: true,
+    });
+
+    await assertSucceeds(newUserInvitationRedemptionBatch(inviteeDb).commit());
+
+    const userSnapshot = await getDoc(doc(inviteeDb, `users/${INVITED_UID}`));
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorSnapshot = await getDoc(doc(ownerDb, `operators/${INVITED_OPERATOR_ID}`));
+    const invitationSnapshot = await getDoc(
+      doc(ownerDb, `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`),
+    );
+
+    assert.equal(userSnapshot.data().role, 'studio_operator');
+    assert.equal(userSnapshot.data().permissionSetId, null);
+    assert.equal(userSnapshot.data().operatorId, INVITED_OPERATOR_ID);
+    assert.equal(userSnapshot.data().activationInviteId, INVITATION_ID);
+    assert.equal(operatorSnapshot.data().linkedUserUid, INVITED_UID);
+    assert.equal(invitationSnapshot.data().status, 'accepted');
+    assert.equal(invitationSnapshot.data().acceptedByUid, INVITED_UID);
+  });
+
+  test('atomically links an eligible existing Studio Operator without changing permissions', async () => {
+    await seedDocuments([
+      [
+        `users/${EXISTING_INVITED_UID}`,
+        createUserProfile({
+          uid: EXISTING_INVITED_UID,
+          displayName: 'Existing Invitee',
+          email: INVITED_EMAIL.toUpperCase(),
+          permissionSetId: DELEGATED_SET_ID,
+        }),
+      ],
+      [
+        `operators/${INVITED_OPERATOR_ID}`,
+        createOperator({
+          displayName: 'Invited Operator',
+          email: INVITED_EMAIL,
+          operatorTypes: ['studio_operator'],
+        }),
+      ],
+      [
+        `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        createAccountInvitation(),
+      ],
+    ]);
+    const inviteeDb = authenticatedDb(EXISTING_INVITED_UID, {
+      email: INVITED_EMAIL,
+      emailVerified: true,
+    });
+
+    await assertSucceeds(existingUserInvitationRedemptionBatch(inviteeDb).commit());
+
+    const userSnapshot = await getDoc(doc(inviteeDb, `users/${EXISTING_INVITED_UID}`));
+    assert.equal(userSnapshot.data().role, 'studio_operator');
+    assert.equal(userSnapshot.data().permissionSetId, DELEGATED_SET_ID);
+    assert.equal(userSnapshot.data().operatorId, INVITED_OPERATOR_ID);
+    assert.equal(userSnapshot.data().activationInviteId, INVITATION_ID);
+  });
+
+  test('rejects unverified, mismatched, expired, one-sided, and privileged redemptions', async () => {
+    await seedDocuments([
+      [
+        `operators/${INVITED_OPERATOR_ID}`,
+        createOperator({
+          displayName: 'Invited Operator',
+          email: INVITED_EMAIL,
+          operatorTypes: ['studio_operator'],
+        }),
+      ],
+      [
+        `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        createAccountInvitation(),
+      ],
+    ]);
+
+    const unverifiedDb = authenticatedDb(INVITED_UID, {
+      email: INVITED_EMAIL,
+      emailVerified: false,
+    });
+    await assertFails(newUserInvitationRedemptionBatch(unverifiedDb).commit());
+
+    const mismatchedDb = authenticatedDb(INVITED_UID, {
+      email: 'wrong@studio37.id',
+      emailVerified: true,
+    });
+    await assertFails(newUserInvitationRedemptionBatch(mismatchedDb).commit());
+
+    const verifiedDb = authenticatedDb(INVITED_UID, {
+      email: INVITED_EMAIL,
+      emailVerified: true,
+    });
+    await assertFails(
+      newUserInvitationRedemptionBatch(verifiedDb, {
+        profileOverrides: { role: 'owner' },
+      }).commit(),
+    );
+    await assertFails(
+      newUserInvitationRedemptionBatch(verifiedDb, {
+        profileOverrides: { permissionSetId: DELEGATED_SET_ID },
+      }).commit(),
+    );
+    await assertFails(
+      setDoc(doc(verifiedDb, `users/${INVITED_UID}`), {
+        activationInviteId: INVITATION_ID,
+        createdAt: serverTimestamp(),
+        displayName: 'Invited Operator',
+        email: INVITED_EMAIL,
+        operatorId: INVITED_OPERATOR_ID,
+        permissionSetId: null,
+        phone: '+6281234567890',
+        role: 'studio_operator',
+        status: 'active',
+        uid: INVITED_UID,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(verifiedDb, `operators/${INVITED_OPERATOR_ID}`), {
+        linkedUserUid: INVITED_UID,
+        updatedAt: serverTimestamp(),
+        updatedByUid: INVITED_UID,
+      }),
+    );
+
+    await seedDocuments([
+      [
+        `operators/${INVITED_OPERATOR_ID}/accountInvites/${INVITATION_ID}`,
+        createAccountInvitation({
+          createdAt: Timestamp.fromMillis(Date.now() - 60_000),
+          expiresAt: Timestamp.fromMillis(Date.now() - 1_000),
+          updatedAt: Timestamp.fromMillis(Date.now() - 60_000),
+        }),
+      ],
+    ]);
+    await assertFails(newUserInvitationRedemptionBatch(verifiedDb).commit());
+  });
+
+  test('prevents an Owner from creating or promoting another Owner through app rules', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const createdAt = recentTimestamp();
+
+    await assertFails(
+      setDoc(
+        doc(ownerDb, 'users/second-owner'),
+        createUserProfile({
+          uid: 'second-owner',
+          role: 'owner',
+          createdAt,
+          updatedAt: createdAt,
+        }),
+      ),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDb, `users/${UNASSIGNED_UID}`), {
+        role: 'owner',
+        updatedAt: serverTimestamp(),
+      }),
+    );
   });
 
   test('rejects malformed operators, duplicate types, account links, and spoofed metadata', async () => {

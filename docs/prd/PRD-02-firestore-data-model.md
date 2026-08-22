@@ -30,6 +30,7 @@ Key fields:
 - `status`: `active | disabled`
 - `permissionSetId` or normalized permissions
 - `operatorId`
+- `activationInviteId` (nullable invitation source)
 - `createdAt`, `updatedAt`
 
 The initial implementation uses nullable `permissionSetId`; Owner capabilities are implicit and
@@ -52,7 +53,13 @@ exact known document IDs; one-sided links and direct reassignment are denied. Th
 contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
 `docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md`. Phase 4C4 consumes the same exact-document
 boundary in an Owner-only review/link/unlink browser workflow without adding a user collection
-query or Authentication provisioning path.
+query or Authentication provisioning path. Phase 4C5A adds exact nested
+`operators/{operatorId}/accountInvites/{invitationId}` documents for verified-email
+self-registration. Redemption creates or links the exact `users/{auth.uid}` profile and updates the
+operator/invitation in one atomic batch. New profiles are always active `studio_operator` users
+with a null permission set; the invitation path cannot create/promote an Owner. No invitation list
+or composite index is introduced. The finalized contract is
+`docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md`.
 
 Compensation defaults, permission administration, assignment behavior, and their owning UI are
 implemented in later slices.
