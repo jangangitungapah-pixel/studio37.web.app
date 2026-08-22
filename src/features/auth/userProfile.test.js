@@ -31,6 +31,7 @@ describe('Studio37 user profile model', () => {
     expect(profile).toEqual({
       id: 'owner-1',
       uid: 'owner-1',
+      activationInviteId: null,
       displayName: 'Studio37 Owner',
       email: 'owner@studio37.id',
       phone: '+6281234567890',
@@ -73,5 +74,14 @@ describe('Studio37 user profile model', () => {
     expect(profile.phone).toBeNull();
     expect(profile.permissionSetId).toBeNull();
     expect(profile.operatorId).toBeNull();
+    expect(profile.activationInviteId).toBeNull();
+  });
+
+  it('decodes an optional account-activation invitation reference', () => {
+    const profile = decodeUserProfileDocument(
+      createProfile({ activationInviteId: 'invite-12345678901234567890' }),
+    );
+
+    expect(profile.activationInviteId).toBe('invite-12345678901234567890');
   });
 });

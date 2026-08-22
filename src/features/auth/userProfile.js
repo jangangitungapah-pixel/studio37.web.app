@@ -68,6 +68,10 @@ export function decodeUserProfileDocument(value) {
   return Object.freeze({
     id,
     uid,
+    activationInviteId: normalizeOptionalReference(
+      value.activationInviteId,
+      'user.activationInviteId',
+    ),
     displayName: requireNonEmptyString(value.displayName, 'user.displayName'),
     email: normalizeEmail(value.email),
     phone: normalizeIndonesianPhone(value.phone, { allowNull: true, label: 'user.phone' }),

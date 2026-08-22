@@ -85,6 +85,13 @@ Owner can:
 
 Disabling an account should preserve its historical bookings, payments, commissions, and audit references.
 
+The Phase 4C5A invitation foundation lets a Firebase user with a matching verified email create or
+link its own application profile through an exact three-document Firestore batch. This removes the
+need to manually create every `users/{uid}` document while preserving strict authority: a new
+profile is forced to active `studio_operator`, receives no permission set, and cannot become Owner
+through invitation or an Owner client mutation. First-Owner bootstrap remains a separate reviewed
+console-only procedure. Provider/sign-up and invitation-delivery UI remain later checkpoints.
+
 ## 9. Recording Operator Without Login
 
 An operator/engineer may exist only as an `operators` record for assignment and commission tracking. Creating an operator record does not require creating an authenticated application account.

@@ -27,15 +27,16 @@ generic unbounded read path.
 
 ## Initial access matrix
 
-| Resource                            | Read                                                                     | List/query                               | Create/update                                                            | Delete                          |
-| ----------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------ | ------------------------------- |
-| `users/{uid}`                       | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                  | Active Owner only; account-link changes require reciprocal atomic write. | Denied; use status changes.     |
-| `permissionSets/{id}`               | Active Owner, or active Operator whose exact profile references this ID. | Denied.                                  | Active Owner only, with supported delegable capabilities.                | Denied; use `status: disabled`. |
-| `appSettings/studio`                | Any exact valid active Studio37 user profile.                            | Denied.                                  | Owner or active Operator with `settings.studio.edit`; validated.         | Denied.                         |
-| `studios/{roomId}`                  | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.  | Owner or `settings.studio.edit`; validated.                              | Denied; use `status: disabled`. |
-| `operators/{operatorId}`            | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100. | Ordinary management by capability; account link is atomic Owner-only.    | Denied; use `status: disabled`. |
-| `studio37System/connectivity-probe` | Active Owner exact-document read only.                                   | Denied.                                  | Denied.                                                                  | Denied.                         |
-| Every other path                    | Denied.                                                                  | Denied.                                  | Denied.                                                                  | Denied.                         |
+| Resource                                               | Read                                                                     | List/query                               | Create/update                                                                         | Delete                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------- |
+| `users/{uid}`                                          | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                  | Owner-managed Operator profiles or verified invitation redemption; atomic links only. | Denied; use status changes.     |
+| `permissionSets/{id}`                                  | Active Owner, or active Operator whose exact profile references this ID. | Denied.                                  | Active Owner only, with supported delegable capabilities.                             | Denied; use `status: disabled`. |
+| `appSettings/studio`                                   | Any exact valid active Studio37 user profile.                            | Denied.                                  | Owner or active Operator with `settings.studio.edit`; validated.                      | Denied.                         |
+| `studios/{roomId}`                                     | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.  | Owner or `settings.studio.edit`; validated.                                           | Denied; use `status: disabled`. |
+| `operators/{operatorId}`                               | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100. | Ordinary management by capability; account links require reviewed atomic flows.       | Denied; use `status: disabled`. |
+| `operators/{operatorId}/accountInvites/{invitationId}` | Active Owner or authenticated user with the matching verified email.     | Denied.                                  | Active Owner creates/revokes; matching invitee accepts in a three-document batch.     | Denied.                         |
+| `studio37System/connectivity-probe`                    | Active Owner exact-document read only.                                   | Denied.                                  | Denied.                                                                               | Denied.                         |
+| Every other path                                       | Denied.                                                                  | Denied.                                  | Denied.                                                                               | Denied.                         |
 
 The self-profile read exception is deliberate. A signed-in identity must be able to observe that
 its own profile is missing, malformed, or disabled so the application can fail closed and present
@@ -51,14 +52,15 @@ User profile writes enforce:
 - nullable, single-segment references;
 - canonical nullable Indonesian `+62` phone storage;
 - Owner profiles with no permission-set reference;
+- nullable immutable invitation activation source, which is always absent/null for Owners;
 - Firestore timestamps with nondecreasing `updatedAt`;
 - immutable `createdAt` after creation;
-- active Owner authorization for every write.
+- active Owner authorization for ordinary writes, or the narrow verified-email invitation batch.
 
-An Owner cannot disable or demote its own profile through the client rules. This reduces accidental
-lockout risk; creating the first Owner still uses the reviewed manual Firebase-console bootstrap.
-The Firebase console is an administrative environment and is not a public application bootstrap
-endpoint.
+An Owner cannot disable or demote its own profile through the client rules, create another Owner,
+or promote a Studio Operator. This reduces accidental lockout and privilege-propagation risk;
+creating the first Owner still uses the reviewed manual Firebase-console bootstrap. The Firebase
+console is an administrative environment and is not a public application bootstrap endpoint.
 
 Permission-set writes allow only the supported delegable capability registry. In particular,
 `permissions.manage`, `danger_zone.execute`, and unknown capability strings are rejected. A unit
@@ -133,6 +135,23 @@ provisioning boundary is documented in:
 
 ```text
 docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md
+```
+
+Phase 4C5A adds a separate verified-email invitation transition. An Owner may create a pending
+document only beneath an active, unlinked `studio_operator`, with its normalized contact snapshot
+and a maximum 30-day expiry. A matching Firebase user may read that exact invitation only when the
+Auth token email is verified. Acceptance must atomically create or update the invitee's own user
+profile, link the operator, and mark the invitation accepted. Rules validate all post-commit
+pointers and actor/timestamps.
+
+A newly invited profile is forced to active `studio_operator` with `permissionSetId: null`.
+Existing profiles must already be active, unlinked Studio Operators; their permission assignment
+is preserved. One-sided writes, expired/revoked/reused invitations, email mismatch, unverified
+email, Owner-role creation/promotion, injected permissions, collection lists, and hard delete are
+denied. The detailed contract is:
+
+```text
+docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md
 ```
 
 ## Deferred product collections
