@@ -25,19 +25,22 @@ The application currently performs only document-addressed Firestore operations:
 | `setById`             | One explicit document write                  | Not required    |
 | `updateById`          | One explicit document update                 | Not required    |
 | User profile observer | One explicit `users/{uid}` document listener | Not required    |
+| Permission observer   | One explicit `permissionSets/{id}` listener  | Not required    |
 
 There are no implemented collection queries and therefore no required composite indexes yet.
 `firestore.indexes.json` intentionally begins with empty `indexes` and `fieldOverrides` arrays.
 
 ### Active document-listener registry
 
-| Query ID              | Repository                 | Path          | Bound                          | Listener                 | Phase |
-| --------------------- | -------------------------- | ------------- | ------------------------------ | ------------------------ | ----- |
-| `auth.profile-by-uid` | `userProfileRepository.js` | `users/{uid}` | One authenticated UID document | One per Firebase session | 3B    |
+| Query ID                    | Repository                   | Path                  | Bound                             | Listener                          | Phase |
+| --------------------------- | ---------------------------- | --------------------- | --------------------------------- | --------------------------------- | ----- |
+| `auth.profile-by-uid`       | `userProfileRepository.js`   | `users/{uid}`         | One authenticated UID document    | One per Firebase session          | 3B    |
+| `auth.permission-set-by-id` | `permissionSetRepository.js` | `permissionSets/{id}` | One referenced permission-set doc | One per assigned operator session | 3C    |
 
-The listener exists so profile removal, disablement, and reactivation take effect without a page
-refresh. It is unsubscribed when the Firebase identity changes, signs out, or the Auth provider
-unmounts.
+The listeners exist so profile removal/disablement and permission-set replacement/disablement take
+effect without a page refresh. The permission-set listener is not created for Owners or operators
+with a null permission-set reference. Listeners are unsubscribed when their identity/reference
+changes, the user signs out, or the Auth provider unmounts.
 
 ## Active query registry
 

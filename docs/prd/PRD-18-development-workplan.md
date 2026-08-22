@@ -126,9 +126,9 @@ Phase 2 progress on 2026-08-21:
 - [x] Implement `users` profile model.
 - [x] Implement Owner bootstrap strategy.
 - [x] Implement active/disabled user handling.
-- [ ] Implement capability-based permission helpers.
-- [ ] Implement route-level permission guards.
-- [ ] Implement feature/action-level permission guards.
+- [x] Implement capability-based permission helpers.
+- [x] Implement route-level permission guards.
+- [x] Implement feature/action-level permission guards.
 - [ ] Implement logout/user menu.
 - [ ] Add initial Firestore Security Rules.
 - [ ] Add auth/permission emulator tests.
@@ -159,9 +159,18 @@ Phase 3 progress on 2026-08-22:
   self-promotion path, Admin SDK credential, or service-account key. GitHub Actions Quality run
   `32549566508` passed formatting, lint, 84 tests, production build, and Vite development-server
   smoke.
-- Capability permissions, route/action authorization, the app-shell user menu, Firestore Security
-  Rules, emulator rule tests, manual Owner login acceptance, and every final Phase 3 gate remain
-  pending.
+- At the Phase 3B checkpoint, capability permissions, route/action authorization, the app-shell
+  user menu, Firestore Security Rules, emulator rule tests, manual Owner login acceptance, and every
+  final Phase 3 gate remained pending.
+- Phase 3C added the source-controlled capability registry, implicit Owner access, and live exact
+  `permissionSets/{id}` resolution for assigned Studio Operators. Null assignments grant no
+  capabilities; missing, disabled, malformed, and unreadable referenced sets fail closed.
+- Phase 3C applies shared policies to route access and navigation visibility, shows a clear denied
+  state for unauthorized direct URLs, and provides an independent all-of/any-of/Owner-only action
+  guard. GitHub Actions Quality run `32551197015` passed formatting, lint, 107 tests, production
+  build, and Vite development-server smoke.
+- The app-shell user menu/logout UI, Firestore Security Rules, emulator rule tests, manual Owner
+  login acceptance, and every final Phase 3 gate remain pending.
 
 ---
 
@@ -616,3 +625,4 @@ Implementation status:
 - [ ] Phase 3 — Authentication, Owner Bootstrap & Permissions in progress.
   - [x] Phase 3A — Login, Firebase session persistence, and authenticated-route foundation implemented and quality-gated.
   - [x] Phase 3B — user profile model, manual Owner bootstrap strategy, and active/disabled access enforcement implemented and quality-gated.
+  - [x] Phase 3C — capability resolution plus route, navigation, and action guards implemented and quality-gated.

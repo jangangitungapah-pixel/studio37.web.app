@@ -46,6 +46,11 @@ Permissions should be capability-based rather than page-name-only. Example capab
 
 Owner implicitly has all capabilities. Owner-only capabilities should remain non-delegable where required for safety, including permission administration and factory reset.
 
+The initial runtime registry treats `permissions.manage` and `danger_zone.execute` as explicitly
+non-delegable. Studio Operator capabilities resolve from the exact `permissionSets/{id}` referenced
+by the user profile; a null reference grants no capabilities, while a referenced set that is
+missing, disabled, malformed, or unreadable fails closed.
+
 ## 5. Route Authorization
 
 Protected routes require an authenticated active user. Route visibility should reflect permissions, but hiding navigation is not sufficient security.
