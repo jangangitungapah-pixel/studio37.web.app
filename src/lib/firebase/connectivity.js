@@ -7,6 +7,11 @@ const defaultConnectivityAdapter = Object.freeze({
   getDocFromServer,
 });
 
+export const FIRESTORE_CONNECTIVITY_PROBE_PATH = Object.freeze({
+  collection: 'studio37System',
+  document: 'connectivity-probe',
+});
+
 const reachableAuthorizationCodes = new Set(['permission-denied', 'unauthenticated']);
 
 function normalizeErrorCode(error) {
@@ -32,7 +37,11 @@ export async function probeFirestoreConnectivity({
   }
 
   try {
-    const probeRef = adapter.doc(db, '__studio37_system__', 'connectivity-probe');
+    const probeRef = adapter.doc(
+      db,
+      FIRESTORE_CONNECTIVITY_PROBE_PATH.collection,
+      FIRESTORE_CONNECTIVITY_PROBE_PATH.document,
+    );
     const snapshot = await adapter.getDocFromServer(probeRef);
 
     return Object.freeze({
