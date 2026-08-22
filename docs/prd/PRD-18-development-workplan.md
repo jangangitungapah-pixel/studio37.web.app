@@ -200,12 +200,12 @@ Phase 3 progress on 2026-08-22:
 
 ## 4.1 Studio Settings
 
-- [ ] Implement Studio Settings page.
+- [x] Implement Studio Settings page.
 - [ ] Add/edit studio rooms.
 - [ ] Activate/deactivate studio rooms.
-- [ ] Configure operating hours.
-- [ ] Configure booking interval/granularity.
-- [ ] Configure timezone/basic studio profile.
+- [x] Configure operating hours.
+- [x] Configure booking interval/granularity.
+- [x] Configure timezone/basic studio profile.
 
 ## 4.2 Operator Settings
 
@@ -225,6 +225,19 @@ Phase 3 progress on 2026-08-22:
 - [ ] Protected operator/account fields pass security tests.
 - [ ] Responsive QA passes.
 - [ ] Lint/test/build pass.
+
+Phase 4 progress on 2026-08-22:
+
+- Phase 4A implemented the exact `appSettings/studio` profile and booking-defaults contract,
+  responsive permission-aware Studio Settings page, one exact-document repository read,
+  server timestamp/actor metadata, and Settings subnavigation.
+- Firestore Security Rules allow exact active-user reads, Owner or explicit
+  `settings.studio.edit` writes, reject list/delete/invalid shapes/spoofed metadata, and retain
+  all deferred collections as default-deny.
+- GitHub Actions Quality run `32558100901` passed formatting, lint, 131 unit/component tests, 18
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Studio room CRUD, Operator Settings, and Phase 4 integration/responsive gates remain pending;
+  Phase 4 remains in progress.
 
 ---
 
@@ -651,3 +664,7 @@ Implementation status:
   - [x] Phase 3D — responsive authenticated-user menu and fail-safe logout flow implemented and quality-gated.
   - [x] Phase 3E — initial Firestore Security Rules and emulator authorization coverage implemented and quality-gated.
   - [x] Final Phase 3 manual Owner login browser QA accepted.
+- [ ] Phase 4 — Studio & Operator Configuration in progress.
+  - [x] Phase 4A — studio profile, timezone, operating hours, and booking defaults implemented and quality-gated.
+  - [ ] Studio room CRUD/deactivation and display ordering pending.
+  - [ ] Operator model, login linking, permissions, and settings UI pending.
