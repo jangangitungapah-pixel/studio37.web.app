@@ -6,6 +6,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
+    function permissionSetPath(permissionSetId) {
+      return /databases/$(database)/documents/permissionSets/$(permissionSetId);
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -72,10 +76,21 @@ service cloud.firestore {
         && data.role == 'owner';
     }
 
+    function isActiveUserProfile(uid, data) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active';
+    }
+
     function isActiveOwner() {
       return isSignedIn()
         && exists(currentUserPath())
         && isActiveOwnerProfile(request.auth.uid, get(currentUserPath()).data);
+    }
+
+    function isActiveUser() {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveUserProfile(request.auth.uid, get(currentUserPath()).data);
     }
 
     function canProfileReadPermissionSet(uid, data, permissionSetId) {
@@ -162,6 +177,75 @@ service cloud.firestore {
         && data.updatedAt >= data.createdAt;
     }
 
+    function activeProfileHasCapability(profile, capability) {
+      return profile.role == 'studio_operator'
+        && profile.permissionSetId is string
+        && exists(permissionSetPath(profile.permissionSetId))
+        && isValidPermissionSet(get(permissionSetPath(profile.permissionSetId)).data)
+        && get(permissionSetPath(profile.permissionSetId)).data.status == 'active'
+        && capability in get(permissionSetPath(profile.permissionSetId)).data.capabilities;
+    }
+
+    function hasCapability(capability) {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveUserProfile(request.auth.uid, get(currentUserPath()).data)
+        && (get(currentUserPath()).data.role == 'owner'
+          || activeProfileHasCapability(get(currentUserPath()).data, capability));
+    }
+
+    function isValidStudioOperatingHours(data, bookingIntervalMinutes) {
+      return data is map
+        && data.keys().hasAll(['opensAtMinutes', 'closesAtMinutes'])
+        && data.keys().hasOnly(['opensAtMinutes', 'closesAtMinutes'])
+        && data.opensAtMinutes is int
+        && data.closesAtMinutes is int
+        && data.opensAtMinutes >= 0
+        && data.closesAtMinutes <= 1439
+        && data.opensAtMinutes < data.closesAtMinutes
+        && data.opensAtMinutes % bookingIntervalMinutes == 0
+        && data.closesAtMinutes % bookingIntervalMinutes == 0
+        && data.closesAtMinutes - data.opensAtMinutes >= bookingIntervalMinutes;
+    }
+
+    function isValidStudioSettings(data) {
+      return data.keys().hasAll([
+          'businessName',
+          'timeZone',
+          'operatingHours',
+          'bookingIntervalMinutes',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'businessName',
+          'timeZone',
+          'operatingHours',
+          'bookingIntervalMinutes',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.businessName is string
+        && data.businessName.size() > 0
+        && data.businessName.size() <= 120
+        && data.timeZone in ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura']
+        && data.bookingIntervalMinutes in [15, 30, 60]
+        && isValidStudioOperatingHours(data.operatingHours, data.bookingIntervalMinutes)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
     function usesCurrentWriteTime(data) {
       return data.createdAt <= request.time && data.updatedAt <= request.time;
     }
@@ -174,6 +258,21 @@ service cloud.firestore {
     function preservesPermissionSetHistory() {
       return request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt >= resource.data.updatedAt;
+    }
+
+    function usesStudioSettingsCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesStudioSettingsHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
     }
 
     function preservesOwnOwnerAccess(uid) {
@@ -212,6 +311,21 @@ service cloud.firestore {
         && isValidPermissionSet(request.resource.data)
         && usesCurrentWriteTime(request.resource.data)
         && preservesPermissionSetHistory();
+
+      allow delete: if false;
+    }
+
+    match /appSettings/studio {
+      allow get: if isActiveUser();
+      allow list: if false;
+
+      allow create: if hasCapability('settings.studio.edit')
+        && isValidStudioSettings(request.resource.data)
+        && usesStudioSettingsCreateMetadata();
+
+      allow update: if hasCapability('settings.studio.edit')
+        && isValidStudioSettings(request.resource.data)
+        && preservesStudioSettingsHistory();
 
       allow delete: if false;
     }

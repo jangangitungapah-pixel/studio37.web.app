@@ -13,8 +13,9 @@ import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
 import { DesignSystemPreviewPage } from '../features/dev/DesignSystemPreviewPage.jsx';
 import { FirebaseStatusPage } from '../features/dev/FirebaseStatusPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
+import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
-export function AppRouter() {
+export function AppRouter({ studioSettingsRepository }) {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -45,7 +46,10 @@ export function AppRouter() {
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.STUDIO} />}>
-            <Route path="settings/studio" element={<SettingsPage title="Studio Settings" />} />
+            <Route
+              path="settings/studio"
+              element={<StudioSettingsPage repository={studioSettingsRepository} />}
+            />
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.PRICING} />}>

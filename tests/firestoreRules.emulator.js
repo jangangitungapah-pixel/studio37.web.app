@@ -13,6 +13,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  serverTimestamp,
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
@@ -23,8 +24,10 @@ const OPERATOR_UID = 'operator-1';
 const DISABLED_UID = 'disabled-operator';
 const UNASSIGNED_UID = 'unassigned-operator';
 const DISABLED_SET_UID = 'disabled-set-operator';
+const STUDIO_EDITOR_UID = 'studio-editor';
 const DELEGATED_SET_ID = 'front-desk';
 const DISABLED_SET_ID = 'disabled-template';
+const STUDIO_EDITOR_SET_ID = 'studio-editor-template';
 const RULES_PATH = new URL('../firestore.rules', import.meta.url);
 const FIXTURE_TIMESTAMP = Timestamp.fromMillis(Date.UTC(2026, 0, 1));
 
@@ -68,6 +71,30 @@ function createPermissionSet({
     capabilities,
     createdAt,
     updatedAt,
+    ...overrides,
+  };
+}
+
+function createStudioSettings({
+  businessName = 'Studio37',
+  timeZone = 'Asia/Jakarta',
+  operatingHours = { closesAtMinutes: 1320, opensAtMinutes: 600 },
+  bookingIntervalMinutes = 30,
+  createdAt = FIXTURE_TIMESTAMP,
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  ...overrides
+} = {}) {
+  return {
+    businessName,
+    timeZone,
+    operatingHours,
+    bookingIntervalMinutes,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
     ...overrides,
   };
 }
@@ -136,10 +163,21 @@ beforeEach(async () => {
       `users/${DISABLED_SET_UID}`,
       createUserProfile({ uid: DISABLED_SET_UID, permissionSetId: DISABLED_SET_ID }),
     ],
+    [
+      `users/${STUDIO_EDITOR_UID}`,
+      createUserProfile({ uid: STUDIO_EDITOR_UID, permissionSetId: STUDIO_EDITOR_SET_ID }),
+    ],
     [`permissionSets/${DELEGATED_SET_ID}`, createPermissionSet()],
     [
       `permissionSets/${DISABLED_SET_ID}`,
       createPermissionSet({ name: 'Disabled template', status: 'disabled' }),
+    ],
+    [
+      `permissionSets/${STUDIO_EDITOR_SET_ID}`,
+      createPermissionSet({
+        name: 'Studio settings editor',
+        capabilities: ['settings.studio.edit', 'settings.studio.view'],
+      }),
     ],
     ['studio37System/connectivity-probe', { checkedAt: FIXTURE_TIMESTAMP }],
   ]);
@@ -423,10 +461,113 @@ describe('initial Firestore authorization boundary', () => {
     }
   });
 
+  test('allows active operational users to read only the exact studio settings document', async () => {
+    await seedDocuments([['appSettings/studio', createStudioSettings()]]);
+
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const disabledDb = authenticatedDb(DISABLED_UID);
+    const unauthenticatedDb = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertSucceeds(getDoc(doc(ownerDb, 'appSettings/studio')));
+    await assertSucceeds(getDoc(doc(operatorDb, 'appSettings/studio')));
+    await assertFails(getDoc(doc(disabledDb, 'appSettings/studio')));
+    await assertFails(getDoc(doc(unauthenticatedDb, 'appSettings/studio')));
+    await assertFails(getDocs(collection(ownerDb, 'appSettings')));
+    await assertFails(getDoc(doc(ownerDb, 'appSettings/other')));
+  });
+
+  test('allows validated writes only to Owner or an explicitly delegated studio editor', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const editorDb = authenticatedDb(STUDIO_EDITOR_UID);
+    const reference = doc(ownerDb, 'appSettings/studio');
+
+    await assertSucceeds(
+      setDoc(
+        reference,
+        createStudioSettings({
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      ),
+    );
+
+    await assertFails(
+      updateDoc(doc(operatorDb, 'appSettings/studio'), {
+        businessName: 'Unauthorized update',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'appSettings/studio'), {
+        businessName: '37 Music Studio',
+        updatedAt: serverTimestamp(),
+        updatedByUid: STUDIO_EDITOR_UID,
+      }),
+    );
+    await assertFails(deleteDoc(doc(editorDb, 'appSettings/studio')));
+  });
+
+  test('rejects malformed studio settings and spoofed actor metadata', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'appSettings/studio');
+    const writeSettings = (overrides) =>
+      setDoc(
+        reference,
+        createStudioSettings({
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          ...overrides,
+        }),
+      );
+
+    for (const invalidSettings of [
+      { timeZone: 'Studio37/Local' },
+      { bookingIntervalMinutes: 45 },
+      { operatingHours: { closesAtMinutes: 600, opensAtMinutes: 1320 } },
+      { operatingHours: { closesAtMinutes: 1315, opensAtMinutes: 600 } },
+      { createdByUid: OPERATOR_UID },
+      { updatedByUid: OPERATOR_UID },
+      { isPublic: true },
+    ]) {
+      await assertFails(writeSettings(invalidSettings));
+    }
+  });
+
+  test('preserves studio settings creation history and requires server update metadata', async () => {
+    await seedDocuments([['appSettings/studio', createStudioSettings()]]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'appSettings/studio');
+
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: recentTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        businessName: 'Client-clock update',
+        updatedAt: recentTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        businessName: 'Spoofed actor',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+  });
+
   test('keeps not-yet-implemented domain collections default-deny', async () => {
     await seedDocuments([
       ['pricingRules/standard', { amount: 100_000 }],
-      ['appSettings/studio', { name: 'Studio37' }],
+      ['studios/room-a', { active: true, name: 'Studio A' }],
       ['commissionEntries/paid-1', { amount: 50_000, status: 'paid' }],
       ['bookings/booking-1', { status: 'confirmed' }],
     ]);
@@ -437,7 +578,7 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));
     await assertFails(getDoc(doc(operatorDb, 'bookings/booking-1')));
     await assertFails(updateDoc(doc(operatorDb, 'pricingRules/standard'), { amount: 1 }));
-    await assertFails(updateDoc(doc(operatorDb, 'appSettings/studio'), { name: 'Hijacked' }));
+    await assertFails(updateDoc(doc(operatorDb, 'studios/room-a'), { name: 'Hijacked' }));
     await assertFails(updateDoc(doc(operatorDb, 'commissionEntries/paid-1'), { amount: 0 }));
   });
 
