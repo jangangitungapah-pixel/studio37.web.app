@@ -311,9 +311,14 @@ Phase 4 progress on 2026-08-22:
 - On 2026-08-23, the project owner confirmed successful real-Firebase operator account registration
   through the invitation onboarding flow; the manual invitation/account-link browser acceptance
   gate is accepted.
-- Booking/calendar consumption of active rooms/hours, permission administration, automated
-  invitation delivery/resend/status administration, and final Phase 4 responsive/integration gates
-  remain pending; Phase 4 remains in progress.
+- Phase 4D1 established bounded Owner-only permission-set administration, exact-user permission
+  assignment and revocation transactions, evaluator-safe Security Rules, query/index documentation,
+  and automated coverage. GitHub Actions Quality run `32649866117` passed formatting, lint, 223
+  unit/component tests, 36 Firestore Emulator authorization tests, production build, and Vite
+  development-server smoke.
+- Booking/calendar consumption of active rooms/hours, the Phase 4D2 permission editor and browser
+  QA, automated invitation delivery/resend/status administration, and final Phase 4
+  responsive/integration gates remain pending; Phase 4 remains in progress.
 
 ---
 
@@ -750,4 +755,5 @@ Implementation status:
   - [x] Phase 4C5A — exact-path verified-email invitation/self-registration model, repository, atomic Rules, and automated coverage implemented and quality-gated.
   - [x] Phase 4C5B — email/password provider, Firebase verification, Owner copy/share invitation, and browser acceptance UI implemented and automated quality-gated.
   - [x] Final Phase 4C5B real-Firebase invitation/account-link browser acceptance accepted.
-  - [ ] Permission management, automated invitation delivery/status administration, and final integration/responsive gates pending.
+  - [x] Phase 4D1 — bounded permission-set repository, exact assignment transaction, Security Rules, and automated coverage implemented and quality-gated.
+  - [ ] Phase 4D2 permission editor/assignment UI and browser QA, automated invitation delivery/status administration, and final integration/responsive gates pending.

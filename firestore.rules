@@ -209,6 +209,47 @@ service cloud.firestore {
         && data.updatedAt >= data.createdAt;
     }
 
+    function isActivePermissionSetData(data) {
+      return isValidPermissionSet(data) && data.status == 'active';
+    }
+
+    function isActiveAssignablePermissionSet(permissionSetId) {
+      return permissionSetId is string
+        && exists(permissionSetPath(permissionSetId))
+        && isActivePermissionSetData(get(permissionSetPath(permissionSetId)).data);
+    }
+
+    function isReciprocalActiveStudioOperatorData(uid, data) {
+      return isValidOperator(data)
+        && data.status == 'active'
+        && data.linkedUserUid == uid
+        && data.operatorTypes.hasAny(['studio_operator']);
+    }
+
+    function hasReciprocalActiveStudioOperator(uid, operatorId) {
+      return operatorId is string
+        && exists(operatorPath(operatorId))
+        && isReciprocalActiveStudioOperatorData(
+          uid,
+          get(operatorPath(operatorId)).data
+        );
+    }
+
+    function isFocusedPermissionAssignment(uid) {
+      let permissionSetId = request.resource.data.permissionSetId;
+      return isSignedIn()
+        && uid != request.auth.uid
+        && isActiveOwner()
+        && resource.data.role == 'studio_operator'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['permissionSetId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && (permissionSetId == null
+          || (resource.data.status == 'active'
+            && hasReciprocalActiveStudioOperator(uid, resource.data.operatorId)
+            && isActiveAssignablePermissionSet(permissionSetId)));
+    }
+
     function activeProfileHasCapability(profile, capability) {
       return profile.role == 'studio_operator'
         && profile.permissionSetId is string
@@ -747,21 +788,26 @@ service cloud.firestore {
           || isInvitationUserCreate(uid));
 
       allow update: if isValidUserProfile(uid, request.resource.data)
-        && (isInvitationUserLinkUpdate(uid)
-          || (usesCurrentWriteTime(request.resource.data)
-            && preservesUserHistory()
-            && canUpdateUserProfile(uid, resource.data)
-            && preservesOwnOwnerAccess(uid)
-            && preservesUserRoleAndActivationSource()
-            && (request.resource.data.operatorId == resource.data.operatorId
-              || (isActiveOwner() && isAtomicUserOperatorLink(uid)))));
+        && ((request.resource.data.permissionSetId != resource.data.permissionSetId
+            && isFocusedPermissionAssignment(uid))
+          || (request.resource.data.permissionSetId == resource.data.permissionSetId
+            && (isInvitationUserLinkUpdate(uid)
+              || (usesCurrentWriteTime(request.resource.data)
+                && preservesUserHistory()
+                && canUpdateUserProfile(uid, resource.data)
+                && preservesOwnOwnerAccess(uid)
+                && preservesUserRoleAndActivationSource()
+                && (request.resource.data.operatorId == resource.data.operatorId
+                  || (isActiveOwner() && isAtomicUserOperatorLink(uid)))))));
 
       allow delete: if false;
     }
 
     match /permissionSets/{permissionSetId} {
       allow get: if canReadPermissionSet(permissionSetId);
-      allow list: if false;
+      allow list: if isActiveOwner()
+        && request.query.limit != null
+        && request.query.limit <= 50;
 
       allow create: if isActiveOwner()
         && isValidPermissionSet(request.resource.data)

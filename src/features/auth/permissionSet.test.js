@@ -2,7 +2,14 @@ import { Timestamp } from 'firebase/firestore';
 import { describe, expect, it } from 'vitest';
 
 import { CAPABILITIES } from './capabilities.js';
-import { decodePermissionSetDocument, PERMISSION_SET_STATUSES } from './permissionSet.js';
+import {
+  comparePermissionSets,
+  decodePermissionSetDocument,
+  normalizePermissionSetDetails,
+  normalizePermissionSetId,
+  normalizePermissionSetStatus,
+  PERMISSION_SET_STATUSES,
+} from './permissionSet.js';
 
 function createPermissionSet(overrides = {}) {
   return {
@@ -49,5 +56,42 @@ describe('Studio37 permission set model', () => {
         createPermissionSet({ updatedAt: new Date('2026-08-21T23:59:59.000Z') }),
       ),
     ).toThrow('permissionSet.updatedAt cannot be earlier than permissionSet.createdAt.');
+  });
+
+  it('normalizes editable details and stable name ordering', () => {
+    expect(
+      normalizePermissionSetDetails({
+        capabilities: [CAPABILITIES.DASHBOARD_VIEW, CAPABILITIES.BOOKING_VIEW],
+        name: '  Front Desk  ',
+      }),
+    ).toEqual({
+      capabilities: [CAPABILITIES.BOOKING_VIEW, CAPABILITIES.DASHBOARD_VIEW],
+      name: 'Front Desk',
+    });
+    expect(
+      [
+        { id: 'set-b', name: 'Operator' },
+        { id: 'set-a', name: 'operator' },
+        { id: 'set-c', name: 'Booking' },
+      ].sort(comparePermissionSets),
+    ).toEqual([
+      { id: 'set-c', name: 'Booking' },
+      { id: 'set-a', name: 'operator' },
+      { id: 'set-b', name: 'Operator' },
+    ]);
+  });
+
+  it('rejects malformed ids, details, statuses, and stored shapes', () => {
+    expect(() => normalizePermissionSetId('permissionSets/front-desk')).toThrow(/document id/);
+    expect(() => normalizePermissionSetStatus('archived')).toThrow(/status/);
+    expect(() =>
+      normalizePermissionSetDetails({
+        capabilities: [CAPABILITIES.BOOKING_VIEW],
+        name: 'x'.repeat(121),
+      }),
+    ).toThrow(/at most 120/);
+    expect(() =>
+      decodePermissionSetDocument(createPermissionSet({ unexpectedOwnerAccess: true })),
+    ).toThrow(/unsupported document shape/);
   });
 });

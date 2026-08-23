@@ -94,6 +94,12 @@ permission set, and cannot become Owner through invitation or an Owner client mu
 First-Owner bootstrap remains a separate reviewed console-only procedure; automated invitation
 delivery and permission administration remain separate checkpoints.
 
+Phase 4D1 establishes the Owner-only bounded permission-template repository and exact linked-user
+assignment transaction. It does not make `permissions.manage` delegable and does not expose a user
+or Authentication collection lookup. The finalized foundation is documented in
+`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`; its responsive administration UI remains
+the next checkpoint.
+
 ## 9. Recording Operator Without Login
 
 An operator/engineer may exist only as an `operators` record for assignment and commission tracking. Creating an operator record does not require creating an authenticated application account.

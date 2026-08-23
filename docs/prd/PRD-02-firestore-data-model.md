@@ -208,6 +208,13 @@ Unknown capabilities and Owner-only `permissions.manage` / `danger_zone.execute`
 invalid in an operator permission set. Runtime resolution reads only the exact referenced
 `permissionSets/{permissionSetId}` document.
 
+Phase 4D1 adds Owner-only template administration with one `name asc + limit(50)` query and a
+focused exact-document assignment transaction. Non-null assignments require an active reciprocal
+Studio Operator user/operator link and an active canonical permission set; clearing to null remains
+available for revocation. No user collection scan, Auth enumeration, hard delete, or composite
+index is introduced. The contract is
+`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`.
+
 ### `auditLogs`
 Append-only-ish operational audit events for sensitive changes.
 
