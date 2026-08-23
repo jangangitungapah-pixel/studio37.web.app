@@ -34,6 +34,8 @@ const STUDIO_EDITOR_UID = 'studio-editor';
 const OPERATOR_MANAGER_UID = 'operator-manager';
 const INVITED_UID = 'invited-operator';
 const EXISTING_INVITED_UID = 'existing-invited-operator';
+const ASSIGNABLE_UID = 'assignable-operator';
+const ASSIGNABLE_OPERATOR_ID = 'operator-assignable';
 const INVITED_OPERATOR_ID = 'operator-invited';
 const INVITATION_ID = 'invite-12345678901234567890';
 const INVITED_EMAIL = 'invitee@studio37.id';
@@ -346,6 +348,10 @@ beforeEach(async () => {
         permissionSetId: OPERATOR_MANAGER_SET_ID,
       }),
     ],
+    [
+      `users/${ASSIGNABLE_UID}`,
+      createUserProfile({ uid: ASSIGNABLE_UID, operatorId: ASSIGNABLE_OPERATOR_ID }),
+    ],
     [`permissionSets/${DELEGATED_SET_ID}`, createPermissionSet()],
     [
       `permissionSets/${DISABLED_SET_ID}`,
@@ -363,6 +369,14 @@ beforeEach(async () => {
       createPermissionSet({
         name: 'Operator manager',
         capabilities: ['settings.operators.manage', 'settings.operators.view'],
+      }),
+    ],
+    [
+      `operators/${ASSIGNABLE_OPERATOR_ID}`,
+      createOperator({
+        displayName: 'Assignable Operator',
+        linkedUserUid: ASSIGNABLE_UID,
+        operatorTypes: ['studio_operator'],
       }),
     ],
     ['studio37System/connectivity-probe', { checkedAt: FIXTURE_TIMESTAMP }],
@@ -404,7 +418,7 @@ describe('initial Firestore authorization boundary', () => {
     await assertSucceeds(getDoc(doc(ownerDb, `users/${OPERATOR_UID}`)));
   });
 
-  test('rejects user and permission-set collection scans for every role', async () => {
+  test('keeps user scans denied and permission-set administration bounded to Owner', async () => {
     const ownerDb = authenticatedDb(OWNER_UID);
     const operatorDb = authenticatedDb(OPERATOR_UID);
 
@@ -412,6 +426,15 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(getDocs(collection(operatorDb, 'users')));
     await assertFails(getDocs(collection(ownerDb, 'permissionSets')));
     await assertFails(getDocs(collection(operatorDb, 'permissionSets')));
+    await assertSucceeds(
+      getDocs(query(collection(ownerDb, 'permissionSets'), orderBy('name', 'asc'), limit(50))),
+    );
+    await assertFails(
+      getDocs(query(collection(ownerDb, 'permissionSets'), orderBy('name', 'asc'), limit(51))),
+    );
+    await assertFails(
+      getDocs(query(collection(operatorDb, 'permissionSets'), orderBy('name', 'asc'), limit(50))),
+    );
   });
 
   test('lets an active Owner create and soft-disable a validated operator profile', async () => {
@@ -656,6 +679,65 @@ describe('initial Firestore authorization boundary', () => {
         ),
       );
     }
+  });
+
+  test('lets only an active Owner assign and clear an active permission set on a linked user', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const reference = doc(ownerDb, `users/${ASSIGNABLE_UID}`);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        permissionSetId: DELEGATED_SET_ID,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    assert.equal((await getDoc(reference)).data().permissionSetId, DELEGATED_SET_ID);
+
+    await assertFails(
+      updateDoc(doc(operatorDb, `users/${ASSIGNABLE_UID}`), {
+        permissionSetId: null,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        permissionSetId: null,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    assert.equal((await getDoc(reference)).data().permissionSetId, null);
+  });
+
+  test('rejects disabled, missing, unlinked, or mixed-field permission assignments', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const assignableReference = doc(ownerDb, `users/${ASSIGNABLE_UID}`);
+
+    await assertFails(
+      updateDoc(assignableReference, {
+        permissionSetId: DISABLED_SET_ID,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(assignableReference, {
+        permissionSetId: 'missing-permission-set',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDb, `users/${UNASSIGNED_UID}`), {
+        permissionSetId: DELEGATED_SET_ID,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(assignableReference, {
+        permissionSetId: DELEGATED_SET_ID,
+        status: 'disabled',
+        updatedAt: serverTimestamp(),
+      }),
+    );
   });
 
   test('allows active operational users to read only the exact studio settings document', async () => {

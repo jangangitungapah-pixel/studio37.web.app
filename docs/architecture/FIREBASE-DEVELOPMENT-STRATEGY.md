@@ -176,6 +176,15 @@ or paid delivery service. Its workflow contract is:
 docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md
 ```
 
+Phase 4D1 adds a separate Owner-only permission administration repository. It lists at most 50
+`permissionSets` ordered by name, mutates only canonical templates, and assigns one active template
+through exact user/operator/permission-set transaction reads. No users/Auth enumeration or generic
+collection read is introduced. Its contract is:
+
+```text
+docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

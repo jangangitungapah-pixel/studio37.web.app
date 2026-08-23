@@ -121,7 +121,10 @@ verified-email invitation plus email/password onboarding UI, while keeping new a
 delegated permissions. Those flows are documented in
 `docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md` and
 `docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md`; permission administration remains
-a separate implementation checkpoint.
+a separate implementation checkpoint. Phase 4D1 establishes its bounded permission-template CRUD,
+soft-status, exact assignment transaction, and Security Rules contract in
+`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`; the grouped responsive UI remains Phase
+4D2.
 
 ## 6.1 Permissions UI
 

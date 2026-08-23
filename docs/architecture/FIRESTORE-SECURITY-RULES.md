@@ -27,16 +27,16 @@ generic unbounded read path.
 
 ## Initial access matrix
 
-| Resource                                               | Read                                                                     | List/query                               | Create/update                                                                         | Delete                          |
-| ------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------- |
-| `users/{uid}`                                          | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                  | Owner-managed Operator profiles or verified invitation redemption; atomic links only. | Denied; use status changes.     |
-| `permissionSets/{id}`                                  | Active Owner, or active Operator whose exact profile references this ID. | Denied.                                  | Active Owner only, with supported delegable capabilities.                             | Denied; use `status: disabled`. |
-| `appSettings/studio`                                   | Any exact valid active Studio37 user profile.                            | Denied.                                  | Owner or active Operator with `settings.studio.edit`; validated.                      | Denied.                         |
-| `studios/{roomId}`                                     | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.  | Owner or `settings.studio.edit`; validated.                                           | Denied; use `status: disabled`. |
-| `operators/{operatorId}`                               | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100. | Ordinary management by capability; account links require reviewed atomic flows.       | Denied; use `status: disabled`. |
-| `operators/{operatorId}/accountInvites/{invitationId}` | Active Owner or authenticated user with the matching verified email.     | Denied.                                  | Active Owner creates/revokes; matching invitee accepts in a three-document batch.     | Denied.                         |
-| `studio37System/connectivity-probe`                    | Active Owner exact-document read only.                                   | Denied.                                  | Denied.                                                                               | Denied.                         |
-| Every other path                                       | Denied.                                                                  | Denied.                                  | Denied.                                                                               | Denied.                         |
+| Resource                                               | Read                                                                     | List/query                                    | Create/update                                                                         | Delete                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------- |
+| `users/{uid}`                                          | Signed-in user: own exact profile. Active Owner: another exact profile.  | Denied.                                       | Owner-managed Operator profiles or verified invitation redemption; atomic links only. | Denied; use status changes.     |
+| `permissionSets/{id}`                                  | Active Owner, or active Operator whose exact profile references this ID. | Active Owner only, explicit limit at most 50. | Active Owner only, with supported delegable capabilities.                             | Denied; use `status: disabled`. |
+| `appSettings/studio`                                   | Any exact valid active Studio37 user profile.                            | Denied.                                       | Owner or active Operator with `settings.studio.edit`; validated.                      | Denied.                         |
+| `studios/{roomId}`                                     | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.       | Owner or `settings.studio.edit`; validated.                                           | Denied; use `status: disabled`. |
+| `operators/{operatorId}`                               | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100.      | Ordinary management by capability; account links require reviewed atomic flows.       | Denied; use `status: disabled`. |
+| `operators/{operatorId}/accountInvites/{invitationId}` | Active Owner or authenticated user with the matching verified email.     | Denied.                                       | Active Owner creates/revokes; matching invitee accepts in a three-document batch.     | Denied.                         |
+| `studio37System/connectivity-probe`                    | Active Owner exact-document read only.                                   | Denied.                                       | Denied.                                                                               | Denied.                         |
+| Every other path                                       | Denied.                                                                  | Denied.                                       | Denied.                                                                               | Denied.                         |
 
 The self-profile read exception is deliberate. A signed-in identity must be able to observe that
 its own profile is missing, malformed, or disabled so the application can fail closed and present
@@ -65,6 +65,21 @@ console is an administrative environment and is not a public application bootstr
 Permission-set writes allow only the supported delegable capability registry. In particular,
 `permissions.manage`, `danger_zone.execute`, and unknown capability strings are rejected. A unit
 contract keeps the rule allowlist synchronized with the JavaScript capability registry.
+
+Phase 4D1 allows a canonical active Owner to list permission sets only with an explicit query limit
+of at most 50. The repository fixes the query to `name` ascending and performs one one-shot read;
+unbounded, over-limit, unauthenticated, disabled-profile, and Studio Operator lists remain denied.
+
+Assigning a non-null permission set is a focused Owner-only user-profile update. Rules permit only
+`permissionSetId` plus server `updatedAt`, require an active linked Studio Operator user, validate
+the reciprocal active operational profile, and require the selected permission set to exist and be
+active. Clearing to `null` remains possible for a Studio Operator even if disabled or unlinked so
+permission revocation cannot be blocked by another invalid relationship. Owner assignments and
+mixed role/status/link/permission updates are denied. The complete contract is:
+
+```text
+docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md
+```
 
 ## Studio settings invariants
 
@@ -157,8 +172,9 @@ docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md
 ## Deferred product collections
 
 Bookings, customers, remaining settings documents, session/pricing configuration, payments,
-commissions, ledger entries, and audit logs remain default-deny. Account-link UI and permission
-administration also remain deferred. Their later phases must add the smallest required access with:
+commissions, ledger entries, and audit logs remain default-deny. Permission administration UI also
+remains deferred after its Phase 4D1 data/rules foundation. Later phases must add the smallest
+required access with:
 
 1. a finalized document contract,
 2. explicit capability and field-level constraints,

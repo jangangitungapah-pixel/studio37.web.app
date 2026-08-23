@@ -27,6 +27,8 @@ queries:
 | `updateById`                | One explicit document update                              | Not required    |
 | User profile observer       | One explicit `users/{uid}` document listener              | Not required    |
 | Permission observer         | One explicit `permissionSets/{id}` listener               | Not required    |
+| Permission administration   | Ordered `permissionSets` query capped at 50 docs          | Not required    |
+| Permission assignment       | Exact user/operator/set transaction                       | Not required    |
 | Studio settings load        | One explicit `appSettings/studio` read                    | Not required    |
 | Studio rooms admin          | Ordered `studios` query capped at 50 docs                 | Not required    |
 | Operator admin              | Ordered `operators` query capped at 100 docs              | Not required    |
@@ -37,8 +39,9 @@ The Studio Rooms and Operator queries use automatically indexed single fields. P
 linking addresses only known operator/user document paths, and Phase 4C4 exposes only that same
 exact-UID workflow. Phase 4C5A invitation creation and redemption likewise use only known
 operator, invitation, and own-user document paths; invitation collection reads are not exposed.
-There are still no required composite indexes. `firestore.indexes.json` intentionally retains
-empty `indexes` and `fieldOverrides` arrays.
+Phase 4D1 adds one Owner-only permission-set list using automatic single-field name ordering plus
+exact assignment transaction reads. There are still no required composite indexes.
+`firestore.indexes.json` intentionally retains empty `indexes` and `fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
 configuration resolves to an unsaved UI draft and does not trigger a collection fallback or an
@@ -58,10 +61,11 @@ changes, the user signs out, or the Auth provider unmounts.
 
 ## Active query registry
 
-| Query ID                     | Repository                | Collection  | Purpose                          | Filters | Ordering           | Bound     | Listener | Index                               | Phase |
-| ---------------------------- | ------------------------- | ----------- | -------------------------------- | ------- | ------------------ | --------- | -------- | ----------------------------------- | ----- |
-| `settings.studio-rooms-list` | `studioRoomRepository.js` | `studios`   | Studio Settings room admin       | None    | `displayOrder` asc | Limit 50  | One-shot | Automatic single-field; no manifest | 4B    |
-| `settings.operators-list`    | `operatorRepository.js`   | `operators` | Operator domain/admin foundation | None    | `displayName` asc  | Limit 100 | One-shot | Automatic single-field; no manifest | 4C1   |
+| Query ID                        | Repository                              | Collection       | Purpose                          | Filters | Ordering           | Bound     | Listener | Index                               | Phase |
+| ------------------------------- | --------------------------------------- | ---------------- | -------------------------------- | ------- | ------------------ | --------- | -------- | ----------------------------------- | ----- |
+| `settings.studio-rooms-list`    | `studioRoomRepository.js`               | `studios`        | Studio Settings room admin       | None    | `displayOrder` asc | Limit 50  | One-shot | Automatic single-field; no manifest | 4B    |
+| `settings.operators-list`       | `operatorRepository.js`                 | `operators`      | Operator domain/admin foundation | None    | `displayName` asc  | Limit 100 | One-shot | Automatic single-field; no manifest | 4C1   |
+| `settings.permission-sets-list` | `permissionAdministrationRepository.js` | `permissionSets` | Owner permission administration  | None    | `name` asc         | Limit 50  | One-shot | Automatic single-field; no manifest | 4D1   |
 
 Equal display-order values are sorted by room name and document ID after decoding. Callers cannot
 remove or raise the repository bound, and Firestore Security Rules reject unbounded or over-limit
@@ -73,7 +77,8 @@ account linking in a separate exact-document transaction repository, and Phase 4
 after an explicit Owner interaction; neither repository exposes a collection listener or generic
 collection read. Phase 4C5A keeps invitation operations in another exact-document repository with
 no list/query method; expiry is checked on the addressed document rather than discovered through
-a collection scan.
+a collection scan. Phase 4D1 keeps user assignment document-addressed and exposes only the fixed
+Owner permission-set administration query; callers cannot remove or raise its 50-document bound.
 
 Add another active row only in the same focused change that introduces or materially changes the
 corresponding feature-repository query.

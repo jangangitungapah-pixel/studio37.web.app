@@ -209,6 +209,39 @@ service cloud.firestore {
         && data.updatedAt >= data.createdAt;
     }
 
+    function isActiveAssignablePermissionSet(permissionSetId) {
+      return permissionSetId is string
+        && exists(permissionSetPath(permissionSetId))
+        && isValidPermissionSet(get(permissionSetPath(permissionSetId)).data)
+        && get(permissionSetPath(permissionSetId)).data.status == 'active';
+    }
+
+    function hasReciprocalActiveStudioOperator(uid, operatorId) {
+      return operatorId is string
+        && exists(operatorPath(operatorId))
+        && isValidOperator(get(operatorPath(operatorId)).data)
+        && get(operatorPath(operatorId)).data.status == 'active'
+        && get(operatorPath(operatorId)).data.linkedUserUid == uid
+        && get(operatorPath(operatorId)).data.operatorTypes.hasAny(['studio_operator']);
+    }
+
+    function isFocusedPermissionAssignment(uid) {
+      let permissionSetId = request.resource.data.permissionSetId;
+      return resource.data.role == 'studio_operator'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['permissionSetId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && (permissionSetId == null
+          || (resource.data.status == 'active'
+            && hasReciprocalActiveStudioOperator(uid, resource.data.operatorId)
+            && isActiveAssignablePermissionSet(permissionSetId)));
+    }
+
+    function preservesPermissionAssignmentOrUsesFocusedUpdate(uid) {
+      return request.resource.data.permissionSetId == resource.data.permissionSetId
+        || (isActiveOwner() && isFocusedPermissionAssignment(uid));
+    }
+
     function activeProfileHasCapability(profile, capability) {
       return profile.role == 'studio_operator'
         && profile.permissionSetId is string
@@ -753,6 +786,7 @@ service cloud.firestore {
             && canUpdateUserProfile(uid, resource.data)
             && preservesOwnOwnerAccess(uid)
             && preservesUserRoleAndActivationSource()
+            && preservesPermissionAssignmentOrUsesFocusedUpdate(uid)
             && (request.resource.data.operatorId == resource.data.operatorId
               || (isActiveOwner() && isAtomicUserOperatorLink(uid)))));
 
@@ -761,7 +795,9 @@ service cloud.firestore {
 
     match /permissionSets/{permissionSetId} {
       allow get: if canReadPermissionSet(permissionSetId);
-      allow list: if false;
+      allow list: if isActiveOwner()
+        && request.query.limit != null
+        && request.query.limit <= 50;
 
       allow create: if isActiveOwner()
         && isValidPermissionSet(request.resource.data)
