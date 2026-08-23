@@ -41,6 +41,9 @@ exact-UID workflow. Phase 4C5A invitation creation and redemption likewise use o
 operator, invitation, and own-user document paths; invitation collection reads are not exposed.
 Phase 4D1 adds one Owner-only permission-set list using automatic single-field name ordering plus
 exact assignment transaction reads. There are still no required composite indexes.
+Phase 4D2 reuses that query together with the existing bounded operator list. It performs one exact
+user-profile read only after an explicit assignment action, so no new collection query or index is
+introduced.
 `firestore.indexes.json` intentionally retains empty `indexes` and `fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
@@ -79,6 +82,7 @@ collection read. Phase 4C5A keeps invitation operations in another exact-documen
 no list/query method; expiry is checked on the addressed document rather than discovered through
 a collection scan. Phase 4D1 keeps user assignment document-addressed and exposes only the fixed
 Owner permission-set administration query; callers cannot remove or raise its 50-document bound.
+Phase 4D2 consumes both existing bounded lists and never fans out automatic `users/{uid}` reads.
 
 Add another active row only in the same focused change that introduces or materially changes the
 corresponding feature-repository query.

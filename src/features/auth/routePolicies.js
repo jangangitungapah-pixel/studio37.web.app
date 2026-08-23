@@ -20,6 +20,7 @@ export const ROUTE_POLICIES = Object.freeze({
     anyOf: [CAPABILITIES.COMMISSION_VIEW_OWN, CAPABILITIES.COMMISSION_VIEW_ALL],
   }),
   OPERATORS: createPolicy({ allOf: [CAPABILITIES.SETTINGS_OPERATORS_VIEW] }),
+  PERMISSIONS: createPolicy({ ownerOnly: true }),
   PRICING: createPolicy({ allOf: [CAPABILITIES.SETTINGS_PRICING_VIEW] }),
   STUDIO: createPolicy({ allOf: [CAPABILITIES.SETTINGS_STUDIO_VIEW] }),
 });

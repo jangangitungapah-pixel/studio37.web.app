@@ -279,6 +279,90 @@ describe('Studio37 application shell', () => {
     expect(operatorRepository.listOperators).toHaveBeenCalledOnce();
   });
 
+  it('renders the Owner-only permission administration route with bounded repositories', async () => {
+    window.history.pushState({}, '', '/settings/permissions');
+    const operatorRepository = {
+      listLimit: 100,
+      listOperators: vi.fn(async () => []),
+    };
+    const permissionAdministrationRepository = {
+      assignPermissionSetToUser: vi.fn(),
+      createPermissionSet: vi.fn(),
+      getUserByUid: vi.fn(),
+      listLimit: 50,
+      listPermissionSets: vi.fn(async () => [
+        {
+          capabilities: [CAPABILITIES.DASHBOARD_VIEW],
+          createdAt: new Date('2026-08-23T01:00:00.000Z'),
+          id: 'front-desk',
+          name: 'Front Desk',
+          status: 'active',
+          updatedAt: new Date('2026-08-23T02:00:00.000Z'),
+        },
+      ]),
+      setPermissionSetStatus: vi.fn(),
+      updatePermissionSet: vi.fn(),
+    };
+
+    render(
+      <ToastProvider>
+        <App
+          authGateway={createAuthGateway()}
+          operatorRepository={operatorRepository}
+          permissionAdministrationRepository={permissionAdministrationRepository}
+          userProfileRepository={createUserProfileRepository()}
+        />
+      </ToastProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Hak Akses' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Front Desk' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Hak Akses' })).toHaveAttribute(
+      'href',
+      '/settings/permissions',
+    );
+    expect(permissionAdministrationRepository.listPermissionSets).toHaveBeenCalledOnce();
+    expect(operatorRepository.listOperators).toHaveBeenCalledOnce();
+    expect(permissionAdministrationRepository.getUserByUid).not.toHaveBeenCalled();
+  });
+
+  it('blocks a fully delegated Studio Operator from the Owner-only permission route', async () => {
+    window.history.pushState({}, '', '/settings/permissions');
+    const operatorProfile = {
+      displayName: 'Delegated Manager',
+      permissionSetId: 'operator-manager',
+      role: 'studio_operator',
+      status: 'active',
+      uid: 'operator-1',
+    };
+    const permissionAdministrationRepository = {
+      listPermissionSets: vi.fn(),
+    };
+
+    render(
+      <App
+        authGateway={createAuthGateway({ email: 'operator@studio37.id', uid: 'operator-1' })}
+        permissionAdministrationRepository={permissionAdministrationRepository}
+        permissionSetRepository={createPermissionSetRepository({
+          capabilities: [
+            CAPABILITIES.SETTINGS_OPERATORS_MANAGE,
+            CAPABILITIES.SETTINGS_OPERATORS_VIEW,
+          ],
+          id: 'operator-manager',
+          name: 'Operator Manager',
+          status: 'active',
+        })}
+        userProfileRepository={createUserProfileRepository(operatorProfile)}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Akses tidak diizinkan' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Hak Akses' })).not.toBeInTheDocument();
+    expect(permissionAdministrationRepository.listPermissionSets).not.toHaveBeenCalled();
+  });
+
   it('logs out from the app-shell user menu and returns to Login', async () => {
     const interaction = userEvent.setup();
     const gateway = createAuthGateway();

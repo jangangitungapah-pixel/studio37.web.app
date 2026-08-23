@@ -3,8 +3,9 @@
 ## Purpose
 
 Define the Phase 4D1 data, query, mutation, and authorization foundation for Owner-managed Studio
-Operator permission sets. This slice prepares the domain and repositories for a later responsive
-Phase 4D2 UI; it does not expose permission administration to Operators or add another role.
+Operator permission sets. Phase 4D2 consumes this boundary through the separate responsive UI
+contract in `docs/architecture/PERMISSION-ADMINISTRATION-UI-CONTRACT.md`; neither phase exposes
+permission administration to Operators or adds another role.
 
 Owner authority remains implicit and is never stored in a permission set. The non-delegable
 `permissions.manage` and `danger_zone.execute` capabilities cannot be inserted through this flow.
@@ -91,11 +92,11 @@ This foundation adds one bounded single-field query and exact-document transacti
 no generic `listAll()`, user collection list, Auth-user enumeration, background health read,
 composite index, Cloud Function, Admin SDK, paid service, Hosting, or deployment.
 
-Deferred to Phase 4D2:
+Consumed by Phase 4D2 without expanding the repository boundary:
 
 - grouped capability editor and sensitive-permission explanations;
 - create/edit/soft-status dialogs;
 - assignment UI on login-linked Studio Operators;
-- responsive desktop/mobile browser acceptance.
+- responsive desktop/mobile browser acceptance, which remains a manual gate until confirmed.
 
 Audit events remain Phase 14. Production Rules/index deployment and Hosting remain Phase 17.

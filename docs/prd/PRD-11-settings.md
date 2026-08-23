@@ -123,8 +123,10 @@ delegated permissions. Those flows are documented in
 `docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md`; permission administration remains
 a separate implementation checkpoint. Phase 4D1 establishes its bounded permission-template CRUD,
 soft-status, exact assignment transaction, and Security Rules contract in
-`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`; the grouped responsive UI remains Phase
-4D2.
+`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`. Phase 4D2 adds the separate Owner-only Hak
+Akses route, grouped responsive editor, sensitive-capability explanations, and explicit assignment
+dialog in `docs/architecture/PERMISSION-ADMINISTRATION-UI-CONTRACT.md` without enumerating users or
+Authentication identities.
 
 ## 6.1 Permissions UI
 
