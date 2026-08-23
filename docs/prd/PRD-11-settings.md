@@ -116,8 +116,12 @@ link/unlink UI while preserving the no-provisioning and separate-permission boun
 The detailed contracts are documented in `docs/architecture/OPERATOR-DOMAIN-CONTRACT.md` and
 `docs/architecture/OPERATOR-SETTINGS-CONTRACT.md`, with the account relationship in
 `docs/architecture/OPERATOR-ACCOUNT-LINK-CONTRACT.md` and its browser workflow in
-`docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`; permission administration remains a
-separate implementation checkpoint.
+`docs/architecture/OPERATOR-ACCOUNT-LINK-UI-CONTRACT.md`. Phase 4C5A/4C5B add the exact-path
+verified-email invitation plus email/password onboarding UI, while keeping new accounts at zero
+delegated permissions. Those flows are documented in
+`docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md` and
+`docs/architecture/OPERATOR-ACCOUNT-INVITATION-UI-CONTRACT.md`; permission administration remains
+a separate implementation checkpoint.
 
 ## 6.1 Permissions UI
 

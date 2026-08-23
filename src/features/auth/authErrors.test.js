@@ -19,6 +19,19 @@ describe('authentication error messages', () => {
     );
   });
 
+  it('maps account creation and verification-provider failures without raw details', () => {
+    expect(getAuthErrorMessage({ code: 'auth/email-already-in-use' })).toContain(
+      'sudah memiliki akun',
+    );
+    expect(getAuthErrorMessage({ code: 'auth/weak-password' })).toContain('minimal 6 karakter');
+    expect(getAuthErrorMessage({ code: 'auth/operation-not-allowed' })).toContain(
+      'belum diaktifkan',
+    );
+    expect(getAuthErrorMessage({ code: 'auth/unauthorized-continue-uri' })).toContain(
+      'belum diizinkan',
+    );
+  });
+
   it('uses a safe fallback without exposing raw provider errors', () => {
     expect(getAuthErrorMessage(new Error('raw backend detail'))).toBe(
       'Login belum berhasil. Coba lagi atau hubungi Owner.',

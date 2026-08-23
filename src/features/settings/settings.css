@@ -504,9 +504,56 @@
 }
 
 .settings-account-link-dialog,
-.settings-account-profile {
+.settings-account-profile,
+.settings-invitation-dialog,
+.settings-invitation-result {
   display: grid;
   gap: var(--space-4);
+}
+
+.settings-invitation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.settings-invitation-summary > div {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  padding: var(--space-3);
+}
+
+.settings-invitation-summary dt {
+  color: var(--color-text-soft);
+  font-size: 0.625rem;
+  font-weight: 740;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.settings-invitation-summary dd {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.settings-invitation-result__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.settings-invitation-result__actions span {
+  color: var(--color-danger);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .settings-account-link-form {
@@ -702,6 +749,10 @@
     grid-template-columns: 1fr;
   }
 
+  .settings-invitation-summary {
+    grid-template-columns: 1fr;
+  }
+
   .settings-save-bar {
     position: static;
     display: grid;
@@ -760,6 +811,14 @@
 
   .settings-account-profile__badges {
     justify-content: flex-start;
+  }
+
+  .settings-invitation-result__actions {
+    display: grid;
+  }
+
+  .settings-invitation-result__actions .ui-button {
+    width: 100%;
   }
 }
 

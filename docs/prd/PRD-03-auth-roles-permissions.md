@@ -86,11 +86,13 @@ Owner can:
 Disabling an account should preserve its historical bookings, payments, commissions, and audit references.
 
 The Phase 4C5A invitation foundation lets a Firebase user with a matching verified email create or
-link its own application profile through an exact three-document Firestore batch. This removes the
-need to manually create every `users/{uid}` document while preserving strict authority: a new
-profile is forced to active `studio_operator`, receives no permission set, and cannot become Owner
-through invitation or an Owner client mutation. First-Owner bootstrap remains a separate reviewed
-console-only procedure. Provider/sign-up and invitation-delivery UI remain later checkpoints.
+link its own application profile through an exact three-document Firestore batch. Phase 4C5B adds
+the email/password sign-up/sign-in, Firebase email verification, Owner copy/share link, and browser
+acceptance workflow. This removes the need to manually create every `users/{uid}` document while
+preserving strict authority: a new profile is forced to active `studio_operator`, receives no
+permission set, and cannot become Owner through invitation or an Owner client mutation.
+First-Owner bootstrap remains a separate reviewed console-only procedure; automated invitation
+delivery and permission administration remain separate checkpoints.
 
 ## 9. Recording Operator Without Login
 

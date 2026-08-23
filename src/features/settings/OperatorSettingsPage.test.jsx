@@ -61,6 +61,15 @@ function createAccountRepository(profile = createUserProfile()) {
   };
 }
 
+function createInvitationRepository() {
+  return {
+    createInvitation: vi.fn(async (operatorId) => ({
+      invitationId: 'invite-12345678901234567890',
+      operatorId,
+    })),
+  };
+}
+
 function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {}) {
   return {
     capabilities,
@@ -79,13 +88,18 @@ function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {
 function renderPage({
   access = createAccess(),
   accountRepository = createAccountRepository(),
+  invitationRepository = createInvitationRepository(),
   repository = createRepository(),
 } = {}) {
   return render(
     <ToastProvider>
       <AuthContext.Provider value={access}>
         <MemoryRouter initialEntries={['/settings/operators']}>
-          <OperatorSettingsPage accountRepository={accountRepository} repository={repository} />
+          <OperatorSettingsPage
+            accountRepository={accountRepository}
+            invitationRepository={invitationRepository}
+            repository={repository}
+          />
         </MemoryRouter>
       </AuthContext.Provider>
     </ToastProvider>,
@@ -215,7 +229,7 @@ describe('OperatorSettingsPage', () => {
     renderPage({ accountRepository, repository });
 
     await interaction.click(
-      await screen.findByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+      await screen.findByRole('button', { name: 'Link via UID Budi Engineer' }),
     );
     await interaction.type(screen.getByLabelText(/Firebase user UID/), ' user-dina ');
     await interaction.click(screen.getByRole('button', { name: 'Cari profil' }));
@@ -250,7 +264,7 @@ describe('OperatorSettingsPage', () => {
     });
 
     await interaction.click(
-      await screen.findByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+      await screen.findByRole('button', { name: 'Link via UID Budi Engineer' }),
     );
     await interaction.type(screen.getByLabelText(/Firebase user UID/), 'user-dina');
     await interaction.click(screen.getByRole('button', { name: 'Cari profil' }));
@@ -286,6 +300,33 @@ describe('OperatorSettingsPage', () => {
     });
     expect(await screen.findByText('Hubungan akun diputuskan')).toBeInTheDocument();
     expect(repository.listOperators).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets an Owner create a copyable invitation only for an eligible Studio Operator', async () => {
+    const interaction = userEvent.setup();
+    const invitationRepository = createInvitationRepository();
+    renderPage({
+      invitationRepository,
+      repository: createRepository([
+        createOperator({ operatorTypes: [OPERATOR_TYPES.STUDIO_OPERATOR] }),
+      ]),
+    });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Undang akun Budi Engineer' }),
+    );
+    expect(screen.getByRole('dialog')).toHaveTextContent(/Hak akses tetap terkunci/);
+    await interaction.click(screen.getByRole('button', { name: 'Buat link undangan' }));
+
+    await waitFor(() => {
+      expect(invitationRepository.createInvitation).toHaveBeenCalledWith('operator-budi', {
+        actorUid: 'owner-1',
+      });
+    });
+    expect((await screen.findByLabelText('Link undangan')).value).toContain(
+      '/invite/operator-budi/invite-12345678901234567890',
+    );
+    expect(invitationRepository).not.toHaveProperty('listInvitations');
   });
 
   it('offers a recoverable retry when the linked profile read is unavailable', async () => {
@@ -330,7 +371,10 @@ describe('OperatorSettingsPage', () => {
     expect(await screen.findByRole('button', { name: 'Edit Budi Engineer' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Nonaktifkan Budi Engineer' })).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Hubungkan akun Budi Engineer' }),
+      screen.queryByRole('button', { name: 'Link via UID Budi Engineer' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Undang akun Budi Engineer' }),
     ).not.toBeInTheDocument();
     expect(accountRepository.getUserByUid).not.toHaveBeenCalled();
     expect(accountRepository.linkOperatorToUser).not.toHaveBeenCalled();

@@ -126,10 +126,12 @@ The UI must not require editing raw JSON.
 1. Add/select operator.
 2. Edit identity/contact information.
 3. Define operational type/capabilities.
-4. Optionally enable application login.
-5. Assign Studio Operator permission set if login-enabled.
-6. Configure compensation rule/default where needed.
-7. Save.
+4. Optionally create an exact-path login invitation and copy/share the link.
+5. Invitee creates or reuses an email/password account and verifies the matching email.
+6. Invitee accepts the invitation to establish the reciprocal account link.
+7. Owner separately assigns a Studio Operator permission set.
+8. Configure compensation rule/default where needed.
+9. Save.
 
 Disabling an operator must preserve history.
 

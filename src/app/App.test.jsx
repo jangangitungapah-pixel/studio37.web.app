@@ -108,6 +108,45 @@ describe('Studio37 application shell', () => {
     expect(window.location.pathname).toBe('/login');
   });
 
+  it('keeps the invitation route public while an authenticated invitee has no app profile yet', async () => {
+    window.history.pushState({}, '', '/invite/operator-dina/invite-12345678901234567890');
+    const invitationRepository = {
+      getInvitation: vi.fn().mockResolvedValue({
+        displayName: 'Dina Studio',
+        email: 'dina@studio37.id',
+        expiresAt: new Date('2099-08-29T10:00:00.000Z'),
+        operatorId: 'operator-dina',
+        status: 'pending',
+      }),
+      redeemInvitation: vi.fn(),
+    };
+
+    render(
+      <App
+        authGateway={createAuthGateway({
+          email: 'dina@studio37.id',
+          emailVerified: true,
+          uid: 'invitee-1',
+        })}
+        operatorAccountInvitationRepository={invitationRepository}
+        userProfileRepository={{
+          observeByUid: vi.fn((uid, onProfileChanged) => {
+            if (uid !== 'invitee-1') throw new Error('Unexpected profile uid.');
+            onProfileChanged(null);
+            return vi.fn();
+          }),
+        }}
+      />,
+    );
+
+    expect(await screen.findByText('Dina Studio')).toBeInTheDocument();
+    expect(window.location.pathname).toContain('/invite/operator-dina/');
+    expect(invitationRepository.getInvitation).toHaveBeenCalledWith(
+      'operator-dina',
+      'invite-12345678901234567890',
+    );
+  });
+
   it('blocks the shell when the live application profile is disabled', async () => {
     window.history.pushState({}, '', '/dashboard');
 

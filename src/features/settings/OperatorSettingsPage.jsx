@@ -7,7 +7,9 @@ import { Input } from '../../components/forms/Field.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { operatorRepository } from '../../services/operatorRepository.js';
 import { CAPABILITIES, hasCapability, isOwner } from '../auth/capabilities.js';
+import { isOperatorAccountInvitationEligible } from '../auth/operatorAccountInvitationUi.js';
 import { useAuth } from '../auth/useAuth.js';
+import { OperatorAccountInvitationDialog } from './OperatorAccountInvitationDialog.jsx';
 import { OperatorAccountLinkDialog } from './OperatorAccountLinkDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import {
@@ -67,7 +69,11 @@ function getOperatorInitials(displayName) {
     .join('');
 }
 
-export function OperatorSettingsPage({ accountRepository, repository = operatorRepository }) {
+export function OperatorSettingsPage({
+  accountRepository,
+  invitationRepository,
+  repository = operatorRepository,
+}) {
   const access = useAuth();
   const { pushToast } = useToast();
   const canManage = hasCapability(access, CAPABILITIES.SETTINGS_OPERATORS_MANAGE);
@@ -78,6 +84,7 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
   const [editingOperator, setEditingOperator] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formValues, setFormValues] = useState(() => ({ ...DEFAULT_OPERATOR_FORM_VALUES }));
+  const [invitationTarget, setInvitationTarget] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [loadState, setLoadState] = useState('loading');
   const [operatorDialogMode, setOperatorDialogMode] = useState(null);
@@ -127,6 +134,13 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
   };
 
   const closeAccountDialog = useCallback(() => setAccountTarget(null), []);
+
+  const openInvitationDialog = (operator) => {
+    if (!canManageAccountLinks || !isOperatorAccountInvitationEligible(operator)) return;
+    setInvitationTarget(operator);
+  };
+
+  const closeInvitationDialog = useCallback(() => setInvitationTarget(null), []);
 
   const finishAccountMutation = useCallback(() => {
     setAccountTarget(null);
@@ -277,7 +291,8 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
         <strong>Jenis operator bukan hak akses.</strong>
         <span>
           Studio Operator dan Recording Engineer hanya menentukan fungsi operasional. Owner dapat
-          menghubungkan profil user yang sudah ada; permission tetap dikelola terpisah.
+          mengirim link onboarding atau memakai fallback exact UID; permission tetap dikelola
+          terpisah.
         </span>
       </div>
 
@@ -368,6 +383,7 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
           <div className="settings-operator-list" aria-label="Daftar operator">
             {operators.map((operator) => {
               const isActive = operator.status === OPERATOR_STATUSES.ACTIVE;
+              const canInviteAccount = isOperatorAccountInvitationEligible(operator);
               const contacts = [operator.email, operator.phone].filter(Boolean);
 
               return (
@@ -417,14 +433,26 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
                         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                       </Button>
                       {canManageAccountLinks ? (
-                        <Button
-                          size="sm"
-                          variant={operator.linkedUserUid ? 'secondary' : 'ghost'}
-                          aria-label={`${operator.linkedUserUid ? 'Kelola akun' : 'Hubungkan akun'} ${operator.displayName}`}
-                          onClick={() => openAccountDialog(operator)}
-                        >
-                          {operator.linkedUserUid ? 'Kelola akun' : 'Hubungkan akun'}
-                        </Button>
+                        <>
+                          {canInviteAccount ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              aria-label={`Undang akun ${operator.displayName}`}
+                              onClick={() => openInvitationDialog(operator)}
+                            >
+                              Undang akun
+                            </Button>
+                          ) : null}
+                          <Button
+                            size="sm"
+                            variant={operator.linkedUserUid ? 'secondary' : 'ghost'}
+                            aria-label={`${operator.linkedUserUid ? 'Kelola akun' : 'Link via UID'} ${operator.displayName}`}
+                            onClick={() => openAccountDialog(operator)}
+                          >
+                            {operator.linkedUserUid ? 'Kelola akun' : 'Link via UID'}
+                          </Button>
+                        </>
                       ) : null}
                     </div>
                   ) : null}
@@ -442,6 +470,15 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
           repository={accountRepository}
           onClose={closeAccountDialog}
           onSaved={finishAccountMutation}
+        />
+      ) : null}
+
+      {invitationTarget ? (
+        <OperatorAccountInvitationDialog
+          actorUid={actorUid}
+          operator={invitationTarget}
+          repository={invitationRepository}
+          onClose={closeInvitationDialog}
         />
       ) : null}
 
@@ -553,7 +590,7 @@ export function OperatorSettingsPage({ accountRepository, repository = operatorR
               {editingOperator?.linkedUserUid
                 ? 'Akun login sudah terhubung. Gunakan aksi Kelola akun pada daftar operator untuk memutuskan hubungan.'
                 : canManageAccountLinks
-                  ? 'Profil ini tersimpan tanpa login. Gunakan aksi Hubungkan akun setelah profil operator disimpan.'
+                  ? 'Profil ini tersimpan tanpa login. Gunakan Undang akun untuk onboarding mandiri atau Link via UID sebagai fallback.'
                   : 'Profil ini tersimpan tanpa login. Hanya Owner yang dapat menghubungkan akun.'}
             </span>
           </div>

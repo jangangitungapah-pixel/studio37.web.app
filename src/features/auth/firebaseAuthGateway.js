@@ -1,6 +1,10 @@
 import {
   browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  getIdToken,
   onAuthStateChanged,
+  reload,
+  sendEmailVerification,
   setPersistence,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -36,6 +40,27 @@ export function createFirebaseAuthGateway(auth = firebaseAuth) {
       );
 
       return credential.user;
+    },
+
+    async createAccount({ email, password }) {
+      const credential = await createUserWithEmailAndPassword(
+        requireConfiguredAuth(auth),
+        email,
+        password,
+      );
+
+      return credential.user;
+    },
+
+    async sendVerificationEmail(user, { continueUrl } = {}) {
+      const actionCodeSettings = continueUrl ? { url: continueUrl } : undefined;
+      await sendEmailVerification(user, actionCodeSettings);
+    },
+
+    async refreshUser(user) {
+      await reload(user);
+      await getIdToken(user, true);
+      return user;
     },
 
     signOut() {
