@@ -113,8 +113,38 @@ describe('OperatorAccountInvitationPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Verifikasi email akun' }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Email verifikasi sudah dikirim/)).toBeInTheDocument();
+    expect(screen.getByText(/Permintaan email verifikasi diterima Firebase/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kirim ulang dalam 60 detik' })).toBeDisabled();
     expect(repository.getInvitation).not.toHaveBeenCalled();
+  });
+
+  it('uses a resend-specific recovery state when Firebase throttles verification email', async () => {
+    const interaction = userEvent.setup();
+    const unverifiedUser = {
+      email: 'dina@studio37.id',
+      emailVerified: false,
+      uid: 'invitee-1',
+    };
+    const access = createAccess({
+      sendVerificationEmail: vi
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error('provider details'), { code: 'auth/too-many-requests' }),
+        ),
+      status: 'profile-missing',
+      user: unverifiedUser,
+    });
+    renderInvitationPage({ access });
+
+    await interaction.click(screen.getByRole('button', { name: 'Kirim email verifikasi' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Firebase sementara membatasi pengiriman email verifikasi/,
+    );
+    expect(
+      screen.queryByText(/Permintaan email verifikasi diterima Firebase/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kirim ulang dalam 60 detik' })).toBeDisabled();
   });
 
   it('refreshes the Firebase token before reading a verified invitation', async () => {

@@ -89,7 +89,10 @@ actor. Security Rules remain the authorization and atomicity boundary.
 - Auth session restoration has an explicit loading state.
 - Sign-up and sign-in preserve the entered email after recoverable errors.
 - Provider errors are mapped to non-secret Indonesian messages.
-- Verification can be resent explicitly; it is never sent on every render.
+- Verification can be resent explicitly; it is never sent on every render. A successful request
+  starts a 60-second client-side resend guard, while Firebase may enforce a longer provider-side
+  throttle. The UI reports only that Firebase accepted the request because inbox delivery cannot be
+  observed from the browser.
 - The user can refresh verification state or sign out and choose another account.
 - Exact invitation reads expose a generic recovery message for permission-denied or missing data so
   private invitation details are not leaked.

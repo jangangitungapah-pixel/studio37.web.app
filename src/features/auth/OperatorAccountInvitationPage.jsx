@@ -28,6 +28,8 @@ const invitationStatusLabels = Object.freeze({
   [OPERATOR_ACCOUNT_INVITATION_STATUSES.REVOKED]: 'Sudah dicabut',
 });
 
+const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
+
 function normalizeInvitationPath(operatorId, invitationId) {
   try {
     return Object.freeze({
@@ -73,6 +75,14 @@ function getInvitationAcceptanceErrorMessage(error) {
     messages[error?.code] ??
     'Undangan belum dapat diproses. Tidak ada role atau permission yang diubah.'
   );
+}
+
+function getVerificationEmailErrorMessage(error) {
+  if (error?.code === 'auth/too-many-requests') {
+    return 'Firebase sementara membatasi pengiriman email verifikasi karena terlalu banyak permintaan. Tunggu hingga tombol aktif, lalu coba sekali; bila masih dibatasi, tunggu lebih lama.';
+  }
+
+  return getAuthErrorMessage(error);
 }
 
 function InvitationPanel({ children, intro, title }) {
@@ -122,6 +132,7 @@ export function OperatorAccountInvitationPage({
   const [sendingVerification, setSendingVerification] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transientUser, setTransientUser] = useState(null);
+  const [verificationResendCooldown, setVerificationResendCooldown] = useState(0);
   const [verificationSent, setVerificationSent] = useState(false);
   const effectiveUser =
     transientUser && (!user || transientUser.uid === user.uid) ? transientUser : user;
@@ -132,6 +143,16 @@ export function OperatorAccountInvitationPage({
     if (!user || user.uid === transientUser?.uid) return;
     setTransientUser(null);
   }, [transientUser?.uid, user]);
+
+  useEffect(() => {
+    if (verificationResendCooldown <= 0) return undefined;
+
+    const timeoutId = globalThis.setTimeout(() => {
+      setVerificationResendCooldown((remaining) => Math.max(0, remaining - 1));
+    }, 1000);
+
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [verificationResendCooldown]);
 
   useEffect(() => {
     if (!invitationPath || !effectiveUser || !effectiveEmailVerified) {
@@ -244,8 +265,15 @@ export function OperatorAccountInvitationPage({
         try {
           await sendVerificationEmail(createdUser, { continueUrl });
           setVerificationSent(true);
+          setVerificationResendCooldown(VERIFICATION_RESEND_COOLDOWN_SECONDS);
         } catch (verificationError) {
-          setActionError(getAuthErrorMessage(verificationError));
+          setVerificationSent(false);
+          setVerificationResendCooldown(
+            verificationError?.code === 'auth/too-many-requests'
+              ? VERIFICATION_RESEND_COOLDOWN_SECONDS
+              : 0,
+          );
+          setActionError(getVerificationEmailErrorMessage(verificationError));
         }
       } else {
         const signedInUser = await signIn(validation.value);
@@ -260,15 +288,20 @@ export function OperatorAccountInvitationPage({
   }
 
   async function resendVerification() {
-    if (!effectiveUser) return;
+    if (!effectiveUser || verificationResendCooldown > 0) return;
     setSendingVerification(true);
     setActionError('');
+    setVerificationSent(false);
 
     try {
       await sendVerificationEmail(effectiveUser, { continueUrl });
       setVerificationSent(true);
+      setVerificationResendCooldown(VERIFICATION_RESEND_COOLDOWN_SECONDS);
     } catch (error) {
-      setActionError(getAuthErrorMessage(error));
+      setVerificationResendCooldown(
+        error?.code === 'auth/too-many-requests' ? VERIFICATION_RESEND_COOLDOWN_SECONDS : 0,
+      );
+      setActionError(getVerificationEmailErrorMessage(error));
     } finally {
       setSendingVerification(false);
     }
@@ -299,6 +332,7 @@ export function OperatorAccountInvitationPage({
     try {
       await signOut();
       setTransientUser(null);
+      setVerificationResendCooldown(0);
       setVerificationSent(false);
       setInvitation(null);
       setInvitationState('idle');
@@ -413,7 +447,8 @@ export function OperatorAccountInvitationPage({
       >
         {verificationSent ? (
           <div className="invitation-page__notice" data-tone="success" role="status">
-            Email verifikasi sudah dikirim. Periksa inbox dan folder spam.
+            Permintaan email verifikasi diterima Firebase. Periksa inbox, Spam, Promosi, dan Semua
+            Email.
           </div>
         ) : null}
         {actionError ? (
@@ -422,8 +457,16 @@ export function OperatorAccountInvitationPage({
           </div>
         ) : null}
         <div className="invitation-page__actions">
-          <Button loading={sendingVerification} onClick={resendVerification}>
-            {verificationSent ? 'Kirim ulang verifikasi' : 'Kirim email verifikasi'}
+          <Button
+            disabled={verificationResendCooldown > 0}
+            loading={sendingVerification}
+            onClick={resendVerification}
+          >
+            {verificationResendCooldown > 0
+              ? `Kirim ulang dalam ${verificationResendCooldown} detik`
+              : verificationSent
+                ? 'Kirim ulang verifikasi'
+                : 'Kirim email verifikasi'}
           </Button>
           <Button variant="secondary" loading={refreshing} onClick={checkVerification}>
             Saya sudah verifikasi
@@ -433,7 +476,9 @@ export function OperatorAccountInvitationPage({
           </Button>
         </div>
         <p className="login-page__support">
-          Setelah membuka link verifikasi Firebase, kembali ke halaman ini dan periksa lagi.
+          Firebase mengelola pengiriman email, sehingga halaman ini tidak dapat memastikan email
+          sudah masuk ke inbox. Setelah membuka link verifikasi, kembali ke halaman ini dan periksa
+          lagi.
         </p>
       </InvitationPanel>
     );
