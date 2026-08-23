@@ -303,6 +303,11 @@ Phase 4 progress on 2026-08-22:
   Cloud Function, Admin SDK, composite index, or deployment. GitHub Actions Quality run
   `32581224908` passed formatting, lint, 213 unit/component tests, 34 Firestore Emulator
   authorization tests, production build, and Vite development-server smoke.
+- Phase 4C5B email-delivery QA on 2026-08-23 clarified that a successful provider request does not
+  prove inbox delivery, added a 60-second client-side resend guard, and separated verification-email
+  throttling recovery from login errors. GitHub Actions Quality run `32648089596` passed formatting,
+  lint, 214 unit/component tests, 34 Firestore Emulator authorization tests, production build, and
+  Vite development-server smoke.
 - Booking/calendar consumption of active rooms/hours, permission administration, automated
   invitation delivery/resend/status administration, final real-Firebase invitation/account-link
   acceptance, and final Phase 4 responsive/integration gates remain pending; Phase 4 remains in
