@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+
+# Product requirements are authored documentation and are not rewritten by the app formatter.
+docs/prd
+
+# Calendar/global CSS will keep explicit hand-authored formatting until the design-system phase.
+src/styles/index.css

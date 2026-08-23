@@ -1,0 +1,904 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function currentUserPath() {
+      return userPath(request.auth.uid);
+    }
+
+    function permissionSetPath(permissionSetId) {
+      return /databases/$(database)/documents/permissionSets/$(permissionSetId);
+    }
+
+    function operatorPath(operatorId) {
+      return /databases/$(database)/documents/operators/$(operatorId);
+    }
+
+    function accountInvitationPath(operatorId, invitationId) {
+      return /databases/$(database)/documents/operators/$(operatorId)/accountInvites/$(invitationId);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasValidOptionalReference(value) {
+      return value == null
+        || (value is string && value.size() > 0 && value.size() <= 128 && value.matches('^[^/]+$'));
+    }
+
+    function hasValidOptionalPhone(value) {
+      return value == null
+        || (value is string && value.matches('^\\+62[0-9]{8,13}$'));
+    }
+
+    function hasValidOptionalEmail(value) {
+      return value == null
+        || (value is string
+          && value.size() > 2
+          && value.size() <= 254
+          && value.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'));
+    }
+
+    function activationInviteId(data) {
+      return data.keys().hasAny(['activationInviteId']) ? data.activationInviteId : null;
+    }
+
+    function hasValidActivationInviteId(data) {
+      return !data.keys().hasAny(['activationInviteId'])
+        || hasValidOptionalReference(data.activationInviteId);
+    }
+
+    function isValidUserProfile(uid, data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'email',
+          'phone',
+          'role',
+          'status',
+          'permissionSetId',
+          'operatorId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'activationInviteId',
+          'uid',
+          'displayName',
+          'email',
+          'phone',
+          'role',
+          'status',
+          'permissionSetId',
+          'operatorId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid == uid
+        && data.uid.size() > 0
+        && data.uid.size() <= 128
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 120
+        && data.email is string
+        && data.email.size() > 2
+        && data.email.size() <= 254
+        && hasValidOptionalPhone(data.phone)
+        && data.role in ['owner', 'studio_operator']
+        && data.status in ['active', 'disabled']
+        && hasValidOptionalReference(data.permissionSetId)
+        && hasValidOptionalReference(data.operatorId)
+        && hasValidActivationInviteId(data)
+        && (data.role != 'owner'
+          || (data.permissionSetId == null && activationInviteId(data) == null))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt;
+    }
+
+    function isActiveOwnerProfile(uid, data) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active'
+        && data.role == 'owner';
+    }
+
+    function isActiveUserProfile(uid, data) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active';
+    }
+
+    function isActiveOwner() {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveOwnerProfile(request.auth.uid, get(currentUserPath()).data);
+    }
+
+    function isActiveUser() {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveUserProfile(request.auth.uid, get(currentUserPath()).data);
+    }
+
+    function canProfileReadPermissionSet(uid, data, permissionSetId) {
+      return isValidUserProfile(uid, data)
+        && data.status == 'active'
+        && (data.role == 'owner'
+          || (data.role == 'studio_operator'
+            && data.permissionSetId is string
+            && data.permissionSetId == permissionSetId));
+    }
+
+    function canReadPermissionSet(permissionSetId) {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && canProfileReadPermissionSet(
+          request.auth.uid,
+          get(currentUserPath()).data,
+          permissionSetId
+        );
+    }
+
+    function canCreateUserProfile(uid) {
+      return isSignedIn() && uid != request.auth.uid && isActiveOwner();
+    }
+
+    function canUpdateUserProfile(uid, existingData) {
+      return isSignedIn()
+        && ((uid == request.auth.uid && isActiveOwnerProfile(uid, existingData))
+          || (uid != request.auth.uid && isActiveOwner()));
+    }
+
+    function hasOnlyDelegableCapabilities(capabilities) {
+      return capabilities is list
+        && capabilities.size() <= 23
+        && capabilities.hasOnly([
+          'booking.cancel',
+          'booking.create',
+          'booking.edit',
+          'booking.override_price',
+          'booking.view',
+          'bookkeeping.create',
+          'bookkeeping.view',
+          'commission.adjust',
+          'commission.payout',
+          'commission.view_all',
+          'commission.view_own',
+          'customer.edit',
+          'customer.view',
+          'dashboard.view',
+          'payment.adjust',
+          'payment.create',
+          'payment.view',
+          'settings.operators.manage',
+          'settings.operators.view',
+          'settings.pricing.edit',
+          'settings.pricing.view',
+          'settings.studio.edit',
+          'settings.studio.view'
+        ]);
+    }
+
+    function isValidPermissionSet(data) {
+      return data.keys().hasAll([
+          'name',
+          'status',
+          'capabilities',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name',
+          'status',
+          'capabilities',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.status in ['active', 'disabled']
+        && hasOnlyDelegableCapabilities(data.capabilities)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt;
+    }
+
+    function isActivePermissionSetData(data) {
+      return isValidPermissionSet(data) && data.status == 'active';
+    }
+
+    function isActiveAssignablePermissionSet(permissionSetId) {
+      return permissionSetId is string
+        && exists(permissionSetPath(permissionSetId))
+        && isActivePermissionSetData(get(permissionSetPath(permissionSetId)).data);
+    }
+
+    function isReciprocalActiveStudioOperatorData(uid, data) {
+      return isValidOperator(data)
+        && data.status == 'active'
+        && data.linkedUserUid == uid
+        && data.operatorTypes.hasAny(['studio_operator']);
+    }
+
+    function hasReciprocalActiveStudioOperator(uid, operatorId) {
+      return operatorId is string
+        && exists(operatorPath(operatorId))
+        && isReciprocalActiveStudioOperatorData(
+          uid,
+          get(operatorPath(operatorId)).data
+        );
+    }
+
+    function isFocusedPermissionAssignment(uid) {
+      let permissionSetId = request.resource.data.permissionSetId;
+      return isSignedIn()
+        && uid != request.auth.uid
+        && isActiveOwner()
+        && resource.data.role == 'studio_operator'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['permissionSetId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && (permissionSetId == null
+          || (resource.data.status == 'active'
+            && hasReciprocalActiveStudioOperator(uid, resource.data.operatorId)
+            && isActiveAssignablePermissionSet(permissionSetId)));
+    }
+
+    function activeProfileHasCapability(profile, capability) {
+      return profile.role == 'studio_operator'
+        && profile.permissionSetId is string
+        && exists(permissionSetPath(profile.permissionSetId))
+        && isValidPermissionSet(get(permissionSetPath(profile.permissionSetId)).data)
+        && get(permissionSetPath(profile.permissionSetId)).data.status == 'active'
+        && capability in get(permissionSetPath(profile.permissionSetId)).data.capabilities;
+    }
+
+    function hasCapability(capability) {
+      return isSignedIn()
+        && exists(currentUserPath())
+        && isActiveUserProfile(request.auth.uid, get(currentUserPath()).data)
+        && (get(currentUserPath()).data.role == 'owner'
+          || activeProfileHasCapability(get(currentUserPath()).data, capability));
+    }
+
+    function isValidStudioOperatingHours(data, bookingIntervalMinutes) {
+      return data is map
+        && data.keys().hasAll(['opensAtMinutes', 'closesAtMinutes'])
+        && data.keys().hasOnly(['opensAtMinutes', 'closesAtMinutes'])
+        && data.opensAtMinutes is int
+        && data.closesAtMinutes is int
+        && data.opensAtMinutes >= 0
+        && data.closesAtMinutes <= 1439
+        && data.opensAtMinutes < data.closesAtMinutes
+        && data.opensAtMinutes % bookingIntervalMinutes == 0
+        && data.closesAtMinutes % bookingIntervalMinutes == 0
+        && data.closesAtMinutes - data.opensAtMinutes >= bookingIntervalMinutes;
+    }
+
+    function isValidStudioSettings(data) {
+      return data.keys().hasAll([
+          'businessName',
+          'timeZone',
+          'operatingHours',
+          'bookingIntervalMinutes',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'businessName',
+          'timeZone',
+          'operatingHours',
+          'bookingIntervalMinutes',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.businessName is string
+        && data.businessName.size() > 0
+        && data.businessName.size() <= 120
+        && data.timeZone in ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura']
+        && data.bookingIntervalMinutes in [15, 30, 60]
+        && isValidStudioOperatingHours(data.operatingHours, data.bookingIntervalMinutes)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
+    function isValidStudioRoom(data) {
+      return data.keys().hasAll([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.code is string
+        && data.code.matches('^[A-Z0-9][A-Z0-9-]{0,23}$')
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 80
+        && data.description is string
+        && data.description.size() <= 240
+        && data.displayOrder is int
+        && data.displayOrder >= 1
+        && data.displayOrder <= 999
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
+    function hasValidOperatorTypes(value) {
+      return value is list
+        && value.size() >= 1
+        && value.size() <= 2
+        && value.hasOnly(['studio_operator', 'recording_engineer'])
+        && (value.size() == 1 || value[0] != value[1]);
+    }
+
+    function isValidOperator(data) {
+      return data.keys().hasAll([
+          'displayName',
+          'email',
+          'phone',
+          'operatorTypes',
+          'linkedUserUid',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'displayName',
+          'email',
+          'phone',
+          'operatorTypes',
+          'linkedUserUid',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 100
+        && hasValidOptionalEmail(data.email)
+        && hasValidOptionalPhone(data.phone)
+        && hasValidOperatorTypes(data.operatorTypes)
+        && hasValidOptionalReference(data.linkedUserUid)
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
+    function isValidAccountInvitationId(invitationId) {
+      return invitationId is string
+        && invitationId.size() >= 20
+        && invitationId.size() <= 128
+        && invitationId.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    function hasVerifiedInvitationEmail(email) {
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == email;
+    }
+
+    function isValidAccountInvitation(operatorId, data) {
+      return data.keys().hasAll([
+          'operatorId',
+          'displayName',
+          'email',
+          'phone',
+          'status',
+          'expiresAt',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid',
+          'acceptedAt',
+          'acceptedByUid'
+        ])
+        && data.keys().hasOnly([
+          'operatorId',
+          'displayName',
+          'email',
+          'phone',
+          'status',
+          'expiresAt',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid',
+          'acceptedAt',
+          'acceptedByUid'
+        ])
+        && data.operatorId == operatorId
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 100
+        && data.email is string
+        && data.email.size() > 2
+        && data.email.size() <= 254
+        && data.email.matches('^[^A-Z\\s@]+@[^A-Z\\s@]+\\.[^A-Z\\s@]+$')
+        && hasValidOptionalPhone(data.phone)
+        && data.status in ['pending', 'accepted', 'revoked']
+        && data.expiresAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.expiresAt > data.createdAt
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128
+        && ((data.status == 'accepted'
+            && data.acceptedAt is timestamp
+            && data.acceptedAt == data.updatedAt
+            && data.acceptedByUid is string
+            && data.acceptedByUid.size() > 0
+            && data.acceptedByUid.size() <= 128)
+          || (data.status in ['pending', 'revoked']
+            && data.acceptedAt == null
+            && data.acceptedByUid == null));
+    }
+
+    function usesAccountInvitationCreateMetadata(operatorId, data) {
+      let operator = get(operatorPath(operatorId)).data;
+      return data.status == 'pending'
+        && data.createdAt == request.time
+        && data.updatedAt == request.time
+        && data.createdByUid == request.auth.uid
+        && data.updatedByUid == request.auth.uid
+        && data.acceptedAt == null
+        && data.acceptedByUid == null
+        && data.expiresAt > request.time
+        && data.expiresAt <= request.time + duration.value(30, 'd')
+        && isValidOperator(operator)
+        && operator.status == 'active'
+        && operator.linkedUserUid == null
+        && operator.email is string
+        && 'studio_operator' in operator.operatorTypes
+        && data.displayName == operator.displayName
+        && data.email == operator.email.lower()
+        && data.phone == operator.phone;
+    }
+
+    function isAccountInvitationRevocation(operatorId) {
+      return isActiveOwner()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt', 'updatedByUid'])
+        && request.resource.data.status == 'revoked'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == request.auth.uid
+        && isValidAccountInvitation(operatorId, request.resource.data);
+    }
+
+    function acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user) {
+      return invitation.operatorId == operatorId
+        && invitation.status == 'accepted'
+        && invitation.acceptedAt == request.time
+        && invitation.acceptedByUid == uid
+        && invitation.updatedAt == request.time
+        && invitation.updatedByUid == uid
+        && invitation.email == user.email.lower()
+        && hasVerifiedInvitationEmail(invitation.email);
+    }
+
+    function acceptedInvitationAfterMatchesUser(operatorId, invitationId, uid, user) {
+      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
+      return acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user);
+    }
+
+    function invitationSnapshotMatchesUser(operatorId, invitationId, uid, user) {
+      let invitation = getAfter(accountInvitationPath(operatorId, invitationId)).data;
+      return acceptedInvitationDataMatchesUser(invitation, operatorId, uid, user)
+        && invitation.displayName == user.displayName
+        && invitation.phone == user.phone;
+    }
+
+    function invitedOperatorAfter(operatorId, uid) {
+      let operator = getAfter(operatorPath(operatorId)).data;
+      return operator.linkedUserUid == uid
+        && operator.status == 'active'
+        && 'studio_operator' in operator.operatorTypes
+        && operator.updatedAt == request.time
+        && operator.updatedByUid == uid;
+    }
+
+    function invitedUserDataMatches(user, operatorId, invitationId, uid) {
+      return user.uid == uid
+        && user.role == 'studio_operator'
+        && user.status == 'active'
+        && user.operatorId == operatorId
+        && activationInviteId(user) == invitationId
+        && user.updatedAt == request.time;
+    }
+
+    function invitedUserAfter(operatorId, invitationId, uid) {
+      let user = getAfter(userPath(uid)).data;
+      return invitedUserDataMatches(user, operatorId, invitationId, uid);
+    }
+
+    function isAccountInvitationAcceptance(operatorId, invitationId) {
+      return resource.data.status == 'pending'
+        && request.time < resource.data.expiresAt
+        && hasVerifiedInvitationEmail(resource.data.email)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt', 'updatedByUid', 'acceptedAt', 'acceptedByUid'])
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == request.auth.uid
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.acceptedByUid == request.auth.uid
+        && isValidAccountInvitation(operatorId, request.resource.data)
+        && invitedOperatorAfter(operatorId, request.auth.uid)
+        && invitedUserAfter(operatorId, invitationId, request.auth.uid);
+    }
+
+    function usesCurrentWriteTime(data) {
+      return data.createdAt <= request.time && data.updatedAt <= request.time;
+    }
+
+    function preservesUserHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt;
+    }
+
+    function preservesPermissionSetHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt;
+    }
+
+    function usesStudioSettingsCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesStudioSettingsHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function usesStudioRoomCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesStudioRoomHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function usesOperatorCreateMetadata() {
+      return request.resource.data.linkedUserUid == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesOperatorHistoryAndAccountLink() {
+      return request.resource.data.linkedUserUid == resource.data.linkedUserUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesOperatorHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function linkedOperatorAfter(operatorId, expectedUserUid) {
+      let linkedOperator = getAfter(operatorPath(operatorId)).data;
+      return linkedOperator.linkedUserUid == expectedUserUid
+        && linkedOperator.updatedAt == request.time
+        && linkedOperator.updatedByUid == request.auth.uid;
+    }
+
+    function linkedUserAfter(userUid, expectedOperatorId) {
+      let linkedUser = getAfter(userPath(userUid)).data;
+      return linkedUser.operatorId == expectedOperatorId
+        && linkedUser.updatedAt == request.time;
+    }
+
+    function isAtomicUserOperatorLink(uid) {
+      let previousOperatorId = resource.data.operatorId;
+      let nextOperatorId = request.resource.data.operatorId;
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['operatorId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && ((previousOperatorId == null
+            && nextOperatorId is string
+            && existsAfter(operatorPath(nextOperatorId))
+            && linkedOperatorAfter(nextOperatorId, uid))
+          || (previousOperatorId is string
+            && nextOperatorId == null
+            && existsAfter(operatorPath(previousOperatorId))
+            && linkedOperatorAfter(previousOperatorId, null)));
+    }
+
+    function isAtomicOperatorUserLink(operatorId) {
+      let previousUserUid = resource.data.linkedUserUid;
+      let nextUserUid = request.resource.data.linkedUserUid;
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
+        && ((previousUserUid == null
+            && nextUserUid is string
+            && existsAfter(userPath(nextUserUid))
+            && linkedUserAfter(nextUserUid, operatorId))
+          || (previousUserUid is string
+            && nextUserUid == null
+            && existsAfter(userPath(previousUserUid))
+            && linkedUserAfter(previousUserUid, null)));
+    }
+
+    function isInvitationUserCreate(uid) {
+      let operatorId = request.resource.data.operatorId;
+      let invitationId = activationInviteId(request.resource.data);
+      return request.auth.uid == uid
+        && operatorId is string
+        && invitationId is string
+        && request.resource.data.role == 'studio_operator'
+        && request.resource.data.status == 'active'
+        && request.resource.data.permissionSetId == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && invitedOperatorAfter(operatorId, uid)
+        && invitationSnapshotMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          request.resource.data
+        );
+    }
+
+    function isInvitationUserLinkUpdate(uid) {
+      let operatorId = request.resource.data.operatorId;
+      let invitationId = activationInviteId(request.resource.data);
+      return request.auth.uid == uid
+        && resource.data.role == 'studio_operator'
+        && resource.data.status == 'active'
+        && resource.data.operatorId == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['activationInviteId', 'operatorId', 'updatedAt'])
+        && operatorId is string
+        && invitationId is string
+        && request.resource.data.updatedAt == request.time
+        && invitedOperatorAfter(operatorId, uid)
+        && acceptedInvitationAfterMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          request.resource.data
+        );
+    }
+
+    function isInvitationOperatorLinkDetails(operatorId, uid) {
+      let user = getAfter(userPath(uid)).data;
+      let invitationId = activationInviteId(user);
+      return invitationId is string
+        && invitedUserDataMatches(user, operatorId, invitationId, uid)
+        && acceptedInvitationAfterMatchesUser(
+          operatorId,
+          invitationId,
+          uid,
+          user
+        );
+    }
+
+    function isInvitationOperatorLink(operatorId) {
+      let uid = request.auth.uid;
+      return resource.data.linkedUserUid == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['linkedUserUid', 'updatedAt', 'updatedByUid'])
+        && request.resource.data.linkedUserUid == uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedByUid == uid
+        && isInvitationOperatorLinkDetails(operatorId, uid);
+    }
+
+    function preservesUserRoleAndActivationSource() {
+      return request.resource.data.role == resource.data.role
+        && activationInviteId(request.resource.data) == activationInviteId(resource.data);
+    }
+
+    function preservesOwnOwnerAccess(uid) {
+      return uid != request.auth.uid
+        || (request.resource.data.role == 'owner'
+          && request.resource.data.status == 'active'
+          && request.resource.data.permissionSetId == null);
+    }
+
+    match /users/{uid} {
+      allow get: if isSignedIn() && (request.auth.uid == uid || isActiveOwner());
+      allow list: if false;
+
+      allow create: if isValidUserProfile(uid, request.resource.data)
+        && ((canCreateUserProfile(uid)
+            && request.resource.data.role == 'studio_operator'
+            && request.resource.data.operatorId == null
+            && activationInviteId(request.resource.data) == null
+            && usesCurrentWriteTime(request.resource.data))
+          || isInvitationUserCreate(uid));
+
+      allow update: if isValidUserProfile(uid, request.resource.data)
+        && ((request.resource.data.permissionSetId != resource.data.permissionSetId
+            && isFocusedPermissionAssignment(uid))
+          || (request.resource.data.permissionSetId == resource.data.permissionSetId
+            && (isInvitationUserLinkUpdate(uid)
+              || (usesCurrentWriteTime(request.resource.data)
+                && preservesUserHistory()
+                && canUpdateUserProfile(uid, resource.data)
+                && preservesOwnOwnerAccess(uid)
+                && preservesUserRoleAndActivationSource()
+                && (request.resource.data.operatorId == resource.data.operatorId
+                  || (isActiveOwner() && isAtomicUserOperatorLink(uid)))))));
+
+      allow delete: if false;
+    }
+
+    match /permissionSets/{permissionSetId} {
+      allow get: if canReadPermissionSet(permissionSetId);
+      allow list: if isActiveOwner()
+        && request.query.limit != null
+        && request.query.limit <= 50;
+
+      allow create: if isActiveOwner()
+        && isValidPermissionSet(request.resource.data)
+        && usesCurrentWriteTime(request.resource.data);
+
+      allow update: if isActiveOwner()
+        && isValidPermissionSet(request.resource.data)
+        && usesCurrentWriteTime(request.resource.data)
+        && preservesPermissionSetHistory();
+
+      allow delete: if false;
+    }
+
+    match /appSettings/studio {
+      allow get: if isActiveUser();
+      allow list: if false;
+
+      allow create: if hasCapability('settings.studio.edit')
+        && isValidStudioSettings(request.resource.data)
+        && usesStudioSettingsCreateMetadata();
+
+      allow update: if hasCapability('settings.studio.edit')
+        && isValidStudioSettings(request.resource.data)
+        && preservesStudioSettingsHistory();
+
+      allow delete: if false;
+    }
+
+    match /studios/{studioRoomId} {
+      allow get: if hasCapability('settings.studio.view');
+      allow list: if hasCapability('settings.studio.view')
+        && request.query.limit != null
+        && request.query.limit <= 50;
+
+      allow create: if hasCapability('settings.studio.edit')
+        && isValidStudioRoom(request.resource.data)
+        && usesStudioRoomCreateMetadata();
+
+      allow update: if hasCapability('settings.studio.edit')
+        && isValidStudioRoom(request.resource.data)
+        && preservesStudioRoomHistory();
+
+      allow delete: if false;
+    }
+
+    match /operators/{operatorId} {
+      allow get: if hasCapability('settings.operators.view');
+      allow list: if hasCapability('settings.operators.view')
+        && request.query.limit != null
+        && request.query.limit <= 100;
+
+      allow create: if hasCapability('settings.operators.manage')
+        && isValidOperator(request.resource.data)
+        && usesOperatorCreateMetadata();
+
+      allow update: if isValidOperator(request.resource.data)
+        && (isInvitationOperatorLink(operatorId)
+          || (hasCapability('settings.operators.manage')
+            && preservesOperatorHistoryAndAccountLink())
+          || (isActiveOwner()
+            && preservesOperatorHistory()
+            && isAtomicOperatorUserLink(operatorId)));
+
+      allow delete: if false;
+
+      match /accountInvites/{invitationId} {
+        allow get: if isActiveOwner()
+          || (isValidAccountInvitation(operatorId, resource.data)
+            && hasVerifiedInvitationEmail(resource.data.email));
+        allow list: if false;
+
+        allow create: if isActiveOwner()
+          && isValidAccountInvitationId(invitationId)
+          && isValidAccountInvitation(operatorId, request.resource.data)
+          && usesAccountInvitationCreateMetadata(operatorId, request.resource.data);
+
+        allow update: if isValidAccountInvitationId(invitationId)
+          && (isAccountInvitationAcceptance(operatorId, invitationId)
+            || isAccountInvitationRevocation(operatorId));
+
+        allow delete: if false;
+      }
+    }
+
+    match /studio37System/connectivity-probe {
+      allow get: if isActiveOwner();
+      allow list, create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
