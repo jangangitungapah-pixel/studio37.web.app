@@ -316,9 +316,17 @@ Phase 4 progress on 2026-08-22:
   and automated coverage. GitHub Actions Quality run `32649866117` passed formatting, lint, 223
   unit/component tests, 36 Firestore Emulator authorization tests, production build, and Vite
   development-server smoke.
-- Booking/calendar consumption of active rooms/hours, the Phase 4D2 permission editor and browser
-  QA, automated invitation delivery/resend/status administration, and final Phase 4
-  responsive/integration gates remain pending; Phase 4 remains in progress.
+- Phase 4D2 implementation added the Owner-only Hak Akses route, grouped capability editor,
+  sensitive-permission explanations, template create/edit/soft-status dialogs, and exact-user
+  assignment/change/clear workflow for login-linked Studio Operators. It reuses the bounded
+  permission/operator queries and reads no user profile until an explicit assignment action.
+  GitHub Actions Quality run `32668577849` passed formatting, lint, 238 unit/component tests, 36
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Final Phase 4D2 real-Firebase template/assignment and desktop/mobile browser acceptance remains
+  pending, so `Configure operator permissions` and the responsive Phase 4 gate remain open.
+- Booking/calendar consumption of active rooms/hours, automated invitation
+  delivery/resend/status administration, and final Phase 4 integration gates remain pending; Phase
+  4 remains in progress.
 
 ---
 
@@ -756,4 +764,6 @@ Implementation status:
   - [x] Phase 4C5B — email/password provider, Firebase verification, Owner copy/share invitation, and browser acceptance UI implemented and automated quality-gated.
   - [x] Final Phase 4C5B real-Firebase invitation/account-link browser acceptance accepted.
   - [x] Phase 4D1 — bounded permission-set repository, exact assignment transaction, Security Rules, and automated coverage implemented and quality-gated.
-  - [ ] Phase 4D2 permission editor/assignment UI and browser QA, automated invitation delivery/status administration, and final integration/responsive gates pending.
+  - [x] Phase 4D2 implementation — Owner-only grouped permission editor, soft status, exact linked-user assignment UI, and automated coverage implemented and quality-gated.
+  - [ ] Final Phase 4D2 real-Firebase permission mutation and responsive browser acceptance pending.
+  - [ ] Automated invitation delivery/status administration and final integration/responsive gates pending.
