@@ -308,10 +308,12 @@ Phase 4 progress on 2026-08-22:
   throttling recovery from login errors. GitHub Actions Quality run `32648089596` passed formatting,
   lint, 214 unit/component tests, 34 Firestore Emulator authorization tests, production build, and
   Vite development-server smoke.
+- On 2026-08-23, the project owner confirmed successful real-Firebase operator account registration
+  through the invitation onboarding flow; the manual invitation/account-link browser acceptance
+  gate is accepted.
 - Booking/calendar consumption of active rooms/hours, permission administration, automated
-  invitation delivery/resend/status administration, final real-Firebase invitation/account-link
-  acceptance, and final Phase 4 responsive/integration gates remain pending; Phase 4 remains in
-  progress.
+  invitation delivery/resend/status administration, and final Phase 4 responsive/integration gates
+  remain pending; Phase 4 remains in progress.
 
 ---
 
@@ -747,4 +749,5 @@ Implementation status:
   - [x] Phase 4C4 — Owner-only exact-UID operator/account-link review, link, and unlink UI implemented and quality-gated.
   - [x] Phase 4C5A — exact-path verified-email invitation/self-registration model, repository, atomic Rules, and automated coverage implemented and quality-gated.
   - [x] Phase 4C5B — email/password provider, Firebase verification, Owner copy/share invitation, and browser acceptance UI implemented and automated quality-gated.
-  - [ ] Permission management, automated invitation delivery/status administration, real-Firebase invitation/account-link acceptance, and final integration/responsive gates pending.
+  - [x] Final Phase 4C5B real-Firebase invitation/account-link browser acceptance accepted.
+  - [ ] Permission management, automated invitation delivery/status administration, and final integration/responsive gates pending.
