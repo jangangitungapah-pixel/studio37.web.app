@@ -10,6 +10,11 @@ const settingsDestinations = Object.freeze([
   Object.freeze({ label: 'Harga', policy: ROUTE_POLICIES.PRICING, to: '/settings/pricing' }),
   Object.freeze({ label: 'Operator', policy: ROUTE_POLICIES.OPERATORS, to: '/settings/operators' }),
   Object.freeze({
+    label: 'Hak Akses',
+    policy: ROUTE_POLICIES.PERMISSIONS,
+    to: '/settings/permissions',
+  }),
+  Object.freeze({
     label: 'Danger Zone',
     policy: ROUTE_POLICIES.DANGER_ZONE,
     to: '/settings/danger-zone',

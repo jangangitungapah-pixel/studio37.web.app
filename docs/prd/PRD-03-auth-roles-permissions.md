@@ -97,8 +97,10 @@ delivery and permission administration remain separate checkpoints.
 Phase 4D1 establishes the Owner-only bounded permission-template repository and exact linked-user
 assignment transaction. It does not make `permissions.manage` delegable and does not expose a user
 or Authentication collection lookup. The finalized foundation is documented in
-`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`; its responsive administration UI remains
-the next checkpoint.
+`docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md`. Phase 4D2 exposes it through an Owner-only
+grouped template editor and explicit exact-user assignment dialog documented in
+`docs/architecture/PERMISSION-ADMINISTRATION-UI-CONTRACT.md`; it adds no automatic user fan-out or
+new authorization path.
 
 ## 9. Recording Operator Without Login
 

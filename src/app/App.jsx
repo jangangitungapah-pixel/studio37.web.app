@@ -7,6 +7,7 @@ export function App({
   authGateway,
   operatorAccountInvitationRepository,
   operatorRepository,
+  permissionAdministrationRepository,
   permissionSetRepository,
   studioRoomRepository,
   studioSettingsRepository,
@@ -22,6 +23,7 @@ export function App({
         <AppRouter
           operatorAccountInvitationRepository={operatorAccountInvitationRepository}
           operatorRepository={operatorRepository}
+          permissionAdministrationRepository={permissionAdministrationRepository}
           studioRoomRepository={studioRoomRepository}
           studioSettingsRepository={studioSettingsRepository}
         />

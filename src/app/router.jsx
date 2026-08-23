@@ -14,12 +14,14 @@ import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
 import { DesignSystemPreviewPage } from '../features/dev/DesignSystemPreviewPage.jsx';
 import { FirebaseStatusPage } from '../features/dev/FirebaseStatusPage.jsx';
 import { OperatorSettingsPage } from '../features/settings/OperatorSettingsPage.jsx';
+import { PermissionSettingsPage } from '../features/settings/PermissionSettingsPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
 export function AppRouter({
   operatorAccountInvitationRepository,
   operatorRepository,
+  permissionAdministrationRepository,
   studioRoomRepository,
   studioSettingsRepository,
 }) {
@@ -79,6 +81,18 @@ export function AppRouter({
                 <OperatorSettingsPage
                   invitationRepository={operatorAccountInvitationRepository}
                   repository={operatorRepository}
+                />
+              }
+            />
+          </Route>
+
+          <Route element={<CapabilityRoute policy={ROUTE_POLICIES.PERMISSIONS} />}>
+            <Route
+              path="settings/permissions"
+              element={
+                <PermissionSettingsPage
+                  operatorRepository={operatorRepository}
+                  repository={permissionAdministrationRepository}
                 />
               }
             />

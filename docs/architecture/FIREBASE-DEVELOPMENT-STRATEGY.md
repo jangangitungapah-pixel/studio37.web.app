@@ -185,6 +185,16 @@ collection read is introduced. Its contract is:
 docs/architecture/PERMISSION-ADMINISTRATION-CONTRACT.md
 ```
 
+Phase 4D2 exposes that repository through the Owner-only `/settings/permissions` route. The page
+reuses the bounded permission-set and operator administration queries, filters linked Studio
+Operators in memory, and reads one exact `users/{uid}` profile only after the Owner opens an
+assignment dialog. It introduces no automatic per-operator user reads or new query/index shape.
+Its workflow contract is:
+
+```text
+docs/architecture/PERMISSION-ADMINISTRATION-UI-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:
