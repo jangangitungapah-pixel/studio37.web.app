@@ -364,6 +364,78 @@ service cloud.firestore {
         && data.updatedByUid.size() <= 128;
     }
 
+    function isValidOptionalSessionDuration(value) {
+      return value == null
+        || (value is int
+          && value >= 15
+          && value <= 1440
+          && value % 15 == 0);
+    }
+
+    function hasValidSessionDurationPair(data) {
+      return isValidOptionalSessionDuration(data.defaultDurationMinutes)
+        && isValidOptionalSessionDuration(data.minimumDurationMinutes)
+        && ((data.defaultDurationMinutes == null
+            && data.minimumDurationMinutes == null
+            && data.requiresStudioReservation == false)
+          || (data.defaultDurationMinutes is int
+            && data.minimumDurationMinutes is int
+            && data.minimumDurationMinutes <= data.defaultDurationMinutes));
+    }
+
+    function isValidSessionType(data) {
+      return data.keys().hasAll([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'requiresStudioReservation',
+          'defaultDurationMinutes',
+          'minimumDurationMinutes',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'code',
+          'name',
+          'description',
+          'displayOrder',
+          'requiresStudioReservation',
+          'defaultDurationMinutes',
+          'minimumDurationMinutes',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.code is string
+        && data.code.matches('^[A-Z0-9][A-Z0-9-]{0,23}$')
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 80
+        && data.description is string
+        && data.description.size() <= 240
+        && data.displayOrder is int
+        && data.displayOrder >= 1
+        && data.displayOrder <= 999
+        && data.requiresStudioReservation is bool
+        && hasValidSessionDurationPair(data)
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
     function hasValidOperatorTypes(value) {
       return value is list
         && value.size() >= 1
@@ -629,6 +701,21 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == request.auth.uid;
     }
 
+    function usesSessionTypeCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesSessionTypeHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
     function usesOperatorCreateMetadata() {
       return request.resource.data.linkedUserUid == null
         && request.resource.data.createdAt == request.time
@@ -849,6 +936,23 @@ service cloud.firestore {
       allow update: if hasCapability('settings.studio.edit')
         && isValidStudioRoom(request.resource.data)
         && preservesStudioRoomHistory();
+
+      allow delete: if false;
+    }
+
+    match /sessionTypes/{sessionTypeId} {
+      allow get: if hasCapability('settings.pricing.view');
+      allow list: if hasCapability('settings.pricing.view')
+        && request.query.limit != null
+        && request.query.limit <= 100;
+
+      allow create: if hasCapability('settings.pricing.edit')
+        && isValidSessionType(request.resource.data)
+        && usesSessionTypeCreateMetadata();
+
+      allow update: if hasCapability('settings.pricing.edit')
+        && isValidSessionType(request.resource.data)
+        && preservesSessionTypeHistory();
 
       allow delete: if false;
     }

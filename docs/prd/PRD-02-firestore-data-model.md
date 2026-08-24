@@ -94,6 +94,15 @@ Fields:
 - whether studio/time-slot reservation is required
 - display metadata
 
+Phase 5A1 implements immutable auto-ID `sessionTypes/{sessionTypeId}` documents with canonical
+code/name/description/display ordering, `active | disabled` status, explicit studio-reservation
+behavior, nullable paired default/minimum durations, and immutable creation/server-controlled
+update metadata. The feature repository owns one `displayOrder`-ordered one-shot query capped at
+100 documents and exposes no generic collection read, listener, or hard delete. Pricing models,
+packages, studio scope, add-ons, and calculation snapshots remain separate Phase 5 contracts.
+The finalized foundation is documented in
+`docs/architecture/SESSION-TYPE-DOMAIN-CONTRACT.md`.
+
 ### `pricingRules`
 Pricing configurations associated with session types and optionally specific studios.
 

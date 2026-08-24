@@ -334,7 +334,7 @@ Phase 4 progress on 2026-08-22:
 
 ## 5.1 Domain Engine
 
-- [ ] Implement session type model.
+- [x] Implement session type model.
 - [ ] Implement pricing rule model.
 - [ ] Implement hourly calculation.
 - [ ] Implement fixed-session calculation.
@@ -366,6 +366,21 @@ Phase 4 progress on 2026-08-22:
 - [ ] Invalid/ambiguous rules are blocked.
 - [ ] Responsive Price Settings QA passes.
 - [ ] Lint/test/build pass.
+
+Phase 5 progress on 2026-08-24:
+
+- Phase 5A1 implemented strict configurable `sessionTypes/{sessionTypeId}` documents, explicit
+  studio-reservation behavior, paired default/minimum durations, deterministic display ordering,
+  and soft activation/deactivation.
+- The Session Type repository owns one `displayOrder asc + limit(100)` one-shot query and focused
+  create/edit/status operations. It exposes no generic `listAll()`, listener, hard delete, pricing
+  rule, calculation, or UI operation and requires no composite index.
+- Capability-scoped Firestore Security Rules validate canonical fields, duration relationships,
+  immutable creation metadata, server update metadata, bounded reads, and hard-delete denial.
+  GitHub Actions Quality run `32695402968` passed formatting, lint, 249 unit/component tests, 40
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Pricing-rule models, calculation engines, snapshots, manual overrides, Price Settings UI, and all
+  final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -767,3 +782,5 @@ Implementation status:
   - [x] Phase 4D2 implementation — Owner-only grouped permission editor, soft status, exact linked-user assignment UI, and automated coverage implemented and quality-gated.
   - [ ] Final Phase 4D2 real-Firebase permission mutation and responsive browser acceptance pending.
   - [ ] Automated invitation delivery/status administration and final integration/responsive gates pending.
+- [ ] Phase 5 — Session & Flexible Pricing Engine in progress.
+  - [x] Phase 5A1 — strict session-type domain/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.

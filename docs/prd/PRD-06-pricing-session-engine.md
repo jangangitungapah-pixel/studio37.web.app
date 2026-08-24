@@ -21,6 +21,11 @@ Session type names are data, not application constants.
 
 A session type may define booking behavior such as whether a physical studio/time slot is required, allowed durations/packages, default studio scope, and enabled add-ons.
 
+Phase 5A1 establishes the strict base session-type identity, reservation behavior, paired
+default/minimum duration, soft-status, bounded repository, and Security Rules contract in
+`docs/architecture/SESSION-TYPE-DOMAIN-CONTRACT.md`. It intentionally does not place pricing
+models, packages, add-ons, or rule-selection logic inside the session-type document.
+
 ## 3. Supported Pricing Models
 
 ### Hourly

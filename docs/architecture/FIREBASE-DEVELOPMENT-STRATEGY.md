@@ -195,6 +195,16 @@ Its workflow contract is:
 docs/architecture/PERMISSION-ADMINISTRATION-UI-CONTRACT.md
 ```
 
+Phase 5A1 adds the first pricing-domain collection boundary at `sessionTypes/{sessionTypeId}`. Its
+repository owns one `displayOrder asc + limit(100)` administration query plus focused create/edit
+and soft-status mutations. It exposes no generic list, listener, hard delete, pricing rule, or
+calculation operation. Booking-capability reads remain default-deny until their owning booking
+phase reviews that access. The contract is:
+
+```text
+docs/architecture/SESSION-TYPE-DOMAIN-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:
