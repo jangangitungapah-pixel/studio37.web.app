@@ -32,6 +32,8 @@ const UNASSIGNED_UID = 'unassigned-operator';
 const DISABLED_SET_UID = 'disabled-set-operator';
 const STUDIO_EDITOR_UID = 'studio-editor';
 const OPERATOR_MANAGER_UID = 'operator-manager';
+const PRICING_VIEWER_UID = 'pricing-viewer';
+const PRICING_EDITOR_UID = 'pricing-editor';
 const INVITED_UID = 'invited-operator';
 const EXISTING_INVITED_UID = 'existing-invited-operator';
 const ASSIGNABLE_UID = 'assignable-operator';
@@ -43,6 +45,8 @@ const DELEGATED_SET_ID = 'front-desk';
 const DISABLED_SET_ID = 'disabled-template';
 const STUDIO_EDITOR_SET_ID = 'studio-editor-template';
 const OPERATOR_MANAGER_SET_ID = 'operator-manager-template';
+const PRICING_VIEWER_SET_ID = 'pricing-viewer-template';
+const PRICING_EDITOR_SET_ID = 'pricing-editor-template';
 const RULES_PATH = new URL('../firestore.rules', import.meta.url);
 const FIXTURE_TIMESTAMP = Timestamp.fromMillis(Date.UTC(2026, 0, 1));
 
@@ -131,6 +135,38 @@ function createStudioRoom({
     name,
     description,
     displayOrder,
+    status,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
+    ...overrides,
+  };
+}
+
+function createSessionType({
+  code = 'REHEARSAL',
+  name = 'Rehearsal',
+  description = 'Latihan band dengan reservasi studio.',
+  displayOrder = 1,
+  requiresStudioReservation = true,
+  defaultDurationMinutes = 120,
+  minimumDurationMinutes = 60,
+  status = 'active',
+  createdAt = FIXTURE_TIMESTAMP,
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  ...overrides
+} = {}) {
+  return {
+    code,
+    name,
+    description,
+    displayOrder,
+    requiresStudioReservation,
+    defaultDurationMinutes,
+    minimumDurationMinutes,
     status,
     createdAt,
     createdByUid,
@@ -349,6 +385,14 @@ beforeEach(async () => {
       }),
     ],
     [
+      `users/${PRICING_VIEWER_UID}`,
+      createUserProfile({ uid: PRICING_VIEWER_UID, permissionSetId: PRICING_VIEWER_SET_ID }),
+    ],
+    [
+      `users/${PRICING_EDITOR_UID}`,
+      createUserProfile({ uid: PRICING_EDITOR_UID, permissionSetId: PRICING_EDITOR_SET_ID }),
+    ],
+    [
       `users/${ASSIGNABLE_UID}`,
       createUserProfile({ uid: ASSIGNABLE_UID, operatorId: ASSIGNABLE_OPERATOR_ID }),
     ],
@@ -369,6 +413,20 @@ beforeEach(async () => {
       createPermissionSet({
         name: 'Operator manager',
         capabilities: ['settings.operators.manage', 'settings.operators.view'],
+      }),
+    ],
+    [
+      `permissionSets/${PRICING_VIEWER_SET_ID}`,
+      createPermissionSet({
+        name: 'Pricing viewer',
+        capabilities: ['settings.pricing.view'],
+      }),
+    ],
+    [
+      `permissionSets/${PRICING_EDITOR_SET_ID}`,
+      createPermissionSet({
+        name: 'Pricing editor',
+        capabilities: ['settings.pricing.edit', 'settings.pricing.view'],
       }),
     ],
     [
@@ -970,6 +1028,162 @@ describe('initial Firestore authorization boundary', () => {
     );
   });
 
+  test('allows only bounded session-type lists to users with pricing-settings view access', async () => {
+    await seedDocuments([
+      ['sessionTypes/rehearsal', createSessionType()],
+      [
+        'sessionTypes/recording',
+        createSessionType({ code: 'RECORDING', name: 'Recording', displayOrder: 2 }),
+      ],
+    ]);
+
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const viewerDb = authenticatedDb(PRICING_VIEWER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const disabledDb = authenticatedDb(DISABLED_UID);
+    const ownerQuery = query(
+      collection(ownerDb, 'sessionTypes'),
+      orderBy('displayOrder', 'asc'),
+      limit(100),
+    );
+    const viewerQuery = query(
+      collection(viewerDb, 'sessionTypes'),
+      orderBy('displayOrder', 'asc'),
+      limit(100),
+    );
+
+    await assertSucceeds(getDocs(ownerQuery));
+    await assertSucceeds(getDocs(viewerQuery));
+    await assertSucceeds(getDoc(doc(viewerDb, 'sessionTypes/rehearsal')));
+    await assertFails(getDocs(collection(ownerDb, 'sessionTypes')));
+    await assertFails(
+      getDocs(
+        query(collection(ownerDb, 'sessionTypes'), orderBy('displayOrder', 'asc'), limit(101)),
+      ),
+    );
+    await assertFails(
+      getDocs(
+        query(collection(operatorDb, 'sessionTypes'), orderBy('displayOrder', 'asc'), limit(100)),
+      ),
+    );
+    await assertFails(getDoc(doc(operatorDb, 'sessionTypes/rehearsal')));
+    await assertFails(
+      getDocs(
+        query(collection(disabledDb, 'sessionTypes'), orderBy('displayOrder', 'asc'), limit(100)),
+      ),
+    );
+  });
+
+  test('allows validated session-type create, edit, and soft-disable only to pricing editors', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const viewerDb = authenticatedDb(PRICING_VIEWER_UID);
+    const editorDb = authenticatedDb(PRICING_EDITOR_UID);
+    const ownerReference = doc(ownerDb, 'sessionTypes/rehearsal');
+
+    await assertSucceeds(
+      setDoc(
+        ownerReference,
+        createSessionType({ createdAt: serverTimestamp(), updatedAt: serverTimestamp() }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'sessionTypes/rehearsal'), {
+        defaultDurationMinutes: 180,
+        minimumDurationMinutes: 90,
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_EDITOR_UID,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'sessionTypes/rehearsal'), {
+        status: 'disabled',
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_EDITOR_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(viewerDb, 'sessionTypes/rehearsal'), {
+        name: 'Unauthorized edit',
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_VIEWER_UID,
+      }),
+    );
+    await assertFails(deleteDoc(ownerReference));
+  });
+
+  test('rejects malformed session types and spoofed creation metadata', async () => {
+    const ownerDb = authenticatedDb(OWNER_UID);
+
+    for (const [sessionTypeId, invalidSessionType] of [
+      ['lowercase-code', { code: 'rehearsal' }],
+      ['invalid-order', { displayOrder: 0 }],
+      ['invalid-status', { status: 'archived' }],
+      ['invalid-duration-step', { defaultDurationMinutes: 125 }],
+      ['invalid-duration-order', { minimumDurationMinutes: 180 }],
+      [
+        'missing-reservation-duration',
+        { defaultDurationMinutes: null, minimumDurationMinutes: null },
+      ],
+      ['spoofed-creator', { createdByUid: OPERATOR_UID }],
+      ['spoofed-updater', { updatedByUid: OPERATOR_UID }],
+      ['unknown-field', { pricingModel: 'hourly' }],
+    ]) {
+      await assertFails(
+        setDoc(
+          doc(ownerDb, `sessionTypes/${sessionTypeId}`),
+          createSessionType({
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            ...invalidSessionType,
+          }),
+        ),
+      );
+    }
+
+    await assertSucceeds(
+      setDoc(
+        doc(ownerDb, 'sessionTypes/mixing'),
+        createSessionType({
+          code: 'MIXING',
+          name: 'Mixing',
+          requiresStudioReservation: false,
+          defaultDurationMinutes: null,
+          minimumDurationMinutes: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      ),
+    );
+  });
+
+  test('preserves session-type creation history and requires server update metadata', async () => {
+    await seedDocuments([['sessionTypes/rehearsal', createSessionType()]]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'sessionTypes/rehearsal');
+
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: recentTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        name: 'Client-clock update',
+        updatedAt: recentTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        name: 'Spoofed actor',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+  });
+
   test('allows only bounded operator lists to users with operator-settings view access', async () => {
     await seedDocuments([
       ['operators/operator-budi', createOperator()],
@@ -1516,7 +1730,6 @@ describe('initial Firestore authorization boundary', () => {
   test('keeps not-yet-implemented domain collections default-deny', async () => {
     await seedDocuments([
       ['pricingRules/standard', { amount: 100_000 }],
-      ['sessionTypes/rehearsal', { active: true, name: 'Rehearsal' }],
       ['commissionEntries/paid-1', { amount: 50_000, status: 'paid' }],
       ['bookings/booking-1', { status: 'confirmed' }],
     ]);
@@ -1527,7 +1740,6 @@ describe('initial Firestore authorization boundary', () => {
     await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));
     await assertFails(getDoc(doc(operatorDb, 'bookings/booking-1')));
     await assertFails(updateDoc(doc(operatorDb, 'pricingRules/standard'), { amount: 1 }));
-    await assertFails(updateDoc(doc(operatorDb, 'sessionTypes/rehearsal'), { name: 'Hijacked' }));
     await assertFails(updateDoc(doc(operatorDb, 'commissionEntries/paid-1'), { amount: 0 }));
   });
 

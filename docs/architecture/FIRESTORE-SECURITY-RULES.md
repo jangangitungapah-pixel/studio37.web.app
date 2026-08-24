@@ -33,6 +33,7 @@ generic unbounded read path.
 | `permissionSets/{id}`                                  | Active Owner, or active Operator whose exact profile references this ID. | Active Owner only, explicit limit at most 50. | Active Owner only, with supported delegable capabilities.                             | Denied; use `status: disabled`. |
 | `appSettings/studio`                                   | Any exact valid active Studio37 user profile.                            | Denied.                                       | Owner or active Operator with `settings.studio.edit`; validated.                      | Denied.                         |
 | `studios/{roomId}`                                     | Owner or active Operator with `settings.studio.view`.                    | Same access, explicit limit at most 50.       | Owner or `settings.studio.edit`; validated.                                           | Denied; use `status: disabled`. |
+| `sessionTypes/{sessionTypeId}`                         | Owner or active Operator with `settings.pricing.view`.                   | Same access, explicit limit at most 100.      | Owner or `settings.pricing.edit`; validated.                                          | Denied; use `status: disabled`. |
 | `operators/{operatorId}`                               | Owner or active Operator with `settings.operators.view`.                 | Same access, explicit limit at most 100.      | Ordinary management by capability; account links require reviewed atomic flows.       | Denied; use `status: disabled`. |
 | `operators/{operatorId}/accountInvites/{invitationId}` | Active Owner or authenticated user with the matching verified email.     | Denied.                                       | Active Owner creates/revokes; matching invitee accepts in a three-document batch.     | Denied.                         |
 | `studio37System/connectivity-probe`                    | Active Owner exact-document read only.                                   | Denied.                                       | Denied.                                                                               | Denied.                         |
@@ -111,6 +112,22 @@ delete remains denied. The detailed contract is documented in:
 docs/architecture/STUDIO-ROOMS-CONTRACT.md
 ```
 
+## Session type invariants
+
+Phase 5A1 opens `sessionTypes/{sessionTypeId}` only to active Owners or Operators with the relevant
+Pricing Settings capability. List access requires an explicit query limit of at most 100; the
+repository fixes one `displayOrder`-ordered, one-shot query at that bound.
+
+Writes require implicit Owner access or `settings.pricing.edit`. Rules enforce the exact base
+field set, canonical code/name/description/display order, explicit studio-reservation behavior,
+paired 15-minute-aligned default/minimum durations, `active | disabled` status, immutable creation
+metadata, server update metadata, and current actor. Hard delete remains denied. Booking reads are
+not opened by this administration foundation. The detailed contract is documented in:
+
+```text
+docs/architecture/SESSION-TYPE-DOMAIN-CONTRACT.md
+```
+
 ## Operator domain invariants
 
 Phase 4C1 opens `operators/{operatorId}` only to active Owners or Operators with the relevant
@@ -171,10 +188,9 @@ docs/architecture/OPERATOR-ACCOUNT-INVITATION-CONTRACT.md
 
 ## Deferred product collections
 
-Bookings, customers, remaining settings documents, session/pricing configuration, payments,
-commissions, ledger entries, and audit logs remain default-deny. Permission administration UI also
-remains deferred after its Phase 4D1 data/rules foundation. Later phases must add the smallest
-required access with:
+Bookings, customers, pricing rules, remaining settings documents, payments, commissions, ledger
+entries, and audit logs remain default-deny. Later phases must add the smallest required access
+with:
 
 1. a finalized document contract,
 2. explicit capability and field-level constraints,
