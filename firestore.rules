@@ -627,10 +627,8 @@ service cloud.firestore {
 
     function hasValidPricingRuleReferences(data) {
       return exists(sessionTypePath(data.sessionTypeId))
-        && isValidSessionType(get(sessionTypePath(data.sessionTypeId)).data)
         && (data.studioId == null
-          || (exists(studioPath(data.studioId))
-            && isValidStudioRoom(get(studioPath(data.studioId)).data)));
+          || exists(studioPath(data.studioId)));
     }
 
     function hasValidOperatorTypes(value) {

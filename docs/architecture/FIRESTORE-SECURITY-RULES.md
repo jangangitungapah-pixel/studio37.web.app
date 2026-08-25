@@ -138,10 +138,10 @@ List access requires an explicit query limit of at most 200; the repository fixe
 Writes require implicit Owner access or `settings.pricing.edit`. Rules enforce the exact envelope,
 four discriminated configuration shapes, safe non-negative integer IDR, 15-minute duration bounds,
 nullable exact-studio scope, valid effective-time ordering, `active | disabled` status, immutable
-creation metadata, server update metadata, and current actor. Each mutation also verifies the one
-exact canonical session type and optional exact canonical studio reference. Hard delete remains
-denied, and booking reads are not opened by this administration foundation. The detailed contract
-is documented in:
+creation metadata, server update metadata, and current actor. Each mutation also verifies that the
+one exact session-type reference and optional exact studio reference exist; those collections
+retain their own canonical write validation. Hard delete remains denied, and booking reads are not
+opened by this administration foundation. The detailed contract is documented in:
 
 ```text
 docs/architecture/PRICING-RULE-DOMAIN-CONTRACT.md

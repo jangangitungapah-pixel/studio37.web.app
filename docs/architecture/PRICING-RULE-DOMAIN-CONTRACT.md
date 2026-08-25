@@ -109,8 +109,9 @@ Indonesian case-insensitive name and immutable document ID after decoding.
 An active user with `settings.pricing.view` may read one pricing rule or issue the bounded list
 query. An active user with `settings.pricing.edit` may create or update a canonical rule.
 Firestore Security Rules independently validate the complete discriminated shape, integer-IDR and
-duration bounds, server actor/time metadata, immutable creation history, and exact referenced
-session/studio documents. Hard delete, unbounded/over-limit queries, missing references, malformed
+duration bounds, server actor/time metadata, immutable creation history, and existence of the exact
+referenced session/studio documents. The referenced collections enforce their own canonical schema
+on application writes. Hard delete, unbounded/over-limit queries, missing references, malformed
 fields, and unauthorized writes are denied.
 
 Booking-phase reads remain default-deny. Phase 8 must explicitly review and test the least-
