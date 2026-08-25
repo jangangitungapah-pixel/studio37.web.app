@@ -64,6 +64,13 @@ The same session type can have different pricing by studio/room.
 
 Add-ons may be fixed, quantity-based, or time-based where supported. Examples: instrument rental, extra microphone, engineer service, extra recording hour.
 
+Phase 5A2 establishes the strict `pricingRules/{pricingRuleId}` envelope and discriminated
+configuration for the four base pricing models above. Each rule has one session reference,
+nullable exact-studio scope, integer priority, optional effective window, soft status, and
+server-owned metadata. The bounded repository and Security Rules contract are documented in
+`docs/architecture/PRICING-RULE-DOMAIN-CONTRACT.md`. This foundation validates configuration but
+does not yet calculate a price, resolve a studio-specific winner, or reject equal-match ambiguity.
+
 ## 4. Pricing Rule Selection
 
 Rules require deterministic priority. Suggested resolution order:

@@ -5,8 +5,9 @@
 Define the Phase 5A1 foundation for Owner-configurable Studio37 service/session types without
 hardcoding Rehearsal, Recording, Mixing, or another service name in application logic. This slice
 implements the strict document model, bounded repository, Security Rules, and automated coverage.
-Pricing-rule models, calculations, packages, add-ons, discounts, snapshots, and Price Settings UI
-remain separate Phase 5 slices.
+Pricing rules are implemented separately by the Phase 5A2 contract in
+`PRICING-RULE-DOMAIN-CONTRACT.md`; calculations, add-ons, discounts, snapshots, and Price Settings
+UI remain later Phase 5 slices.
 
 ## Document path and identity
 
@@ -83,7 +84,6 @@ Firebase Spark development.
 ## Deferred Phase 5 scope
 
 - Session Type CRUD/deactivation UI and responsive browser acceptance;
-- pricing-rule document model and repository;
 - hourly, fixed, package, base-plus-additional, and studio-specific calculation models;
 - add-ons, discounts, rule priority, ambiguity rejection, and effective periods;
 - pricing snapshot and authorized manual override models;

@@ -35,6 +35,7 @@ queries:
 | Operator account link       | Exact user lookup + exact two-doc transaction             | Not required    |
 | Operator account invitation | Exact invitation/user reads + exact three-doc write batch | Not required    |
 | Session type administration | Ordered `sessionTypes` query capped at 100 docs           | Not required    |
+| Pricing rule administration | Ordered `pricingRules` query capped at 200 docs           | Not required    |
 
 The Studio Rooms and Operator queries use automatically indexed single fields. Phase 4C3 account
 linking addresses only known operator/user document paths, and Phase 4C4 exposes only that same
@@ -46,7 +47,8 @@ Phase 4D2 reuses that query together with the existing bounded operator list. It
 user-profile read only after an explicit assignment action, so no new collection query or index is
 introduced.
 Phase 5A1 adds one pricing-settings session-type list using automatic single-field display-order
-indexing. Pricing rules and booking consumption remain unimplemented and default-deny.
+indexing. Phase 5A2 adds one pricing-rule list using automatic single-field priority indexing;
+booking consumption remains unimplemented and default-deny.
 `firestore.indexes.json` intentionally retains empty `indexes` and `fieldOverrides` arrays.
 
 Phase 4A loads the Studio Settings form with one one-shot exact-document read. Missing
@@ -73,6 +75,7 @@ changes, the user signs out, or the Auth provider unmounts.
 | `settings.operators-list`       | `operatorRepository.js`                 | `operators`      | Operator domain/admin foundation | None    | `displayName` asc  | Limit 100 | One-shot | Automatic single-field; no manifest | 4C1   |
 | `settings.permission-sets-list` | `permissionAdministrationRepository.js` | `permissionSets` | Owner permission administration  | None    | `name` asc         | Limit 50  | One-shot | Automatic single-field; no manifest | 4D1   |
 | `settings.session-types-list`   | `sessionTypeRepository.js`              | `sessionTypes`   | Pricing session-type admin       | None    | `displayOrder` asc | Limit 100 | One-shot | Automatic single-field; no manifest | 5A1   |
+| `settings.pricing-rules-list`   | `pricingRuleRepository.js`              | `pricingRules`   | Pricing rule administration      | None    | `priority` desc    | Limit 200 | One-shot | Automatic single-field; no manifest | 5A2   |
 
 Equal display-order values are sorted by room name and document ID after decoding. Callers cannot
 remove or raise the repository bound, and Firestore Security Rules reject unbounded or over-limit
@@ -88,7 +91,9 @@ a collection scan. Phase 4D1 keeps user assignment document-addressed and expose
 Owner permission-set administration query; callers cannot remove or raise its 50-document bound.
 Phase 4D2 consumes both existing bounded lists and never fans out automatic `users/{uid}` reads.
 Phase 5A1 keeps session-type administration to one fixed `displayOrder asc + limit(100)` query;
-callers cannot remove or raise that bound, and no pricing-rule query is exposed yet.
+callers cannot remove or raise that bound. Phase 5A2 keeps pricing-rule administration to one
+fixed `priority desc + limit(200)` query; writes use one exact session-type reference read plus one
+optional exact studio read, and no calculation/resolution query or listener is exposed.
 
 Add another active row only in the same focused change that introduces or materially changes the
 corresponding feature-repository query.
