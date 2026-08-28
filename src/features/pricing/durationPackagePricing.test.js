@@ -82,9 +82,7 @@ describe('duration-package pricing calculation', () => {
     );
 
     expect(result.totalAmountIdr).toBe(450_000);
-    expect(result.extraTimePolicy).toBe(
-      PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE,
-    );
+    expect(result.extraTimePolicy).toBe(PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE);
   });
 
   it('keeps additional metadata with zero overtime on exact duration', () => {
@@ -192,10 +190,7 @@ describe('duration-package pricing calculation', () => {
 
   it('rejects non-object package configurations', () => {
     for (const configuration of [null, undefined, [], 'config', 450_000]) {
-      expectCalculationError(
-        createCalculationInput({ configuration }),
-        /must be an object/,
-      );
+      expectCalculationError(createCalculationInput({ configuration }), /must be an object/);
     }
   });
 
@@ -260,10 +255,7 @@ describe('duration-package pricing calculation', () => {
 
   it('rejects invalid requested duration values', () => {
     for (const durationMinutes of [0, -1]) {
-      expectCalculationError(
-        createCalculationInput({ durationMinutes }),
-        /greater than zero/,
-      );
+      expectCalculationError(createCalculationInput({ durationMinutes }), /greater than zero/);
     }
 
     for (const durationMinutes of [1.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) {
