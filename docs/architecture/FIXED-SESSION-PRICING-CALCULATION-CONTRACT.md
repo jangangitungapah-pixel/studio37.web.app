@@ -2,9 +2,11 @@
 
 ## Purpose
 
-Define the Phase 5A4 pure fixed-session pricing boundary for Studio37. This slice turns one canonical
-fixed-session pricing configuration into a deterministic integer-IDR calculation result. It performs
-no Firestore access, rule selection, booking mutation, duration calculation, or React rendering.
+Define the Phase 5A4 pure fixed-session pricing boundary for Studio37.
+
+This slice converts one canonical fixed-session configuration into a deterministic
+integer-IDR calculation result. It performs no Firestore access, rule selection,
+booking mutation, duration calculation, or React rendering.
 
 ## Source and public API
 
@@ -20,77 +22,74 @@ It exposes one operation:
 calculateFixedSessionPrice({ pricingModel, configuration });
 ```
 
-The input contains exactly those two fields. A persisted pricing-rule document is intentionally not
-accepted because status, effective dates, priority, session/studio scope, and winning-rule selection
-belong to later Phase 5 slices.
+The input contains exactly those two fields. A persisted pricing-rule document is
+not accepted because status, effective dates, priority, session scope, studio scope,
+and winning-rule selection belong to later Phase 5 slices.
 
 ## Canonical input
 
-`pricingModel` must be `fixed_session`.
+The accepted input contract is:
 
-`configuration` contains exactly:
+- `pricingModel` must be exactly `fixed_session`.
+- `configuration` must be an object containing exactly `amountIdr`.
+- `configuration.amountIdr` must be a non-negative safe integer IDR amount.
 
-| Input path                | Contract                                 |
-| ------------------------- | ---------------------------------------- |
-| `configuration.amountIdr` | Non-negative JavaScript-safe integer IDR |
-
-Zero is valid because the existing pricing-rule schema allows a zero-valued configured amount. This
-slice does not invent a positive minimum that is absent from the source model.
+Zero is valid because the existing pricing-rule schema allows a zero-valued amount.
+This slice does not invent a positive minimum that is absent from the source model.
 
 ## Duration independence
 
 A fixed-session price is not multiplied by calendar duration and does not accept
-`durationMinutes`. Supplying duration or any other extra calculation input is rejected as an
-unsupported input shape.
+`durationMinutes`.
 
-This keeps the engine aligned with PRD-06: a fixed project/session amount remains constant when the
-service's calendar duration is not itself a pricing input. Booking logic may still require or store a
-duration for scheduling when the session type reserves a studio, but that duration does not alter
-this calculation.
+Supplying duration or another extra calculation field is rejected as an unsupported
+input shape. Booking logic may still store duration for scheduling, but that duration
+does not alter this calculator result.
 
 ## Calculation order
 
 1. Reject non-object or unsupported input shapes.
 2. Reject a pricing model other than `fixed_session`.
-3. Validate the exact one-field fixed-session configuration.
+3. Validate the exact one-field configuration.
 4. Validate `amountIdr` as a non-negative safe integer IDR value.
 5. Return the configured amount unchanged as the final total.
 
-No multiplication, rounding, increment, minimum-duration, package, or overtime behavior is applied.
+No multiplication, rounding, increment, minimum-duration, package, or overtime logic
+is applied.
 
 ## Deterministic output
 
-The calculator returns one frozen object containing exactly:
+The calculator returns one frozen object with exactly these fields:
 
-| Field            | Meaning                                   |
-| ---------------- | ----------------------------------------- |
-| `pricingModel`   | Always `fixed_session`                    |
-| `amountIdr`      | Canonical configured fixed-session amount |
-| `totalAmountIdr` | Final amount, identical to `amountIdr`    |
+- `pricingModel`: always `fixed_session`.
+- `amountIdr`: the canonical configured amount.
+- `totalAmountIdr`: the final amount, identical to `amountIdr`.
 
-The object is a machine-readable calculation breakdown. It is not a booking pricing snapshot and
-contains no rule ID, session ID, studio ID, actor, timestamp, or calculation-version metadata.
+The result is a machine-readable calculation breakdown. It is not a booking pricing
+snapshot and contains no rule ID, session ID, studio ID, actor, timestamp, or version
+metadata.
 
 ## Failure semantics
 
-- `TypeError` reports non-object input/configuration, unsupported shapes, and non-safe-integer money.
-- `RangeError` reports a wrong pricing model or negative configured amount.
-- The calculator does not mutate its input and does not partially return a result after failure.
+- `TypeError` covers non-object input, unsupported shapes, and invalid safe-integer money.
+- `RangeError` covers a wrong pricing model or negative configured amount.
+- The calculator never mutates its input.
+- The calculator never partially returns a result after failure.
 
 ## Automated coverage
 
 Focused unit tests cover:
 
-- ordinary fixed amount
-- zero amount
-- maximum safe integer amount
-- wrong pricing model
+- ordinary fixed amounts
+- zero amounts
+- the maximum safe integer amount
+- wrong pricing models
 - unsupported top-level fields, including duration
-- malformed/non-object configuration
-- missing/extra configuration fields
-- negative, fractional, unsafe, non-numeric, NaN, and infinite amounts
+- malformed or non-object configuration
+- missing or extra configuration fields
+- negative, fractional, unsafe, non-numeric, `NaN`, and infinite amounts
 - deterministic frozen output
-- input/configuration immutability
+- input and nested-configuration immutability
 
 ## Deferred boundaries
 
