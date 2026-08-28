@@ -337,7 +337,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement session type model.
 - [x] Implement pricing rule model.
 - [x] Implement hourly calculation.
-- [ ] Implement fixed-session calculation.
+- [x] Implement fixed-session calculation.
 - [ ] Implement duration package calculation.
 - [ ] Implement base + additional-time calculation.
 - [ ] Implement studio-specific rule resolution.
@@ -398,9 +398,16 @@ Phase 5 progress on 2026-08-24:
   Firestore access, rule selection, snapshot mutation, React rendering, or booking integration.
   GitHub Actions Quality run `33218197842` passed formatting, zero-warning lint, all unit/component
   tests, Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Fixed-session, duration-package, base-plus-additional calculations, studio/effective rule
-  resolution, ambiguity rejection, add-ons, discounts, snapshots, manual overrides, Price Settings
-  UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A4 implemented a pure fixed-session pricing calculator that consumes one canonical
+  fixed-session configuration, validates its non-negative safe-integer IDR amount, and returns that
+  amount unchanged as the deterministic final total.
+- Fixed-session calculation explicitly rejects duration and other extra pricing inputs, so calendar
+  duration cannot silently alter a fixed project/session price. GitHub Actions Quality run
+  `33219153731` passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator
+  authorization tests, production build, and Vite development-server smoke.
+- Duration-package, base-plus-additional calculations, studio/effective rule resolution, ambiguity
+  rejection, add-ons, discounts, snapshots, manual overrides, Price Settings UI, and all final
+  Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -806,3 +813,4 @@ Implementation status:
   - [x] Phase 5A1 — strict session-type domain/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.
   - [x] Phase 5A2 — strict pricing-rule model/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.
   - [x] Phase 5A3 — pure hourly pricing calculation, increment/minimum validation, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A4 — pure fixed-session pricing calculation, duration-independence validation, integer-IDR validation, and automated coverage implemented and quality-gated.
