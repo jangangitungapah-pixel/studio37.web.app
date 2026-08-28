@@ -146,7 +146,7 @@ function normalizeAmount(value, label) {
   return requireIntegerIdr(value, { label });
 }
 
-function normalizeHourlyConfiguration(value) {
+export function normalizeHourlyPricingConfiguration(value) {
   const configuration = requireRecord(value, 'pricingRule.configuration');
   requireExactFields(
     configuration,
@@ -289,7 +289,7 @@ function normalizeBasePlusAdditionalConfiguration(value) {
 function normalizeConfiguration(pricingModel, value) {
   switch (pricingModel) {
     case PRICING_RULE_MODELS.HOURLY:
-      return normalizeHourlyConfiguration(value);
+      return normalizeHourlyPricingConfiguration(value);
     case PRICING_RULE_MODELS.FIXED_SESSION:
       return normalizeFixedSessionConfiguration(value);
     case PRICING_RULE_MODELS.DURATION_PACKAGE:

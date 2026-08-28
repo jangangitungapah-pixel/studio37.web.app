@@ -76,6 +76,8 @@ src/lib/datetime/timestamps.js
   transaction requires a positive amount.
 - Use `sumIntegerIdr()` for checked addition so an unsafe total fails rather than silently losing
   precision.
+- Use `multiplyIntegerIdr()` for checked multiplication by a whole non-negative quantity so an
+  unsafe product fails rather than silently losing precision.
 - `formatIntegerIdr()` is presentation-only and never changes the stored amount.
 - Percentage and duration calculations must define their own rounding rule in the owning pricing
   or commission engine before the result crosses the integer-IDR boundary.
