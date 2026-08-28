@@ -20,9 +20,7 @@ const configurationFieldNames = Object.freeze([
   'extraTimePolicy',
   'roundingMode',
 ]);
-const supportedExtraTimePolicies = new Set(
-  Object.values(PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES),
-);
+const supportedExtraTimePolicies = new Set(Object.values(PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES));
 const supportedRoundingModes = new Set(Object.values(PRICING_RULE_ROUNDING_MODES));
 
 function requireRecord(value, label) {
@@ -83,9 +81,7 @@ function normalizePackageConfiguration(value) {
   );
 
   if (!supportedExtraTimePolicies.has(configuration.extraTimePolicy)) {
-    throw new RangeError(
-      'durationPackagePricing.configuration.extraTimePolicy is not supported.',
-    );
+    throw new RangeError('durationPackagePricing.configuration.extraTimePolicy is not supported.');
   }
 
   const supportsAdditionalTime =
@@ -153,9 +149,7 @@ function resolveAdditionalTime(inputDurationMinutes, configuration) {
     throw new RangeError('durationPackagePricing extra time is blocked by the configured package.');
   }
 
-  if (
-    configuration.extraTimePolicy === PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE
-  ) {
+  if (configuration.extraTimePolicy === PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE) {
     throw new RangeError(
       'durationPackagePricing extra time requires another package and cannot be priced by one package rule.',
     );
