@@ -62,11 +62,11 @@ No multiplication, rounding, increment, minimum-duration, package, or overtime b
 
 The calculator returns one frozen object containing exactly:
 
-| Field            | Meaning                                      |
-| ---------------- | -------------------------------------------- |
-| `pricingModel`   | Always `fixed_session`                       |
-| `amountIdr`      | Canonical configured fixed-session amount    |
-| `totalAmountIdr` | Final amount, identical to `amountIdr`       |
+| Field            | Meaning                                   |
+| ---------------- | ----------------------------------------- |
+| `pricingModel`   | Always `fixed_session`                    |
+| `amountIdr`      | Canonical configured fixed-session amount |
+| `totalAmountIdr` | Final amount, identical to `amountIdr`    |
 
 The object is a machine-readable calculation breakdown. It is not a booking pricing snapshot and
 contains no rule ID, session ID, studio ID, actor, timestamp, or calculation-version metadata.
