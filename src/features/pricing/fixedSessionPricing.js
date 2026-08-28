@@ -26,11 +26,7 @@ function requireExactFields(value, expectedFields, label) {
 
 function normalizeFixedSessionConfiguration(value) {
   const configuration = requireRecord(value, 'fixedSessionPricing.configuration');
-  requireExactFields(
-    configuration,
-    configurationFieldNames,
-    'fixedSessionPricing.configuration',
-  );
+  requireExactFields(configuration, configurationFieldNames, 'fixedSessionPricing.configuration');
 
   return Object.freeze({
     amountIdr: requireIntegerIdr(configuration.amountIdr, {
