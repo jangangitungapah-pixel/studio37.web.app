@@ -70,16 +70,16 @@ describe('fixed-session pricing calculation', () => {
   it.each([null, undefined, [], 'config', 500_000])(
     'rejects non-object configuration: %j',
     (configuration) => {
-      expect(() =>
-        calculateFixedSessionPrice(createCalculationInput({ configuration })),
-      ).toThrow(/must be an object/);
+      expect(() => calculateFixedSessionPrice(createCalculationInput({ configuration }))).toThrow(
+        /must be an object/,
+      );
     },
   );
 
   it('rejects missing or extra configuration fields', () => {
-    expect(() =>
-      calculateFixedSessionPrice(createCalculationInput({ configuration: {} })),
-    ).toThrow(/unsupported input shape/);
+    expect(() => calculateFixedSessionPrice(createCalculationInput({ configuration: {} }))).toThrow(
+      /unsupported input shape/,
+    );
 
     expect(() =>
       calculateFixedSessionPrice(
