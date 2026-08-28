@@ -52,8 +52,12 @@ function createCalculationInput(overrides = {}) {
   };
 }
 
+function expectCalculationError(input, expectedError) {
+  expect(() => calculateDurationPackagePrice(input)).toThrow(expectedError);
+}
+
 describe('duration-package pricing calculation', () => {
-  it('returns the configured package amount for an exact blocked package duration', () => {
+  it('returns the configured amount for an exact blocked package', () => {
     expect(calculateDurationPackagePrice(createCalculationInput())).toEqual({
       additionalAmountIdr: 0,
       additionalAmountPerIncrementIdr: null,
@@ -72,7 +76,7 @@ describe('duration-package pricing calculation', () => {
     });
   });
 
-  it('returns the package amount for exact duration when another package is required only for overtime', () => {
+  it('returns the package amount for exact another-package duration', () => {
     const result = calculateDurationPackagePrice(
       createCalculationInput({ configuration: createAnotherPackageConfiguration() }),
     );
@@ -83,7 +87,7 @@ describe('duration-package pricing calculation', () => {
     );
   });
 
-  it('keeps configured additional-time metadata with zero overtime on exact package duration', () => {
+  it('keeps additional metadata with zero overtime on exact duration', () => {
     const result = calculateDurationPackagePrice(
       createCalculationInput({ configuration: createAdditionalConfiguration() }),
     );
@@ -100,7 +104,7 @@ describe('duration-package pricing calculation', () => {
     });
   });
 
-  it('rounds additional time up deterministically and adds the overtime amount', () => {
+  it('rounds overtime up and adds the configured amount', () => {
     const result = calculateDurationPackagePrice(
       createCalculationInput({
         configuration: createAdditionalConfiguration(),
@@ -119,14 +123,12 @@ describe('duration-package pricing calculation', () => {
     });
   });
 
-  it('prices aligned additional time exactly without inventing another increment', () => {
+  it('prices aligned overtime exactly', () => {
+    const configuration = createAdditionalConfiguration({
+      roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
+    });
     const result = calculateDurationPackagePrice(
-      createCalculationInput({
-        configuration: createAdditionalConfiguration({
-          roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
-        }),
-        durationMinutes: 240,
-      }),
+      createCalculationInput({ configuration, durationMinutes: 240 }),
     );
 
     expect(result).toMatchObject({
@@ -139,195 +141,174 @@ describe('duration-package pricing calculation', () => {
     });
   });
 
-  it('rejects partial additional increments in exact mode', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAdditionalConfiguration({
-            roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
-          }),
-          durationMinutes: 210,
-        }),
-      ),
-    ).toThrow(/additional increment in exact mode/);
+  it('rejects partial overtime in exact mode', () => {
+    const configuration = createAdditionalConfiguration({
+      roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
+    });
+
+    expectCalculationError(
+      createCalculationInput({ configuration, durationMinutes: 210 }),
+      /additional increment in exact mode/,
+    );
   });
 
-  it('rejects overtime when the package blocks extra time', () => {
-    expect(() =>
-      calculateDurationPackagePrice(createCalculationInput({ durationMinutes: 181 })),
-    ).toThrow(/extra time is blocked/);
-  });
-
-  it('rejects overtime that requires another package instead of silently choosing one', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAnotherPackageConfiguration(),
-          durationMinutes: 240,
-        }),
-      ),
-    ).toThrow(/requires another package/);
-  });
-
-  it('rejects a requested duration shorter than the selected package duration', () => {
-    expect(() =>
-      calculateDurationPackagePrice(createCalculationInput({ durationMinutes: 120 })),
-    ).toThrow(/meet the configured package duration/);
-  });
-
-  it('rejects a non-package pricing model and unsupported top-level fields', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({ pricingModel: PRICING_RULE_MODELS.HOURLY }),
-      ),
-    ).toThrow(/must be duration_package/);
-
-    expect(() =>
-      calculateDurationPackagePrice({
-        ...createCalculationInput(),
-        packageId: 'package-3h',
+  it('rejects blocked and another-package overtime', () => {
+    expectCalculationError(
+      createCalculationInput({ durationMinutes: 181 }),
+      /extra time is blocked/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createAnotherPackageConfiguration(),
+        durationMinutes: 240,
       }),
-    ).toThrow(/unsupported input shape/);
+      /requires another package/,
+    );
   });
 
-  it.each([null, undefined, [], 'package', 450_000])(
-    'rejects non-object calculation input: %j',
-    (value) => {
-      expect(() => calculateDurationPackagePrice(value)).toThrow(/must be an object/);
-    },
-  );
+  it('rejects duration shorter than the selected package', () => {
+    expectCalculationError(
+      createCalculationInput({ durationMinutes: 120 }),
+      /meet the configured package duration/,
+    );
+  });
 
-  it.each([null, undefined, [], 'config', 450_000])(
-    'rejects non-object package configuration: %j',
-    (configuration) => {
-      expect(() =>
-        calculateDurationPackagePrice(createCalculationInput({ configuration })),
-      ).toThrow(/must be an object/);
-    },
-  );
+  it('rejects the wrong model and extra input fields', () => {
+    expectCalculationError(
+      createCalculationInput({ pricingModel: PRICING_RULE_MODELS.HOURLY }),
+      /must be duration_package/,
+    );
+    expectCalculationError(
+      { ...createCalculationInput(), packageId: 'package-3h' },
+      /unsupported input shape/,
+    );
+  });
 
-  it('rejects missing, extra, and mismatched package configuration fields', () => {
-    expect(() =>
-      calculateDurationPackagePrice(createCalculationInput({ configuration: {} })),
-    ).toThrow(/unsupported input shape/);
+  it('rejects non-object calculation inputs', () => {
+    for (const input of [null, undefined, [], 'package', 450_000]) {
+      expectCalculationError(input, /must be an object/);
+    }
+  });
 
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: { ...createBlockedConfiguration(), discountIdr: 10_000 },
+  it('rejects non-object package configurations', () => {
+    for (const configuration of [null, undefined, [], 'config', 450_000]) {
+      expectCalculationError(
+        createCalculationInput({ configuration }),
+        /must be an object/,
+      );
+    }
+  });
+
+  it('rejects malformed package configuration shapes', () => {
+    expectCalculationError(
+      createCalculationInput({ configuration: {} }),
+      /unsupported input shape/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: { ...createBlockedConfiguration(), discountIdr: 10_000 },
+      }),
+      /unsupported input shape/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createBlockedConfiguration({
+          additionalAmountPerIncrementIdr: 100_000,
         }),
-      ),
-    ).toThrow(/unsupported input shape/);
-
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createBlockedConfiguration({
-            additionalAmountPerIncrementIdr: 100_000,
-          }),
-        }),
-      ),
-    ).toThrow(/additional policy/);
+      }),
+      /additional policy/,
+    );
   });
 
   it('rejects unsupported policy and rounding values', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createBlockedConfiguration({ extraTimePolicy: 'free' }),
-        }),
-      ),
-    ).toThrow(/extraTimePolicy/);
-
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAdditionalConfiguration({ roundingMode: 'nearest' }),
-        }),
-      ),
-    ).toThrow(/roundingMode/);
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createBlockedConfiguration({ extraTimePolicy: 'free' }),
+      }),
+      /extraTimePolicy/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createAdditionalConfiguration({ roundingMode: 'nearest' }),
+      }),
+      /roundingMode/,
+    );
   });
 
   it('rejects invalid configured amounts and durations', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createBlockedConfiguration({ amountIdr: -1 }),
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createBlockedConfiguration({ amountIdr: -1 }),
+      }),
+      /must not be negative/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createAdditionalConfiguration({
+          additionalAmountPerIncrementIdr: 1.5,
         }),
-      ),
-    ).toThrow(/must not be negative/);
-
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAdditionalConfiguration({ additionalAmountPerIncrementIdr: 1.5 }),
-        }),
-      ),
-    ).toThrow(/safe integer IDR amount/);
-
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createBlockedConfiguration({ durationMinutes: 20 }),
-        }),
-      ),
-    ).toThrow(/15-minute increment/);
+      }),
+      /safe integer IDR amount/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createBlockedConfiguration({ durationMinutes: 20 }),
+      }),
+      /15-minute increment/,
+    );
   });
 
   it('rejects invalid requested duration values', () => {
     for (const durationMinutes of [0, -1]) {
-      expect(() =>
-        calculateDurationPackagePrice(createCalculationInput({ durationMinutes })),
-      ).toThrow(/greater than zero/);
+      expectCalculationError(
+        createCalculationInput({ durationMinutes }),
+        /greater than zero/,
+      );
     }
 
     for (const durationMinutes of [1.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) {
-      expect(() =>
-        calculateDurationPackagePrice(createCalculationInput({ durationMinutes })),
-      ).toThrow(/safe integer number of minutes/);
+      expectCalculationError(
+        createCalculationInput({ durationMinutes }),
+        /safe integer number of minutes/,
+      );
     }
   });
 
-  it('rejects unsafe overtime multiplication and unsafe package-plus-overtime totals', () => {
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAdditionalConfiguration({
-            additionalAmountPerIncrementIdr: Number.MAX_SAFE_INTEGER,
-          }),
-          durationMinutes: 300,
-        }),
-      ),
-    ).toThrow(/product exceeds the safe integer IDR range/);
-
-    expect(() =>
-      calculateDurationPackagePrice(
-        createCalculationInput({
-          configuration: createAdditionalConfiguration({
-            additionalAmountPerIncrementIdr: 1,
-            amountIdr: Number.MAX_SAFE_INTEGER,
-          }),
-          durationMinutes: 240,
-        }),
-      ),
-    ).toThrow(/total exceeds the safe integer IDR range/);
-  });
-
-  it('preserves the safe integer boundary when the package amount is zero', () => {
-    const result = calculateDurationPackagePrice(
+  it('rejects unsafe overtime and unsafe final totals', () => {
+    expectCalculationError(
       createCalculationInput({
         configuration: createAdditionalConfiguration({
           additionalAmountPerIncrementIdr: Number.MAX_SAFE_INTEGER,
-          amountIdr: 0,
+        }),
+        durationMinutes: 300,
+      }),
+      /product exceeds the safe integer IDR range/,
+    );
+    expectCalculationError(
+      createCalculationInput({
+        configuration: createAdditionalConfiguration({
+          additionalAmountPerIncrementIdr: 1,
+          amountIdr: Number.MAX_SAFE_INTEGER,
         }),
         durationMinutes: 240,
       }),
+      /total exceeds the safe integer IDR range/,
+    );
+  });
+
+  it('preserves the safe integer boundary with a zero package amount', () => {
+    const configuration = createAdditionalConfiguration({
+      additionalAmountPerIncrementIdr: Number.MAX_SAFE_INTEGER,
+      amountIdr: 0,
+    });
+    const result = calculateDurationPackagePrice(
+      createCalculationInput({ configuration, durationMinutes: 240 }),
     );
 
     expect(result.totalAmountIdr).toBe(Number.MAX_SAFE_INTEGER);
   });
 
-  it('returns a frozen deterministic result without mutating its input', () => {
+  it('returns a frozen deterministic result without mutating input', () => {
     const configuration = createAdditionalConfiguration();
     const input = createCalculationInput({ configuration, durationMinutes: 240 });
     const firstResult = calculateDurationPackagePrice(input);
