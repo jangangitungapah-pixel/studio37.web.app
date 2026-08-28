@@ -106,16 +106,19 @@ The finalized foundation is documented in
 ### `pricingRules`
 Pricing configurations associated with session types and optionally specific studios.
 
-Fields:
-- `sessionTypeId`
-- applicable studio IDs or scope
-- pricing model
-- price values
-- duration/package constraints
-- priority
-- active/effective dates
-- add-on/override metadata
-- commission rule references or embedded configuration
+Phase 5A2 implements immutable auto-ID `pricingRules/{pricingRuleId}` documents with an editable
+administration name, one existing session-type reference, nullable exact-studio scope,
+`hourly | fixed_session | duration_package | base_plus_additional` discriminated configuration,
+integer priority, optional effective timestamps, `active | disabled` status, and immutable
+creation/server-controlled update metadata. IDR values are non-negative safe integers, durations
+are 15-minute aligned, and one duration-package document represents one package.
+
+The feature repository owns one `priority desc` one-shot query capped at 200 documents plus focused
+create/edit/soft-status operations. It exposes no generic list, listener, hard delete, calculation,
+resolution, snapshot, or override operation. Add-ons, discounts, commission relationships,
+calculation output, ambiguity handling, and booking snapshots remain separate contracts. The
+finalized foundation is documented in
+`docs/architecture/PRICING-RULE-DOMAIN-CONTRACT.md`.
 
 ### `bookings`
 Primary operational reservation records.

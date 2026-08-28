@@ -18,6 +18,14 @@ service cloud.firestore {
       return /databases/$(database)/documents/operators/$(operatorId);
     }
 
+    function studioPath(studioId) {
+      return /databases/$(database)/documents/studios/$(studioId);
+    }
+
+    function sessionTypePath(sessionTypeId) {
+      return /databases/$(database)/documents/sessionTypes/$(sessionTypeId);
+    }
+
     function accountInvitationPath(operatorId, invitationId) {
       return /databases/$(database)/documents/operators/$(operatorId)/accountInvites/$(invitationId);
     }
@@ -29,6 +37,13 @@ service cloud.firestore {
     function hasValidOptionalReference(value) {
       return value == null
         || (value is string && value.size() > 0 && value.size() <= 128 && value.matches('^[^/]+$'));
+    }
+
+    function hasValidRequiredReference(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 128
+        && value.matches('^[^/]+$');
     }
 
     function hasValidOptionalPhone(value) {
@@ -436,6 +451,186 @@ service cloud.firestore {
         && data.updatedByUid.size() <= 128;
     }
 
+    function isValidPricingAmount(value) {
+      return value is int
+        && value >= 0
+        && value <= 9007199254740991;
+    }
+
+    function isValidPricingDuration(value) {
+      return value is int
+        && value >= 15
+        && value <= 1440
+        && value % 15 == 0;
+    }
+
+    function isValidPricingRoundingMode(value) {
+      return value in ['exact', 'round_up'];
+    }
+
+    function isValidHourlyPricingConfiguration(data) {
+      return data is map
+        && data.keys().hasAll([
+          'amountPerIncrementIdr',
+          'incrementMinutes',
+          'minimumDurationMinutes',
+          'roundingMode'
+        ])
+        && data.keys().hasOnly([
+          'amountPerIncrementIdr',
+          'incrementMinutes',
+          'minimumDurationMinutes',
+          'roundingMode'
+        ])
+        && isValidPricingAmount(data.amountPerIncrementIdr)
+        && isValidPricingDuration(data.incrementMinutes)
+        && isValidPricingDuration(data.minimumDurationMinutes)
+        && isValidPricingRoundingMode(data.roundingMode);
+    }
+
+    function isValidFixedSessionPricingConfiguration(data) {
+      return data is map
+        && data.keys().hasAll(['amountIdr'])
+        && data.keys().hasOnly(['amountIdr'])
+        && isValidPricingAmount(data.amountIdr);
+    }
+
+    function isValidDurationPackagePricingConfiguration(data) {
+      return data is map
+        && data.keys().hasAll([
+          'additionalAmountPerIncrementIdr',
+          'additionalIncrementMinutes',
+          'amountIdr',
+          'durationMinutes',
+          'extraTimePolicy',
+          'roundingMode'
+        ])
+        && data.keys().hasOnly([
+          'additionalAmountPerIncrementIdr',
+          'additionalIncrementMinutes',
+          'amountIdr',
+          'durationMinutes',
+          'extraTimePolicy',
+          'roundingMode'
+        ])
+        && isValidPricingAmount(data.amountIdr)
+        && isValidPricingDuration(data.durationMinutes)
+        && data.extraTimePolicy in ['blocked', 'additional', 'another_package']
+        && ((data.extraTimePolicy == 'additional'
+            && isValidPricingAmount(data.additionalAmountPerIncrementIdr)
+            && isValidPricingDuration(data.additionalIncrementMinutes)
+            && isValidPricingRoundingMode(data.roundingMode))
+          || (data.extraTimePolicy in ['blocked', 'another_package']
+            && data.additionalAmountPerIncrementIdr == null
+            && data.additionalIncrementMinutes == null
+            && data.roundingMode == null));
+    }
+
+    function isValidBasePlusAdditionalPricingConfiguration(data) {
+      return data is map
+        && data.keys().hasAll([
+          'additionalAmountPerIncrementIdr',
+          'additionalIncrementMinutes',
+          'baseAmountIdr',
+          'baseDurationMinutes',
+          'roundingMode'
+        ])
+        && data.keys().hasOnly([
+          'additionalAmountPerIncrementIdr',
+          'additionalIncrementMinutes',
+          'baseAmountIdr',
+          'baseDurationMinutes',
+          'roundingMode'
+        ])
+        && isValidPricingAmount(data.additionalAmountPerIncrementIdr)
+        && isValidPricingDuration(data.additionalIncrementMinutes)
+        && isValidPricingAmount(data.baseAmountIdr)
+        && isValidPricingDuration(data.baseDurationMinutes)
+        && isValidPricingRoundingMode(data.roundingMode);
+    }
+
+    function isValidPricingConfiguration(pricingModel, data) {
+      return (pricingModel == 'hourly' && isValidHourlyPricingConfiguration(data))
+        || (pricingModel == 'fixed_session' && isValidFixedSessionPricingConfiguration(data))
+        || (pricingModel == 'duration_package'
+          && isValidDurationPackagePricingConfiguration(data))
+        || (pricingModel == 'base_plus_additional'
+          && isValidBasePlusAdditionalPricingConfiguration(data));
+    }
+
+    function hasValidPricingEffectiveWindow(data) {
+      return (data.effectiveFrom == null || data.effectiveFrom is timestamp)
+        && (data.effectiveUntil == null || data.effectiveUntil is timestamp)
+        && (data.effectiveFrom == null
+          || data.effectiveUntil == null
+          || data.effectiveUntil > data.effectiveFrom);
+    }
+
+    function isValidPricingRule(data) {
+      return data.keys().hasAll([
+          'name',
+          'sessionTypeId',
+          'studioId',
+          'pricingModel',
+          'configuration',
+          'priority',
+          'effectiveFrom',
+          'effectiveUntil',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'name',
+          'sessionTypeId',
+          'studioId',
+          'pricingModel',
+          'configuration',
+          'priority',
+          'effectiveFrom',
+          'effectiveUntil',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && hasValidRequiredReference(data.sessionTypeId)
+        && hasValidOptionalReference(data.studioId)
+        && data.pricingModel in [
+          'hourly',
+          'fixed_session',
+          'duration_package',
+          'base_plus_additional'
+        ]
+        && isValidPricingConfiguration(data.pricingModel, data.configuration)
+        && data.priority is int
+        && data.priority >= 1
+        && data.priority <= 999
+        && hasValidPricingEffectiveWindow(data)
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
+    function hasValidPricingRuleReferences(data) {
+      return exists(sessionTypePath(data.sessionTypeId))
+        && (data.studioId == null
+          || exists(studioPath(data.studioId)));
+    }
+
     function hasValidOperatorTypes(value) {
       return value is list
         && value.size() >= 1
@@ -716,6 +911,21 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == request.auth.uid;
     }
 
+    function usesPricingRuleCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesPricingRuleHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
     function usesOperatorCreateMetadata() {
       return request.resource.data.linkedUserUid == null
         && request.resource.data.createdAt == request.time
@@ -953,6 +1163,25 @@ service cloud.firestore {
       allow update: if hasCapability('settings.pricing.edit')
         && isValidSessionType(request.resource.data)
         && preservesSessionTypeHistory();
+
+      allow delete: if false;
+    }
+
+    match /pricingRules/{pricingRuleId} {
+      allow get: if hasCapability('settings.pricing.view');
+      allow list: if hasCapability('settings.pricing.view')
+        && request.query.limit != null
+        && request.query.limit <= 200;
+
+      allow create: if hasCapability('settings.pricing.edit')
+        && isValidPricingRule(request.resource.data)
+        && hasValidPricingRuleReferences(request.resource.data)
+        && usesPricingRuleCreateMetadata();
+
+      allow update: if hasCapability('settings.pricing.edit')
+        && isValidPricingRule(request.resource.data)
+        && hasValidPricingRuleReferences(request.resource.data)
+        && preservesPricingRuleHistory();
 
       allow delete: if false;
     }

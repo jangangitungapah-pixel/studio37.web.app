@@ -176,6 +176,45 @@ function createSessionType({
   };
 }
 
+function createPricingRule({
+  name = 'Rehearsal hourly — general',
+  sessionTypeId = 'rehearsal',
+  studioId = null,
+  pricingModel = 'hourly',
+  configuration = {
+    amountPerIncrementIdr: 120_000,
+    incrementMinutes: 60,
+    minimumDurationMinutes: 120,
+    roundingMode: 'round_up',
+  },
+  priority = 100,
+  effectiveFrom = null,
+  effectiveUntil = null,
+  status = 'active',
+  createdAt = FIXTURE_TIMESTAMP,
+  createdByUid = OWNER_UID,
+  updatedAt = createdAt,
+  updatedByUid = createdByUid,
+  ...overrides
+} = {}) {
+  return {
+    name,
+    sessionTypeId,
+    studioId,
+    pricingModel,
+    configuration,
+    priority,
+    effectiveFrom,
+    effectiveUntil,
+    status,
+    createdAt,
+    createdByUid,
+    updatedAt,
+    updatedByUid,
+    ...overrides,
+  };
+}
+
 function createOperator({
   displayName = 'Budi Engineer',
   email = 'budi@studio37.id',
@@ -1184,6 +1223,211 @@ describe('initial Firestore authorization boundary', () => {
     );
   });
 
+  test('allows only bounded pricing-rule lists to users with pricing-settings view access', async () => {
+    await seedDocuments([
+      ['sessionTypes/rehearsal', createSessionType()],
+      ['pricingRules/rehearsal-general', createPricingRule()],
+      [
+        'pricingRules/rehearsal-priority',
+        createPricingRule({ name: 'Priority rule', priority: 200 }),
+      ],
+    ]);
+
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const viewerDb = authenticatedDb(PRICING_VIEWER_UID);
+    const operatorDb = authenticatedDb(OPERATOR_UID);
+    const disabledDb = authenticatedDb(DISABLED_UID);
+    const ownerQuery = query(
+      collection(ownerDb, 'pricingRules'),
+      orderBy('priority', 'desc'),
+      limit(200),
+    );
+    const viewerQuery = query(
+      collection(viewerDb, 'pricingRules'),
+      orderBy('priority', 'desc'),
+      limit(200),
+    );
+
+    await assertSucceeds(getDocs(ownerQuery));
+    await assertSucceeds(getDocs(viewerQuery));
+    await assertSucceeds(getDoc(doc(viewerDb, 'pricingRules/rehearsal-general')));
+    await assertFails(getDocs(collection(ownerDb, 'pricingRules')));
+    await assertFails(
+      getDocs(query(collection(ownerDb, 'pricingRules'), orderBy('priority', 'desc'), limit(201))),
+    );
+    await assertFails(
+      getDocs(
+        query(collection(operatorDb, 'pricingRules'), orderBy('priority', 'desc'), limit(200)),
+      ),
+    );
+    await assertFails(getDoc(doc(operatorDb, 'pricingRules/rehearsal-general')));
+    await assertFails(
+      getDocs(
+        query(collection(disabledDb, 'pricingRules'), orderBy('priority', 'desc'), limit(200)),
+      ),
+    );
+  });
+
+  test('allows validated pricing-rule create, edit, and soft-disable only to pricing editors', async () => {
+    await seedDocuments([
+      ['sessionTypes/rehearsal', createSessionType()],
+      ['studios/room-a', createStudioRoom()],
+    ]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const viewerDb = authenticatedDb(PRICING_VIEWER_UID);
+    const editorDb = authenticatedDb(PRICING_EDITOR_UID);
+    const ownerReference = doc(ownerDb, 'pricingRules/rehearsal-room-a');
+
+    await assertSucceeds(
+      setDoc(
+        ownerReference,
+        createPricingRule({
+          studioId: 'room-a',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'pricingRules/rehearsal-room-a'), {
+        priority: 150,
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_EDITOR_UID,
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(editorDb, 'pricingRules/rehearsal-room-a'), {
+        status: 'disabled',
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_EDITOR_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(viewerDb, 'pricingRules/rehearsal-room-a'), {
+        name: 'Unauthorized edit',
+        updatedAt: serverTimestamp(),
+        updatedByUid: PRICING_VIEWER_UID,
+      }),
+    );
+    await assertFails(deleteDoc(ownerReference));
+  });
+
+  test('rejects malformed pricing configurations, invalid windows, and missing references', async () => {
+    await seedDocuments([
+      ['sessionTypes/rehearsal', createSessionType()],
+      ['studios/room-a', createStudioRoom()],
+    ]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+
+    for (const [pricingRuleId, invalidPricingRule] of [
+      ['invalid-priority', { priority: 0 }],
+      ['missing-session', { sessionTypeId: 'missing-session' }],
+      ['missing-studio', { studioId: 'missing-studio' }],
+      [
+        'fractional-money',
+        {
+          configuration: {
+            amountPerIncrementIdr: 1.5,
+            incrementMinutes: 60,
+            minimumDurationMinutes: 120,
+            roundingMode: 'round_up',
+          },
+        },
+      ],
+      [
+        'invalid-duration',
+        {
+          configuration: {
+            amountPerIncrementIdr: 120_000,
+            incrementMinutes: 20,
+            minimumDurationMinutes: 120,
+            roundingMode: 'round_up',
+          },
+        },
+      ],
+      ['mismatched-model', { pricingModel: 'fixed_session', configuration: { amountIdr: -1 } }],
+      [
+        'partial-package-extra-time',
+        {
+          pricingModel: 'duration_package',
+          configuration: {
+            additionalAmountPerIncrementIdr: 100_000,
+            additionalIncrementMinutes: null,
+            amountIdr: 450_000,
+            durationMinutes: 180,
+            extraTimePolicy: 'blocked',
+            roundingMode: null,
+          },
+        },
+      ],
+      [
+        'invalid-effective-window',
+        {
+          effectiveFrom: recentTimestamp(),
+          effectiveUntil: recentTimestamp(-1_000),
+        },
+      ],
+      ['spoofed-creator', { createdByUid: OPERATOR_UID }],
+      ['spoofed-updater', { updatedByUid: OPERATOR_UID }],
+      ['unknown-field', { discountId: null }],
+    ]) {
+      await assertFails(
+        setDoc(
+          doc(ownerDb, `pricingRules/${pricingRuleId}`),
+          createPricingRule({
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            ...invalidPricingRule,
+          }),
+        ),
+      );
+    }
+
+    await assertSucceeds(
+      setDoc(
+        doc(ownerDb, 'pricingRules/fixed-mixing'),
+        createPricingRule({
+          configuration: { amountIdr: 500_000 },
+          pricingModel: 'fixed_session',
+          studioId: 'room-a',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      ),
+    );
+  });
+
+  test('preserves pricing-rule creation history and requires server update metadata', async () => {
+    await seedDocuments([
+      ['sessionTypes/rehearsal', createSessionType()],
+      ['pricingRules/rehearsal-general', createPricingRule()],
+    ]);
+    const ownerDb = authenticatedDb(OWNER_UID);
+    const reference = doc(ownerDb, 'pricingRules/rehearsal-general');
+
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: recentTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        priority: 200,
+        updatedAt: recentTimestamp(),
+        updatedByUid: OWNER_UID,
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        name: 'Spoofed actor',
+        updatedAt: serverTimestamp(),
+        updatedByUid: OPERATOR_UID,
+      }),
+    );
+  });
+
   test('allows only bounded operator lists to users with operator-settings view access', async () => {
     await seedDocuments([
       ['operators/operator-budi', createOperator()],
@@ -1727,9 +1971,8 @@ describe('initial Firestore authorization boundary', () => {
     );
   });
 
-  test('keeps not-yet-implemented domain collections default-deny', async () => {
+  test('keeps remaining not-yet-implemented domain collections default-deny', async () => {
     await seedDocuments([
-      ['pricingRules/standard', { amount: 100_000 }],
       ['commissionEntries/paid-1', { amount: 50_000, status: 'paid' }],
       ['bookings/booking-1', { status: 'confirmed' }],
     ]);
@@ -1739,7 +1982,6 @@ describe('initial Firestore authorization boundary', () => {
 
     await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));
     await assertFails(getDoc(doc(operatorDb, 'bookings/booking-1')));
-    await assertFails(updateDoc(doc(operatorDb, 'pricingRules/standard'), { amount: 1 }));
     await assertFails(updateDoc(doc(operatorDb, 'commissionEntries/paid-1'), { amount: 0 }));
   });
 

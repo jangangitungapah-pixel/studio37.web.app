@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatIntegerIdr, requireIntegerIdr, sumIntegerIdr } from './idr.js';
+import { formatIntegerIdr, multiplyIntegerIdr, requireIntegerIdr, sumIntegerIdr } from './idr.js';
 
 describe('integer-IDR utilities', () => {
   it('accepts zero and positive safe integers without changing their value', () => {
     expect(requireIntegerIdr(0)).toBe(0);
+    expect(requireIntegerIdr(-0)).toBe(0);
     expect(requireIntegerIdr(120000)).toBe(120000);
   });
 
@@ -26,6 +27,15 @@ describe('integer-IDR utilities', () => {
     expect(sumIntegerIdr([])).toBe(0);
     expect(() => sumIntegerIdr('120000')).toThrow(/array/);
     expect(() => sumIntegerIdr([Number.MAX_SAFE_INTEGER, 1])).toThrow(/safe integer IDR range/);
+  });
+
+  it('multiplies integer IDR by a whole non-negative quantity with overflow protection', () => {
+    expect(multiplyIntegerIdr(120_000, 3)).toBe(360_000);
+    expect(multiplyIntegerIdr(0, Number.MAX_SAFE_INTEGER)).toBe(0);
+    expect(multiplyIntegerIdr(-50_000, 2, { allowNegative: true })).toBe(-100_000);
+    expect(() => multiplyIntegerIdr(120_000, 1.5)).toThrow(/multiplier must be a safe integer/);
+    expect(() => multiplyIntegerIdr(120_000, -1)).toThrow(/multiplier must not be negative/);
+    expect(() => multiplyIntegerIdr(Number.MAX_SAFE_INTEGER, 2)).toThrow(/safe integer IDR range/);
   });
 
   it('formats IDR without inventing fractional currency values', () => {

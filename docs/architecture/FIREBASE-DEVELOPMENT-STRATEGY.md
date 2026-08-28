@@ -205,6 +205,17 @@ phase reviews that access. The contract is:
 docs/architecture/SESSION-TYPE-DOMAIN-CONTRACT.md
 ```
 
+Phase 5A2 adds `pricingRules/{pricingRuleId}` with strict discriminated configuration for hourly,
+fixed-session, duration-package, and base-plus-additional models. Its administration repository
+owns one `priority desc + limit(200)` one-shot query plus focused create/edit/soft-status writes.
+Writes validate one exact session-type reference and one optional exact studio reference; there is
+no calculation, resolver, listener, generic list, hard delete, Cloud Function, Admin SDK, or paid
+service. The contract is:
+
+```text
+docs/architecture/PRICING-RULE-DOMAIN-CONTRACT.md
+```
+
 ## Connectivity probe semantics
 
 The manual development probe performs one server document read attempt against the legal non-reserved path:

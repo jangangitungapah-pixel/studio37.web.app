@@ -335,8 +335,8 @@ Phase 4 progress on 2026-08-22:
 ## 5.1 Domain Engine
 
 - [x] Implement session type model.
-- [ ] Implement pricing rule model.
-- [ ] Implement hourly calculation.
+- [x] Implement pricing rule model.
+- [x] Implement hourly calculation.
 - [ ] Implement fixed-session calculation.
 - [ ] Implement duration package calculation.
 - [ ] Implement base + additional-time calculation.
@@ -379,8 +379,28 @@ Phase 5 progress on 2026-08-24:
   immutable creation metadata, server update metadata, bounded reads, and hard-delete denial.
   GitHub Actions Quality run `32695402968` passed formatting, lint, 249 unit/component tests, 40
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Pricing-rule models, calculation engines, snapshots, manual overrides, Price Settings UI, and all
-  final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A2 implemented strict `pricingRules/{pricingRuleId}` documents with nullable exact-studio
+  scope, integer priority, optional effective timestamps, and discriminated hourly, fixed-session,
+  duration-package, and base-plus-additional configuration using integer IDR.
+- The Pricing Rule repository owns one `priority desc + limit(200)` one-shot query plus focused
+  create/edit/soft-status operations. It exposes no generic `listAll()`, listener, hard delete,
+  calculation, resolver, snapshot, override, or UI operation and requires no composite index.
+- Capability-scoped Firestore Security Rules validate complete model-specific shapes, existing
+  exact session/studio references, immutable creation metadata, server update metadata, bounded
+  reads, and hard-delete denial. GitHub Actions Quality run `32867285524` passed formatting, lint,
+  261 unit/component tests, 44 Firestore Emulator authorization tests, production build, and Vite
+  development-server smoke.
+- Phase 5A3 implemented a pure hourly pricing calculator that consumes one canonical hourly
+  configuration plus an explicit requested duration, enforces the configured minimum duration,
+  supports exact increment rejection and deterministic round-up billing, and uses checked safe
+  integer-IDR multiplication.
+- The calculator returns a frozen normalized machine-readable breakdown only; it performs no
+  Firestore access, rule selection, snapshot mutation, React rendering, or booking integration.
+  GitHub Actions Quality run `33218197842` passed formatting, zero-warning lint, all unit/component
+  tests, Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Fixed-session, duration-package, base-plus-additional calculations, studio/effective rule
+  resolution, ambiguity rejection, add-ons, discounts, snapshots, manual overrides, Price Settings
+  UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -784,3 +804,5 @@ Implementation status:
   - [ ] Automated invitation delivery/status administration and final integration/responsive gates pending.
 - [ ] Phase 5 — Session & Flexible Pricing Engine in progress.
   - [x] Phase 5A1 — strict session-type domain/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A2 — strict pricing-rule model/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A3 — pure hourly pricing calculation, increment/minimum validation, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
