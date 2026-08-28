@@ -11,8 +11,17 @@ function createCalculationInput(overrides = {}) {
   };
 }
 
+function expectInvalidInput(value, expectedError) {
+  expect(() => calculateFixedSessionPrice(value)).toThrow(expectedError);
+}
+
+function expectInvalidConfiguration(configuration, expectedError) {
+  const input = createCalculationInput({ configuration });
+  expect(() => calculateFixedSessionPrice(input)).toThrow(expectedError);
+}
+
 describe('fixed-session pricing calculation', () => {
-  it('returns the configured fixed amount as a deterministic frozen breakdown', () => {
+  it('returns the configured amount as a deterministic frozen breakdown', () => {
     const input = createCalculationInput();
     const result = calculateFixedSessionPrice(input);
 
@@ -25,82 +34,76 @@ describe('fixed-session pricing calculation', () => {
     expect(input).toEqual(createCalculationInput());
   });
 
-  it('allows a zero-price fixed session without inventing a positive minimum', () => {
-    expect(
-      calculateFixedSessionPrice(createCalculationInput({ configuration: { amountIdr: 0 } })),
-    ).toEqual({
+  it('allows a zero-price fixed session', () => {
+    const input = createCalculationInput({ configuration: { amountIdr: 0 } });
+    const result = calculateFixedSessionPrice(input);
+
+    expect(result).toEqual({
       amountIdr: 0,
       pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
       totalAmountIdr: 0,
     });
   });
 
-  it('preserves the maximum safe integer IDR amount exactly', () => {
-    const result = calculateFixedSessionPrice(
-      createCalculationInput({ configuration: { amountIdr: Number.MAX_SAFE_INTEGER } }),
-    );
+  it('preserves the maximum safe integer amount exactly', () => {
+    const configuration = { amountIdr: Number.MAX_SAFE_INTEGER };
+    const input = createCalculationInput({ configuration });
+    const result = calculateFixedSessionPrice(input);
 
     expect(result.totalAmountIdr).toBe(Number.MAX_SAFE_INTEGER);
   });
 
   it('rejects a non-fixed pricing model', () => {
-    expect(() =>
-      calculateFixedSessionPrice(
-        createCalculationInput({ pricingModel: PRICING_RULE_MODELS.HOURLY }),
-      ),
-    ).toThrow(/must be fixed_session/);
+    const input = createCalculationInput({ pricingModel: PRICING_RULE_MODELS.HOURLY });
+
+    expectInvalidInput(input, /must be fixed_session/);
   });
 
-  it.each([null, undefined, [], 'fixed', 500_000])(
-    'rejects non-object calculation input: %j',
-    (value) => {
-      expect(() => calculateFixedSessionPrice(value)).toThrow(/must be an object/);
-    },
-  );
-
-  it('rejects extra calculation fields so duration cannot silently affect a fixed session', () => {
-    expect(() =>
-      calculateFixedSessionPrice({
-        ...createCalculationInput(),
-        durationMinutes: 180,
-      }),
-    ).toThrow(/unsupported input shape/);
+  it('rejects non-object calculation input', () => {
+    expectInvalidInput(null, /must be an object/);
+    expectInvalidInput(undefined, /must be an object/);
+    expectInvalidInput([], /must be an object/);
+    expectInvalidInput('fixed', /must be an object/);
+    expectInvalidInput(500_000, /must be an object/);
   });
 
-  it.each([null, undefined, [], 'config', 500_000])(
-    'rejects non-object configuration: %j',
-    (configuration) => {
-      expect(() => calculateFixedSessionPrice(createCalculationInput({ configuration }))).toThrow(
-        /must be an object/,
-      );
-    },
-  );
+  it('rejects extra calculation fields', () => {
+    const input = {
+      ...createCalculationInput(),
+      durationMinutes: 180,
+    };
+
+    expectInvalidInput(input, /unsupported input shape/);
+  });
+
+  it('rejects non-object configuration', () => {
+    expectInvalidConfiguration(null, /must be an object/);
+    expectInvalidConfiguration(undefined, /must be an object/);
+    expectInvalidConfiguration([], /must be an object/);
+    expectInvalidConfiguration('config', /must be an object/);
+    expectInvalidConfiguration(500_000, /must be an object/);
+  });
 
   it('rejects missing or extra configuration fields', () => {
-    expect(() => calculateFixedSessionPrice(createCalculationInput({ configuration: {} }))).toThrow(
-      /unsupported input shape/,
-    );
+    expectInvalidConfiguration({}, /unsupported input shape/);
 
-    expect(() =>
-      calculateFixedSessionPrice(
-        createCalculationInput({
-          configuration: { amountIdr: 500_000, durationMinutes: 180 },
-        }),
-      ),
-    ).toThrow(/unsupported input shape/);
+    const configuration = {
+      amountIdr: 500_000,
+      durationMinutes: 180,
+    };
+    expectInvalidConfiguration(configuration, /unsupported input shape/);
   });
 
-  it.each([
-    [-1, /must not be negative/],
-    [1.5, /safe integer IDR amount/],
-    [Number.MAX_SAFE_INTEGER + 1, /safe integer IDR amount/],
-    [NaN, /safe integer IDR amount/],
-    [Infinity, /safe integer IDR amount/],
-    ['500000', /safe integer IDR amount/],
-  ])('rejects invalid fixed amount %j', (amountIdr, expectedError) => {
-    expect(() =>
-      calculateFixedSessionPrice(createCalculationInput({ configuration: { amountIdr } })),
-    ).toThrow(expectedError);
+  it('rejects invalid fixed amounts', () => {
+    expectInvalidConfiguration({ amountIdr: -1 }, /must not be negative/);
+    expectInvalidConfiguration({ amountIdr: 1.5 }, /safe integer IDR amount/);
+    expectInvalidConfiguration(
+      { amountIdr: Number.MAX_SAFE_INTEGER + 1 },
+      /safe integer IDR amount/,
+    );
+    expectInvalidConfiguration({ amountIdr: NaN }, /safe integer IDR amount/);
+    expectInvalidConfiguration({ amountIdr: Infinity }, /safe integer IDR amount/);
+    expectInvalidConfiguration({ amountIdr: '500000' }, /safe integer IDR amount/);
   });
 
   it('does not mutate the nested configuration object', () => {
