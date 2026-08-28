@@ -30,8 +30,8 @@ belong to later Phase 5 slices.
 
 `configuration` contains exactly:
 
-| Input path               | Contract                                 |
-| ------------------------ | ---------------------------------------- |
+| Input path                | Contract                                 |
+| ------------------------- | ---------------------------------------- |
 | `configuration.amountIdr` | Non-negative JavaScript-safe integer IDR |
 
 Zero is valid because the existing pricing-rule schema allows a zero-valued configured amount. This
