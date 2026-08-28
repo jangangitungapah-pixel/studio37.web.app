@@ -83,7 +83,9 @@ function normalizePackageConfiguration(value) {
   );
 
   if (!supportedExtraTimePolicies.has(configuration.extraTimePolicy)) {
-    throw new RangeError('durationPackagePricing.configuration.extraTimePolicy is not supported.');
+    throw new RangeError(
+      'durationPackagePricing.configuration.extraTimePolicy is not supported.',
+    );
   }
 
   const supportsAdditionalTime =
@@ -159,7 +161,8 @@ function resolveAdditionalTime(inputDurationMinutes, configuration) {
     );
   }
 
-  const hasPartialIncrement = additionalDurationMinutes % configuration.additionalIncrementMinutes !== 0;
+  const hasPartialIncrement =
+    additionalDurationMinutes % configuration.additionalIncrementMinutes !== 0;
 
   if (configuration.roundingMode === PRICING_RULE_ROUNDING_MODES.EXACT && hasPartialIncrement) {
     throw new RangeError(
@@ -178,7 +181,10 @@ function resolveAdditionalTime(inputDurationMinutes, configuration) {
     billedAdditionalIncrementCount * configuration.additionalIncrementMinutes;
   const billableDurationMinutes = configuration.durationMinutes + billedAdditionalDurationMinutes;
 
-  if (!Number.isSafeInteger(billedAdditionalDurationMinutes) || !Number.isSafeInteger(billableDurationMinutes)) {
+  if (
+    !Number.isSafeInteger(billedAdditionalDurationMinutes) ||
+    !Number.isSafeInteger(billableDurationMinutes)
+  ) {
     throw new RangeError(
       'durationPackagePricing billable duration exceeds the safe integer minute range.',
     );
