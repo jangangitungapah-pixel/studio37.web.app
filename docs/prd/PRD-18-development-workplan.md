@@ -338,7 +338,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement pricing rule model.
 - [x] Implement hourly calculation.
 - [x] Implement fixed-session calculation.
-- [ ] Implement duration package calculation.
+- [x] Implement duration package calculation.
 - [ ] Implement base + additional-time calculation.
 - [ ] Implement studio-specific rule resolution.
 - [ ] Implement add-on calculations.
@@ -405,9 +405,19 @@ Phase 5 progress on 2026-08-24:
   duration cannot silently alter a fixed project/session price. GitHub Actions Quality run
   `33219153731` passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator
   authorization tests, production build, and Vite development-server smoke.
-- Duration-package, base-plus-additional calculations, studio/effective rule resolution, ambiguity
-  rejection, add-ons, discounts, snapshots, manual overrides, Price Settings UI, and all final
-  Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A5 implemented a pure duration-package calculator that consumes one canonical package
+  configuration plus an explicit requested duration. Exact package duration returns the package
+  amount, requests shorter than the selected package fail clearly, blocked overtime is rejected,
+  and `another_package` overtime is deferred to later package selection rather than guessed.
+- The `additional` overtime policy supports explicit exact-increment rejection or deterministic
+  round-up billing, with checked safe-integer IDR multiplication and addition. The result is a frozen
+  normalized machine-readable breakdown with no Firestore access, rule/package discovery, snapshot
+  mutation, React rendering, or booking integration. GitHub Actions Quality run `33220251251` passed
+  formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
+  production build, and Vite development-server smoke.
+- Base-plus-additional calculation, studio/effective rule resolution, ambiguity rejection, add-ons,
+  discounts, snapshots, manual overrides, Price Settings UI, and all final Phase 5 gates remain
+  pending; Phase 5 remains in progress.
 
 ---
 
@@ -814,3 +824,4 @@ Implementation status:
   - [x] Phase 5A2 — strict pricing-rule model/repository, bounded query, Security Rules, and automated coverage implemented and quality-gated.
   - [x] Phase 5A3 — pure hourly pricing calculation, increment/minimum validation, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
   - [x] Phase 5A4 — pure fixed-session pricing calculation, duration-independence validation, integer-IDR validation, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A5 — pure duration-package pricing calculation, explicit extra-time policies, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
