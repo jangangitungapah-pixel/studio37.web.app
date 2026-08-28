@@ -27,9 +27,7 @@ describe('fixed-session pricing calculation', () => {
 
   it('allows a zero-price fixed session without inventing a positive minimum', () => {
     expect(
-      calculateFixedSessionPrice(
-        createCalculationInput({ configuration: { amountIdr: 0 } }),
-      ),
+      calculateFixedSessionPrice(createCalculationInput({ configuration: { amountIdr: 0 } })),
     ).toEqual({
       amountIdr: 0,
       pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
@@ -101,9 +99,7 @@ describe('fixed-session pricing calculation', () => {
     ['500000', /safe integer IDR amount/],
   ])('rejects invalid fixed amount %j', (amountIdr, expectedError) => {
     expect(() =>
-      calculateFixedSessionPrice(
-        createCalculationInput({ configuration: { amountIdr } }),
-      ),
+      calculateFixedSessionPrice(createCalculationInput({ configuration: { amountIdr } })),
     ).toThrow(expectedError);
   });
 
