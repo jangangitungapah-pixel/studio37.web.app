@@ -140,10 +140,7 @@ describe('add-on pricing calculation', () => {
     expect(() => calculateAddOnPrices({ addOns: [], discountIdr: 10_000 })).toThrow(
       /unsupported input shape/,
     );
-    expectCalculationError(
-      [{ ...createFixedAddOn(), quantity: 1 }],
-      /unsupported input shape/,
-    );
+    expectCalculationError([{ ...createFixedAddOn(), quantity: 1 }], /unsupported input shape/);
     expectCalculationError(
       [createQuantityAddOn({ configuration: { amountIdr: 75_000 } })],
       /unsupported input shape/,
@@ -170,7 +167,10 @@ describe('add-on pricing calculation', () => {
     }
 
     for (const quantity of [1.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) {
-      expectCalculationError([createQuantityAddOn({ quantity })], /quantity must be a safe integer/);
+      expectCalculationError(
+        [createQuantityAddOn({ quantity })],
+        /quantity must be a safe integer/,
+      );
     }
   });
 
