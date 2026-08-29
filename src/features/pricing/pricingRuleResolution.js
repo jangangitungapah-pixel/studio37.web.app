@@ -70,6 +70,22 @@ function normalizeRules(value) {
   return Object.freeze(value.map((rule) => decodePricingRuleDocument(rule)));
 }
 
+function requireStudioCandidateSet(rules) {
+  if (rules.some((rule) => rule.status !== PRICING_RULE_STATUSES.ACTIVE)) {
+    throw new TypeError('pricingRuleResolution studio candidates must all be active rules.');
+  }
+
+  const sessionTypeIds = new Set(rules.map((rule) => rule.sessionTypeId));
+
+  if (sessionTypeIds.size > 1) {
+    throw new TypeError(
+      'pricingRuleResolution studio candidates must all belong to one session type.',
+    );
+  }
+
+  return rules;
+}
+
 function isEffectiveAt(rule, pricingTimeMs) {
   const startsOnTime = rule.effectiveFrom === null || rule.effectiveFrom.getTime() <= pricingTimeMs;
   const endsAfterTime = rule.effectiveUntil === null || pricingTimeMs < rule.effectiveUntil.getTime();
@@ -116,7 +132,7 @@ export function resolveStudioPricingScope(value) {
     'pricingRuleResolution studio input',
   );
 
-  const rules = normalizeRules(input.rules);
+  const rules = requireStudioCandidateSet(normalizeRules(input.rules));
   const studioId = normalizeNullableStudioId(input.studioId);
   const generalRules = rules.filter((rule) => rule.studioId === null);
 
