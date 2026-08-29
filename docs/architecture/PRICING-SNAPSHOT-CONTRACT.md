@@ -177,8 +177,8 @@ All money remains integer IDR and checked against the existing safe-integer mone
 Phase 5A12 starts both constants at version `1`:
 
 ```js
-PRICING_SNAPSHOT_VERSION = 1
-PRICING_CALCULATION_VERSION = 1
+PRICING_SNAPSHOT_VERSION = 1;
+PRICING_CALCULATION_VERSION = 1;
 ```
 
 `PRICING_SNAPSHOT_VERSION` identifies the stored snapshot schema.
