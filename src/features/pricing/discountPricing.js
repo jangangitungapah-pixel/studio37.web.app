@@ -141,9 +141,7 @@ export function calculateDiscount(value) {
     );
 
     if (configuration.amountIdr > discountableAmountIdr) {
-      throw new RangeError(
-        'discountPricing fixed discount must not exceed discountableAmountIdr.',
-      );
+      throw new RangeError('discountPricing fixed discount must not exceed discountableAmountIdr.');
     }
 
     return buildResult({
