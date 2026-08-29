@@ -182,28 +182,26 @@ describe('pricing snapshot builder', () => {
       expectedTotal: 280_000,
       model: PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL,
     },
-  ])('captures a canonical $model base calculation', ({
-    baseCalculation,
-    configuration,
-    expectedTotal,
-    model,
-  }) => {
-    const snapshot = buildPricingSnapshot({
-      addOnCalculation: emptyAddOns(),
-      baseCalculation,
-      discountCalculation: noDiscount(baseCalculation.totalAmountIdr),
-      pricingRule: createRule({
-        configuration,
-        id: `rule-${model}`,
-        pricingModel: model,
-      }),
-      pricingTime,
-    });
+  ])(
+    'captures a canonical $model base calculation',
+    ({ baseCalculation, configuration, expectedTotal, model }) => {
+      const snapshot = buildPricingSnapshot({
+        addOnCalculation: emptyAddOns(),
+        baseCalculation,
+        discountCalculation: noDiscount(baseCalculation.totalAmountIdr),
+        pricingRule: createRule({
+          configuration,
+          id: `rule-${model}`,
+          pricingModel: model,
+        }),
+        pricingTime,
+      });
 
-    expect(snapshot.rule.pricingModel).toBe(model);
-    expect(snapshot.baseCalculation.pricingModel).toBe(model);
-    expect(snapshot.amounts.finalAmountIdr).toBe(expectedTotal);
-  });
+      expect(snapshot.rule.pricingModel).toBe(model);
+      expect(snapshot.baseCalculation.pricingModel).toBe(model);
+      expect(snapshot.amounts.finalAmountIdr).toBe(expectedTotal);
+    },
+  );
 
   it('captures selected rule identity and source configuration metadata', () => {
     const snapshot = buildPricingSnapshot(buildSnapshotInput());
@@ -320,9 +318,9 @@ describe('pricing snapshot builder', () => {
       totalAddOnAmountIdr: canonical.totalAddOnAmountIdr,
     };
 
-    expect(() => buildPricingSnapshot(buildSnapshotInput({ addOnCalculation: wrongTotal }))).toThrow(
-      /totalAddOnAmountIdr/,
-    );
+    expect(() =>
+      buildPricingSnapshot(buildSnapshotInput({ addOnCalculation: wrongTotal })),
+    ).toThrow(/totalAddOnAmountIdr/);
     expect(() => buildPricingSnapshot(buildSnapshotInput({ addOnCalculation: wrongItem }))).toThrow(
       /canonical calculation result/,
     );
