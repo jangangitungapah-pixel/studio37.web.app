@@ -1,7 +1,7 @@
-import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
-import { USER_PROFILE_STATUSES } from '../auth/userProfile.js';
 import { toJavaScriptDate } from '../../lib/datetime/timestamps.js';
 import { requireIntegerIdr, sumIntegerIdr } from '../../lib/money/idr.js';
+import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
+import { USER_PROFILE_ROLES, USER_PROFILE_STATUSES } from '../auth/userProfile.js';
 import {
   PRICING_CALCULATION_VERSION,
   PRICING_SNAPSHOT_VERSION,
@@ -35,6 +35,7 @@ const pricingSnapshotAmountFieldNames = Object.freeze([
   'nonDiscountableAmountIdr',
   'subtotalAmountIdr',
 ]);
+const supportedActorRoles = new Set(Object.values(USER_PROFILE_ROLES));
 
 function requireRecord(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -203,6 +204,11 @@ function normalizeAuthorizedActor(accessValue) {
 
   const actorUid = requireNonEmptyString(profile.uid, 'manualPriceOverride.access.profile.uid');
   const actorRole = requireNonEmptyString(profile.role, 'manualPriceOverride.access.profile.role');
+
+  if (!supportedActorRoles.has(actorRole)) {
+    throw new RangeError('manualPriceOverride actor role is not supported.');
+  }
+
   const user = requireRecord(access.user, 'manualPriceOverride.access.user');
   const authenticatedUid = requireNonEmptyString(user.uid, 'manualPriceOverride.access.user.uid');
 
