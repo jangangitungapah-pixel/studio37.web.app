@@ -172,7 +172,11 @@ export function resolveStudioPricingScope(value) {
 
 export function resolvePricingRulePriority(value) {
   const input = requireRecord(value, 'pricingRuleResolution priority input');
-  requireExactFields(input, priorityResolutionInputFieldNames, 'pricingRuleResolution priority input');
+  requireExactFields(
+    input,
+    priorityResolutionInputFieldNames,
+    'pricingRuleResolution priority input',
+  );
 
   const rules = requirePriorityCandidateSet(normalizeRules(input.rules));
 
