@@ -163,37 +163,29 @@ describe('discount pricing calculation', () => {
   it('rejects invalid percentage basis points', () => {
     for (const percentageBasisPoints of [-1, DISCOUNT_PERCENTAGE_BASIS_POINTS + 1]) {
       expect(() =>
-        calculate(
-          250_000,
-          createPercentageDiscount({ configuration: { percentageBasisPoints } }),
-        ),
+        calculate(250_000, createPercentageDiscount({ configuration: { percentageBasisPoints } })),
       ).toThrow(/must be between 0 and 10000 basis points/);
     }
 
     for (const percentageBasisPoints of [1.5, NaN, Infinity]) {
       expect(() =>
-        calculate(
-          250_000,
-          createPercentageDiscount({ configuration: { percentageBasisPoints } }),
-        ),
+        calculate(250_000, createPercentageDiscount({ configuration: { percentageBasisPoints } })),
       ).toThrow(/safe integer number of basis points/);
     }
   });
 
   it('supports zero discountable amount only when the discount cannot make it negative', () => {
     expect(calculate(0, null).finalAmountIdr).toBe(0);
-    expect(calculate(0, createFixedDiscount({ configuration: { amountIdr: 0 } })).finalAmountIdr).toBe(
-      0,
-    );
     expect(
-      calculate(
-        0,
-        createPercentageDiscount({ configuration: { percentageBasisPoints: 5_000 } }),
-      ).finalAmountIdr,
+      calculate(0, createFixedDiscount({ configuration: { amountIdr: 0 } })).finalAmountIdr,
     ).toBe(0);
-    expect(() =>
-      calculate(0, createFixedDiscount({ configuration: { amountIdr: 1 } })),
-    ).toThrow(/must not exceed discountableAmountIdr/);
+    expect(
+      calculate(0, createPercentageDiscount({ configuration: { percentageBasisPoints: 5_000 } }))
+        .finalAmountIdr,
+    ).toBe(0);
+    expect(() => calculate(0, createFixedDiscount({ configuration: { amountIdr: 1 } }))).toThrow(
+      /must not exceed discountableAmountIdr/,
+    );
   });
 
   it('returns frozen deterministic output without mutating caller input', () => {
