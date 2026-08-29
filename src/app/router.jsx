@@ -15,6 +15,7 @@ import { DesignSystemPreviewPage } from '../features/dev/DesignSystemPreviewPage
 import { FirebaseStatusPage } from '../features/dev/FirebaseStatusPage.jsx';
 import { OperatorSettingsPage } from '../features/settings/OperatorSettingsPage.jsx';
 import { PermissionSettingsPage } from '../features/settings/PermissionSettingsPage.jsx';
+import { PriceSettingsPage } from '../features/settings/PriceSettingsPage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
@@ -22,6 +23,7 @@ export function AppRouter({
   operatorAccountInvitationRepository,
   operatorRepository,
   permissionAdministrationRepository,
+  sessionTypeRepository,
   studioRoomRepository,
   studioSettingsRepository,
 }) {
@@ -71,7 +73,10 @@ export function AppRouter({
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.PRICING} />}>
-            <Route path="settings/pricing" element={<SettingsPage title="Price Settings" />} />
+            <Route
+              path="settings/pricing"
+              element={<PriceSettingsPage repository={sessionTypeRepository} />}
+            />
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.OPERATORS} />}>

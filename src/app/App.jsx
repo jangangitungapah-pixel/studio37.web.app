@@ -9,6 +9,7 @@ export function App({
   operatorRepository,
   permissionAdministrationRepository,
   permissionSetRepository,
+  sessionTypeRepository,
   studioRoomRepository,
   studioSettingsRepository,
   userProfileRepository,
@@ -24,6 +25,7 @@ export function App({
           operatorAccountInvitationRepository={operatorAccountInvitationRepository}
           operatorRepository={operatorRepository}
           permissionAdministrationRepository={permissionAdministrationRepository}
+          sessionTypeRepository={sessionTypeRepository}
           studioRoomRepository={studioRoomRepository}
           studioSettingsRepository={studioSettingsRepository}
         />

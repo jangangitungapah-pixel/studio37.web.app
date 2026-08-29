@@ -1,0 +1,237 @@
+.price-session-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  padding: var(--space-5);
+}
+
+.price-session-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.price-session-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-4);
+}
+
+.price-session-row[data-disabled='true'] {
+  background: var(--color-surface-subtle);
+}
+
+.price-session-row__order {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+}
+
+.price-session-row__content {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.price-session-row__heading,
+.price-session-row__meta,
+.price-session-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.price-session-row__heading h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 720;
+}
+
+.price-session-row__meta {
+  color: var(--color-text-soft);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.price-session-row__meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle);
+  padding: 0 var(--space-2);
+}
+
+.price-session-row__content > p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-session-row__actions {
+  justify-content: flex-end;
+}
+
+.price-session-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.price-session-switches {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.price-session-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  padding: var(--space-3);
+  cursor: pointer;
+}
+
+.price-session-switch:has(input:checked) {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
+  background: var(--color-brand-soft);
+}
+
+.price-session-switch:has(input:disabled) {
+  cursor: default;
+}
+
+.price-session-switch input {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  margin: 0.15rem 0 0;
+  accent-color: var(--color-brand);
+}
+
+.price-session-switch > span,
+.price-session-duration-panel > div:first-child,
+.price-session-status-summary {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.price-session-switch strong,
+.price-session-duration-panel strong,
+.price-session-status-summary strong {
+  color: var(--color-text);
+  font-size: 0.78rem;
+}
+
+.price-session-switch small,
+.price-session-duration-panel span,
+.price-session-status-summary span {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.price-session-duration-panel {
+  display: grid;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4);
+}
+
+.price-session-status-summary {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4);
+}
+
+.price-settings-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.price-settings-next h2,
+.price-settings-next p {
+  margin: 0;
+}
+
+.price-settings-next h2 {
+  font-size: 0.95rem;
+  font-weight: 720;
+}
+
+.price-settings-next p:not(.settings-card__eyebrow) {
+  max-width: 720px;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .price-session-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: flex-start;
+    padding: var(--space-3);
+  }
+
+  .price-session-row__actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .price-session-row__actions > * {
+    flex: 1 1 auto;
+  }
+
+  .price-session-row__content > p {
+    white-space: normal;
+  }
+
+  .price-settings-next {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .price-session-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .price-session-row__order {
+    width: auto;
+    height: 1.75rem;
+    justify-self: start;
+    padding: 0 var(--space-2);
+  }
+
+  .price-session-row__actions {
+    grid-column: auto;
+  }
+}
