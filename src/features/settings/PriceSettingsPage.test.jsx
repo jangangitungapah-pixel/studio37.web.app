@@ -83,11 +83,11 @@ describe('PriceSettingsPage session type workflow', () => {
 
     await screen.findByText('Belum ada session type');
     await interaction.click(screen.getByRole('button', { name: 'Tambah session type' }));
-    await interaction.type(screen.getByLabelText('Nama session type'), 'Rehearsal');
-    await interaction.type(screen.getByLabelText('Kode'), 'rehearsal');
+    await interaction.type(screen.getByLabelText(/^Nama session type/), 'Rehearsal');
+    await interaction.type(screen.getByLabelText(/^Kode/), 'rehearsal');
     await interaction.type(screen.getByLabelText('Deskripsi'), 'Latihan reguler');
-    await interaction.clear(screen.getByLabelText('Durasi default (menit)'));
-    await interaction.type(screen.getByLabelText('Durasi default (menit)'), '120');
+    await interaction.clear(screen.getByLabelText(/^Durasi default \(menit\)/));
+    await interaction.type(screen.getByLabelText(/^Durasi default \(menit\)/), '120');
     await interaction.click(screen.getByRole('button', { name: 'Simpan session type' }));
 
     await waitFor(() => {
@@ -113,7 +113,7 @@ describe('PriceSettingsPage session type workflow', () => {
     renderPage({ repository });
 
     await interaction.click(await screen.findByRole('button', { name: 'Edit Rehearsal' }));
-    const nameInput = screen.getByLabelText('Nama session type');
+    const nameInput = screen.getByLabelText(/^Nama session type/);
     await interaction.clear(nameInput);
     await interaction.type(nameInput, 'Band Rehearsal');
     await interaction.click(screen.getByRole('button', { name: 'Simpan session type' }));
@@ -134,8 +134,8 @@ describe('PriceSettingsPage session type workflow', () => {
     renderPage({ repository });
 
     await interaction.click(await screen.findByRole('button', { name: 'Tambah session type' }));
-    await interaction.type(screen.getByLabelText('Nama session type'), 'Another Service');
-    await interaction.type(screen.getByLabelText('Kode'), 'REHEARSAL');
+    await interaction.type(screen.getByLabelText(/^Nama session type/), 'Another Service');
+    await interaction.type(screen.getByLabelText(/^Kode/), 'REHEARSAL');
     await interaction.click(screen.getByRole('button', { name: 'Simpan session type' }));
 
     expect(
