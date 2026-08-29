@@ -213,11 +213,7 @@ function toAddOnInput(item, index) {
 
 function replayAddOnCalculation(value) {
   const calculation = requireRecord(value, 'pricingSnapshot.addOnCalculation');
-  requireExactFields(
-    calculation,
-    addOnCalculationFieldNames,
-    'pricingSnapshot.addOnCalculation',
-  );
+  requireExactFields(calculation, addOnCalculationFieldNames, 'pricingSnapshot.addOnCalculation');
 
   if (!Array.isArray(calculation.items)) {
     throw new TypeError('pricingSnapshot.addOnCalculation.items must be an array.');
