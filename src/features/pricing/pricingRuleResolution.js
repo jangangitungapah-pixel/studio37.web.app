@@ -12,6 +12,7 @@ export const PRICING_RULE_STUDIO_MATCH_SCOPES = Object.freeze({
 });
 
 const eligibilityInputFieldNames = Object.freeze(['pricingTime', 'rules', 'sessionTypeId']);
+const priorityResolutionInputFieldNames = Object.freeze(['rules']);
 const studioResolutionInputFieldNames = Object.freeze(['rules', 'studioId']);
 
 function requireRecord(value, label) {
@@ -86,6 +87,19 @@ function requireStudioCandidateSet(rules) {
   return rules;
 }
 
+function requirePriorityCandidateSet(rules) {
+  const candidates = requireStudioCandidateSet(rules);
+  const studioIds = new Set(candidates.map((rule) => rule.studioId));
+
+  if (studioIds.size > 1) {
+    throw new TypeError(
+      'pricingRuleResolution priority candidates must all belong to one studio scope.',
+    );
+  }
+
+  return candidates;
+}
+
 function isEffectiveAt(rule, pricingTimeMs) {
   const startsOnTime = rule.effectiveFrom === null || rule.effectiveFrom.getTime() <= pricingTimeMs;
   const endsAfterTime =
@@ -153,5 +167,32 @@ export function resolveStudioPricingScope(value) {
     matchScope,
     rules: Object.freeze(selectedRules),
     studioId,
+  });
+}
+
+export function resolvePricingRulePriority(value) {
+  const input = requireRecord(value, 'pricingRuleResolution priority input');
+  requireExactFields(input, priorityResolutionInputFieldNames, 'pricingRuleResolution priority input');
+
+  const rules = requirePriorityCandidateSet(normalizeRules(input.rules));
+
+  if (rules.length === 0) {
+    return Object.freeze({
+      highestPriority: null,
+      rules: Object.freeze([]),
+    });
+  }
+
+  const highestPriority = rules.reduce(
+    (highest, rule) => Math.max(highest, rule.priority),
+    rules[0].priority,
+  );
+  const highestPriorityRules = rules
+    .filter((rule) => rule.priority === highestPriority)
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  return Object.freeze({
+    highestPriority,
+    rules: Object.freeze(highestPriorityRules),
   });
 }
