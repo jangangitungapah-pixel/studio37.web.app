@@ -71,7 +71,8 @@ export function validateSessionTypeForm(value) {
   const description = typeof value?.description === 'string' ? value.description.trim() : '';
   const displayOrder = parseInteger(value?.displayOrder);
   const requiresStudioReservation = value?.requiresStudioReservation === true;
-  const useDurationConfiguration = requiresStudioReservation || value?.useDurationConfiguration === true;
+  const useDurationConfiguration =
+    requiresStudioReservation || value?.useDurationConfiguration === true;
 
   if (!name || name.length > 80) errors.name = true;
   if (!sessionTypeCodePattern.test(code)) errors.code = true;
