@@ -350,7 +350,7 @@ Phase 4 progress on 2026-08-22:
 
 ## 5.2 Price Settings UI
 
-- [ ] Session type CRUD/deactivation UI.
+- [x] Session type CRUD/deactivation UI.
 - [ ] Pricing rule editor.
 - [ ] Package editor.
 - [ ] Duration/minimum/increment configuration.
@@ -484,8 +484,19 @@ Phase 5 progress on 2026-08-24:
   snapshots, and forged audit fields. GitHub Actions Quality run `33270313881` passed formatting,
   zero-warning lint, all unit/component tests, Firestore Emulator authorization tests, production
   build, and Vite development-server smoke.
-- Firestore Booking persistence/integration, server-authoritative override writes/timestamps,
-  Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5B1 replaced the `/settings/pricing` placeholder with bounded, capability-aware Session Type
+  administration on top of the existing Phase 5A1 repository. The responsive workflow supports
+  create/edit, studio-reservation and duration configuration, duplicate-code validation, soft
+  deactivation/reactivation, read-only pricing-view access, loading/empty/error recovery states, and
+  explicit historical-snapshot safety copy without adding Firestore queries, indexes, hard delete,
+  or Security Rule changes.
+- Focused form/UI coverage validates canonical duration behavior, create/edit/deactivation,
+  read-only capability boundaries, duplicate-code rejection, and recoverable bounded-query retry.
+  GitHub Actions Quality run `33271762345` passed formatting, zero-warning lint, all unit/component
+  tests, Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Pricing-rule/package/studio-scope/add-on/preview/validation UI, Firestore Booking
+  persistence/integration, server-authoritative override writes/timestamps, and all final Phase 5
+  gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -901,3 +912,4 @@ Implementation status:
   - [x] Phase 5A11 — explicit unique-match resolution and typed equal-highest ambiguity rejection with fail-closed pipeline validation implemented and quality-gated.
   - [x] Phase 5A12 — pure versioned pricing snapshot construction, selected-rule binding, calculator replay integrity, reconciled totals, and historical-detachment coverage implemented and quality-gated.
   - [x] Phase 5A13 — authorized manual price override with existing capability enforcement, immutable automatic baseline preservation, explicit audit metadata, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B1 — bounded capability-aware Session Type Price Settings CRUD/deactivation UI, responsive states, and automated coverage implemented and quality-gated.
