@@ -71,11 +71,7 @@ function normalizeRequestedDuration(value) {
 
 function normalizeConfiguration(value) {
   const configuration = requireRecord(value, 'baseAdditionalPricing.configuration');
-  requireExactFields(
-    configuration,
-    configurationFieldNames,
-    'baseAdditionalPricing.configuration',
-  );
+  requireExactFields(configuration, configurationFieldNames, 'baseAdditionalPricing.configuration');
 
   if (!supportedRoundingModes.has(configuration.roundingMode)) {
     throw new RangeError('baseAdditionalPricing.configuration.roundingMode is not supported.');
@@ -172,9 +168,7 @@ export function calculateBaseAdditionalPrice(value) {
   requireExactFields(input, calculationInputFieldNames, 'baseAdditionalPricing input');
 
   if (input.pricingModel !== PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL) {
-    throw new RangeError(
-      'baseAdditionalPricing.pricingModel must be base_plus_additional.',
-    );
+    throw new RangeError('baseAdditionalPricing.pricingModel must be base_plus_additional.');
   }
 
   const configuration = normalizeConfiguration(input.configuration);
