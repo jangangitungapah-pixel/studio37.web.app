@@ -5,10 +5,7 @@ import {
   PRICING_RULE_STUDIO_MATCH_SCOPES,
   resolveStudioPricingScope,
 } from './pricingRuleResolution.js';
-import {
-  PRICING_RULE_MODELS,
-  PRICING_RULE_STATUSES,
-} from './pricingRules.js';
+import { PRICING_RULE_MODELS, PRICING_RULE_STATUSES } from './pricingRules.js';
 
 function createRule(overrides = {}) {
   return {
@@ -135,10 +132,7 @@ describe('studio-specific pricing rule resolution', () => {
 
   it('uses only general-scope rules when the requested studio is null', () => {
     const result = resolveStudioPricingScope({
-      rules: [
-        createRule({ id: 'general' }),
-        createRule({ id: 'studio-a', studioId: 'studio-a' }),
-      ],
+      rules: [createRule({ id: 'general' }), createRule({ id: 'studio-a', studioId: 'studio-a' })],
       studioId: null,
     });
 
@@ -220,9 +214,7 @@ describe('pricing rule resolution validation', () => {
     expect(() =>
       filterEligiblePricingRules(
         createEligibilityInput({
-          rules: Array.from({ length: 201 }, (_, index) =>
-            createRule({ id: `rule-${index}` }),
-          ),
+          rules: Array.from({ length: 201 }, (_, index) => createRule({ id: `rule-${index}` })),
         }),
       ),
     ).toThrow(/at most 200 rules/);
