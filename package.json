@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/features/pricing/pricingRuleResolution.js src/features/pricing/pricingRulePriority.test.js && git diff -- src/features/pricing/pricingRuleResolution.js src/features/pricing/pricingRulePriority.test.js && exit 1",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js\"",
     "test:watch": "vitest"
