@@ -12,7 +12,7 @@ The contract lives in `src/features/pricing/discountPricing.js`.
 calculateDiscount({
   discountableAmountIdr,
   discount,
-})
+});
 ```
 
 `discountableAmountIdr` is the exact non-negative safe-integer IDR amount that the caller has decided is eligible for discount.
