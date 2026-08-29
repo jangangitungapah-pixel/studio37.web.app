@@ -234,6 +234,21 @@ describe('pricing rule resolution validation', () => {
     ).toThrow(/unsupported document shape/);
   });
 
+  it('fails closed when studio resolution receives disabled or mixed-session candidates', () => {
+    expect(() =>
+      resolveStudioPricingScope({
+        rules: [createRule({ status: PRICING_RULE_STATUSES.DISABLED })],
+        studioId: null,
+      }),
+    ).toThrow(/must all be active/);
+    expect(() =>
+      resolveStudioPricingScope({
+        rules: [createRule(), createRule({ id: 'other', sessionTypeId: 'session-rehearsal' })],
+        studioId: null,
+      }),
+    ).toThrow(/one session type/);
+  });
+
   it('rejects invalid pricing instants', () => {
     expect(() =>
       filterEligiblePricingRules(createEligibilityInput({ pricingTime: new Date('invalid') })),
