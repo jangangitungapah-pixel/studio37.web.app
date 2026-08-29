@@ -344,7 +344,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement add-on calculations.
 - [x] Implement discount calculations.
 - [x] Implement deterministic rule priority.
-- [ ] Reject ambiguous rule matches.
+- [x] Reject ambiguous rule matches.
 - [ ] Implement pricing snapshot builder.
 - [ ] Implement authorized manual override model.
 
@@ -457,8 +457,16 @@ Phase 5 progress on 2026-08-24:
   array ordering and never as a winner tie-break. GitHub Actions Quality run `33265511421` passed
   formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
   production build, and Vite development-server smoke.
-- Ambiguity rejection, snapshots, manual overrides, discount/add-on persistence, Price Settings UI,
-  and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A11 implemented the final unique-match gate after numeric priority resolution. Zero
+  candidates produce an explicit `none` result, one candidate produces a frozen `unique` result,
+  and multiple distinct equal-highest candidates throw typed `PricingRuleAmbiguityError` metadata
+  instead of being selected by ID, name, repository order, or caller order.
+- The gate revalidates active/session/studio-scope consistency, distinct rule IDs, and
+  `highestPriority` sequencing so bypassed or malformed pipeline inputs fail closed. GitHub Actions
+  Quality run `33268564767` passed formatting, zero-warning lint, all unit/component tests,
+  Firestore Emulator authorization tests, production build, and Vite development-server smoke.
+- Pricing snapshots, manual overrides, discount/add-on persistence, Price Settings UI, and all final
+  Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -871,3 +879,4 @@ Implementation status:
   - [x] Phase 5A8 — pure fixed/quantity/time add-on calculation, checked integer-IDR arithmetic, strict validation, and automated coverage implemented and quality-gated.
   - [x] Phase 5A9 — pure fixed/percentage discount calculation, integer-basis-point percentage arithmetic, non-negative final totals, and automated coverage implemented and quality-gated.
   - [x] Phase 5A10 — deterministic highest-priority candidate selection with equal-highest preservation and automated coverage implemented and quality-gated.
+  - [x] Phase 5A11 — explicit unique-match resolution and typed equal-highest ambiguity rejection with fail-closed pipeline validation implemented and quality-gated.
