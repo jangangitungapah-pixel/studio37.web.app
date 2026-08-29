@@ -17,7 +17,8 @@ function getUserFacingValidationErrors(errors) {
     translated.code = 'Kode wajib memakai huruf, angka, atau tanda hubung; maksimal 24 karakter.';
   }
   if (errors.description) translated.description = 'Deskripsi maksimal 240 karakter.';
-  if (errors.displayOrder) translated.displayOrder = 'Urutan tampil harus berupa angka bulat 1–999.';
+  if (errors.displayOrder)
+    translated.displayOrder = 'Urutan tampil harus berupa angka bulat 1–999.';
   if (errors.defaultDurationMinutes) {
     translated.defaultDurationMinutes = 'Durasi default harus kelipatan 15 menit antara 15–1440.';
   }
@@ -66,16 +67,18 @@ export function SessionTypeEditorDialog({
     );
   }, [editingSessionType?.id, existingSessionTypes, formValues.code]);
 
-  const changeTextField = (fieldName, { uppercase = false } = {}) => (event) => {
-    const nextValue = uppercase ? event.target.value.toUpperCase() : event.target.value;
-    setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
-    setFieldErrors((current) => {
-      if (!current[fieldName]) return current;
-      const nextErrors = { ...current };
-      delete nextErrors[fieldName];
-      return nextErrors;
-    });
-  };
+  const changeTextField =
+    (fieldName, { uppercase = false } = {}) =>
+    (event) => {
+      const nextValue = uppercase ? event.target.value.toUpperCase() : event.target.value;
+      setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
+      setFieldErrors((current) => {
+        if (!current[fieldName]) return current;
+        const nextErrors = { ...current };
+        delete nextErrors[fieldName];
+        return nextErrors;
+      });
+    };
 
   const changeReservation = (event) => {
     const checked = event.target.checked;
