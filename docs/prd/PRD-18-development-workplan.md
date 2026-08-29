@@ -346,7 +346,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement deterministic rule priority.
 - [x] Reject ambiguous rule matches.
 - [x] Implement pricing snapshot builder.
-- [ ] Implement authorized manual override model.
+- [x] Implement authorized manual override model.
 
 ## 5.2 Price Settings UI
 
@@ -474,8 +474,18 @@ Phase 5 progress on 2026-08-24:
   mutation cannot rewrite the in-memory historical result. GitHub Actions Quality run `33269361587`
   passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization
   tests, production build, and Vite development-server smoke.
-- Manual overrides, Firestore Booking persistence/integration, discount/add-on persistence, Price
-  Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A13 implemented a pure authorized manual-price override boundary on top of the immutable
+  automatic pricing snapshot. Owner authority uses the existing implicit capability model, while a
+  Studio Operator must explicitly have `booking.override_price`; actor UID is derived from the
+  authenticated active profile and cannot be caller supplied.
+- The override preserves the automatic calculated amount and selected pricing-rule identity, records
+  the overridden final amount, actor role/UID, authorization capability, timestamp, and required
+  reason, and rejects unauthenticated/disabled/mismatched actors, no-op or invalid amounts, malformed
+  snapshots, and forged audit fields. GitHub Actions Quality run `33270313881` passed formatting,
+  zero-warning lint, all unit/component tests, Firestore Emulator authorization tests, production
+  build, and Vite development-server smoke.
+- Firestore Booking persistence/integration, server-authoritative override writes/timestamps,
+  Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -890,3 +900,4 @@ Implementation status:
   - [x] Phase 5A10 — deterministic highest-priority candidate selection with equal-highest preservation and automated coverage implemented and quality-gated.
   - [x] Phase 5A11 — explicit unique-match resolution and typed equal-highest ambiguity rejection with fail-closed pipeline validation implemented and quality-gated.
   - [x] Phase 5A12 — pure versioned pricing snapshot construction, selected-rule binding, calculator replay integrity, reconciled totals, and historical-detachment coverage implemented and quality-gated.
+  - [x] Phase 5A13 — authorized manual price override with existing capability enforcement, immutable automatic baseline preservation, explicit audit metadata, and automated coverage implemented and quality-gated.
