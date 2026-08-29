@@ -47,9 +47,7 @@ describe('base-plus-additional pricing calculation', () => {
   });
 
   it('charges the base amount when requested duration is shorter than the base duration', () => {
-    const result = calculateBaseAdditionalPrice(
-      createCalculationInput({ durationMinutes: 60 }),
-    );
+    const result = calculateBaseAdditionalPrice(createCalculationInput({ durationMinutes: 60 }));
 
     expect(result).toMatchObject({
       additionalAmountIdr: 0,
@@ -80,9 +78,7 @@ describe('base-plus-additional pricing calculation', () => {
   });
 
   it('rounds partial additional time up deterministically', () => {
-    const result = calculateBaseAdditionalPrice(
-      createCalculationInput({ durationMinutes: 121 }),
-    );
+    const result = calculateBaseAdditionalPrice(createCalculationInput({ durationMinutes: 121 }));
 
     expect(result).toMatchObject({
       additionalAmountIdr: 80_000,
@@ -178,10 +174,7 @@ describe('base-plus-additional pricing calculation', () => {
 
   it('rejects invalid requested duration values', () => {
     for (const durationMinutes of [0, -1]) {
-      expectCalculationError(
-        createCalculationInput({ durationMinutes }),
-        /greater than zero/,
-      );
+      expectCalculationError(createCalculationInput({ durationMinutes }), /greater than zero/);
     }
 
     for (const durationMinutes of [1.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) {
