@@ -343,7 +343,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement studio-specific rule resolution.
 - [x] Implement add-on calculations.
 - [x] Implement discount calculations.
-- [ ] Implement deterministic rule priority.
+- [x] Implement deterministic rule priority.
 - [ ] Reject ambiguous rule matches.
 - [ ] Implement pricing snapshot builder.
 - [ ] Implement authorized manual override model.
@@ -451,9 +451,14 @@ Phase 5 progress on 2026-08-24:
   snapshot, override, React, or Booking coupling. GitHub Actions Quality run `33258165384` passed
   formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
   production build, and Vite development-server smoke.
-- Deterministic priority, ambiguity rejection, snapshots, manual overrides, discount/add-on
-  persistence, Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in
-  progress.
+- Phase 5A10 implemented deterministic numeric priority resolution after studio-scope selection.
+  The resolver keeps only candidates at the highest configured priority while preserving every
+  equal-highest candidate for the later ambiguity gate; rule ID is used only to stabilize returned
+  array ordering and never as a winner tie-break. GitHub Actions Quality run `33265511421` passed
+  formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
+  production build, and Vite development-server smoke.
+- Ambiguity rejection, snapshots, manual overrides, discount/add-on persistence, Price Settings UI,
+  and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -865,3 +870,4 @@ Implementation status:
   - [x] Phase 5A7 — active/effective eligibility filtering and exact-studio/general-scope pricing-rule resolution implemented and quality-gated.
   - [x] Phase 5A8 — pure fixed/quantity/time add-on calculation, checked integer-IDR arithmetic, strict validation, and automated coverage implemented and quality-gated.
   - [x] Phase 5A9 — pure fixed/percentage discount calculation, integer-basis-point percentage arithmetic, non-negative final totals, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A10 — deterministic highest-priority candidate selection with equal-highest preservation and automated coverage implemented and quality-gated.
