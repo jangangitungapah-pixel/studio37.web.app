@@ -131,7 +131,11 @@ describe('session type settings form adapter', () => {
   it('selects the next bounded display order deterministically', () => {
     expect(getNextSessionTypeDisplayOrder([])).toBe(1);
     expect(
-      getNextSessionTypeDisplayOrder([{ displayOrder: 3 }, { displayOrder: 8 }, { displayOrder: 2 }]),
+      getNextSessionTypeDisplayOrder([
+        { displayOrder: 3 },
+        { displayOrder: 8 },
+        { displayOrder: 2 },
+      ]),
     ).toBe(9);
     expect(getNextSessionTypeDisplayOrder([{ displayOrder: 999 }])).toBe(999);
   });
