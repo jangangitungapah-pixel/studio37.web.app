@@ -11,6 +11,24 @@ export const PRICING_RULE_STUDIO_MATCH_SCOPES = Object.freeze({
   NONE: 'none',
 });
 
+export const PRICING_RULE_MATCH_STATUSES = Object.freeze({
+  NONE: 'none',
+  UNIQUE: 'unique',
+});
+
+export class PricingRuleAmbiguityError extends Error {
+  constructor({ highestPriority, ruleIds }) {
+    super(
+      `Pricing rule configuration is ambiguous at priority ${highestPriority}: ${ruleIds.join(', ')}.`,
+    );
+    this.name = 'PricingRuleAmbiguityError';
+    this.code = 'PRICING_RULE_AMBIGUITY';
+    this.highestPriority = highestPriority;
+    this.ruleIds = Object.freeze([...ruleIds]);
+  }
+}
+
+const ambiguityResolutionInputFieldNames = Object.freeze(['highestPriority', 'rules']);
 const eligibilityInputFieldNames = Object.freeze(['pricingTime', 'rules', 'sessionTypeId']);
 const priorityResolutionInputFieldNames = Object.freeze(['rules']);
 const studioResolutionInputFieldNames = Object.freeze(['rules', 'studioId']);
@@ -98,6 +116,42 @@ function requirePriorityCandidateSet(rules) {
   }
 
   return candidates;
+}
+
+function requireDistinctRuleIds(rules) {
+  const ruleIds = rules.map((rule) => rule.id);
+
+  if (new Set(ruleIds).size !== ruleIds.length) {
+    throw new TypeError('pricingRuleResolution match candidates must have distinct rule ids.');
+  }
+
+  return rules;
+}
+
+function normalizeResolvedHighestPriority(value, rules) {
+  if (rules.length === 0) {
+    if (value !== null) {
+      throw new TypeError(
+        'pricingRuleResolution.highestPriority must be null when no candidates remain.',
+      );
+    }
+
+    return null;
+  }
+
+  if (!Number.isInteger(value) || value < 1 || value > 999) {
+    throw new RangeError(
+      'pricingRuleResolution.highestPriority must be an integer between 1 and 999.',
+    );
+  }
+
+  if (rules.some((rule) => rule.priority !== value)) {
+    throw new TypeError(
+      'pricingRuleResolution match candidates must all equal highestPriority after priority resolution.',
+    );
+  }
+
+  return value;
 }
 
 function isEffectiveAt(rule, pricingTimeMs) {
@@ -198,5 +252,38 @@ export function resolvePricingRulePriority(value) {
   return Object.freeze({
     highestPriority,
     rules: Object.freeze(highestPriorityRules),
+  });
+}
+
+export function resolveUniquePricingRuleMatch(value) {
+  const input = requireRecord(value, 'pricingRuleResolution match input');
+  requireExactFields(
+    input,
+    ambiguityResolutionInputFieldNames,
+    'pricingRuleResolution match input',
+  );
+
+  const rules = requireDistinctRuleIds(requirePriorityCandidateSet(normalizeRules(input.rules)));
+  const highestPriority = normalizeResolvedHighestPriority(input.highestPriority, rules);
+
+  if (rules.length === 0) {
+    return Object.freeze({
+      highestPriority,
+      matchStatus: PRICING_RULE_MATCH_STATUSES.NONE,
+      rule: null,
+    });
+  }
+
+  if (rules.length > 1) {
+    throw new PricingRuleAmbiguityError({
+      highestPriority,
+      ruleIds: rules.map((rule) => rule.id).sort((left, right) => left.localeCompare(right)),
+    });
+  }
+
+  return Object.freeze({
+    highestPriority,
+    matchStatus: PRICING_RULE_MATCH_STATUSES.UNIQUE,
+    rule: rules[0],
   });
 }
