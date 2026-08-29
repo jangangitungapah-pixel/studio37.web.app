@@ -7,10 +7,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { sessionTypeRepository } from '../../services/sessionTypeRepository.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
-import {
-  SESSION_TYPE_LIST_LIMIT,
-  SESSION_TYPE_STATUSES,
-} from '../pricing/sessionTypes.js';
+import { SESSION_TYPE_LIST_LIMIT, SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { SessionTypeEditorDialog } from './SessionTypeEditorDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import { getNextSessionTypeDisplayOrder } from './sessionTypeSettings.js';
@@ -220,7 +217,8 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
             <p className="settings-card__eyebrow">Layanan</p>
             <h2 id="price-session-types-heading">Session types</h2>
             <p className="settings-card__subtitle">
-              Tentukan layanan, perilaku reservasi studio, default/minimum durasi, dan urutan tampil.
+              Tentukan layanan, perilaku reservasi studio, default/minimum durasi, dan urutan
+              tampil.
             </p>
           </div>
           {canEdit ? (
@@ -269,7 +267,9 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
         {loadState === 'ready' && limitReached ? (
           <div className="settings-notice" data-tone="warning" role="status">
             <strong>Batas {listLimit} session type tercapai.</strong>
-            <span>Edit atau aktifkan kembali konfigurasi yang ada; hard delete tidak tersedia.</span>
+            <span>
+              Edit atau aktifkan kembali konfigurasi yang ada; hard delete tidak tersedia.
+            </span>
           </div>
         ) : null}
 
@@ -347,7 +347,10 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
         ) : null}
       </section>
 
-      <section className="settings-card price-settings-next" aria-labelledby="price-rules-next-heading">
+      <section
+        className="settings-card price-settings-next"
+        aria-labelledby="price-rules-next-heading"
+      >
         <div>
           <p className="settings-card__eyebrow">Checkpoint berikutnya</p>
           <h2 id="price-rules-next-heading">Pricing rules</h2>
