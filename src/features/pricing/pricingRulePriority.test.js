@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  resolvePricingRulePriority,
-  resolveStudioPricingScope,
-} from './pricingRuleResolution.js';
+import { resolvePricingRulePriority, resolveStudioPricingScope } from './pricingRuleResolution.js';
 import { PRICING_RULE_MODELS, PRICING_RULE_STATUSES } from './pricingRules.js';
 
 function createRule(overrides = {}) {
@@ -42,16 +39,10 @@ describe('pricing rule deterministic priority resolution', () => {
 
   it('produces the same winning candidate regardless of input order', () => {
     const firstResult = resolvePricingRulePriority({
-      rules: [
-        createRule({ id: 'low', priority: 10 }),
-        createRule({ id: 'winner', priority: 20 }),
-      ],
+      rules: [createRule({ id: 'low', priority: 10 }), createRule({ id: 'winner', priority: 20 })],
     });
     const secondResult = resolvePricingRulePriority({
-      rules: [
-        createRule({ id: 'winner', priority: 20 }),
-        createRule({ id: 'low', priority: 10 }),
-      ],
+      rules: [createRule({ id: 'winner', priority: 20 }), createRule({ id: 'low', priority: 10 })],
     });
 
     expect(firstResult.highestPriority).toBe(20);
