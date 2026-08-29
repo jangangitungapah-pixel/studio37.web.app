@@ -340,7 +340,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement fixed-session calculation.
 - [x] Implement duration package calculation.
 - [x] Implement base + additional-time calculation.
-- [ ] Implement studio-specific rule resolution.
+- [x] Implement studio-specific rule resolution.
 - [ ] Implement add-on calculations.
 - [ ] Implement discount calculations.
 - [ ] Implement deterministic rule priority.
@@ -424,9 +424,18 @@ Phase 5 progress on 2026-08-24:
   rendering, or booking integration. GitHub Actions Quality run `33224093253` passed formatting,
   zero-warning lint, all unit/component tests, Firestore Emulator authorization tests, production
   build, and Vite development-server smoke.
-- Studio/effective rule resolution, ambiguity rejection, add-ons, discounts, snapshots, manual
-  overrides, Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in
-  progress.
+- Phase 5A7 implemented pure pricing-rule eligibility filtering for active rules, exact session type,
+  and start-inclusive/end-exclusive effective windows, plus a studio-scope resolver that prefers
+  exact-studio candidates over general scope and falls back to general scope when no exact candidate
+  remains.
+- The studio resolver deliberately preserves every candidate inside the preferred scope and does not
+  apply numeric priority, name/ID tie breakers, or ambiguity resolution. Invalid persisted rules,
+  disabled studio candidates, mixed-session candidate sets, malformed IDs, and oversized candidate
+  arrays fail closed. GitHub Actions Quality run `33224744380` passed formatting, zero-warning lint,
+  all unit/component tests, Firestore Emulator authorization tests, production build, and Vite
+  development-server smoke.
+- Deterministic priority, ambiguity rejection, add-ons, discounts, snapshots, manual overrides,
+  Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -835,3 +844,4 @@ Implementation status:
   - [x] Phase 5A4 — pure fixed-session pricing calculation, duration-independence validation, integer-IDR validation, and automated coverage implemented and quality-gated.
   - [x] Phase 5A5 — pure duration-package pricing calculation, explicit extra-time policies, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
   - [x] Phase 5A6 — pure base-plus-additional pricing calculation, base-window coverage, explicit additional-time rounding, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A7 — active/effective eligibility filtering and exact-studio/general-scope pricing-rule resolution implemented and quality-gated.
