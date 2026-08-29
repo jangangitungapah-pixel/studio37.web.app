@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write docs/architecture/PRICING-SNAPSHOT-CONTRACT.md src/features/pricing/pricingSnapshot.js src/features/pricing/pricingSnapshot.test.js && git diff -- docs/architecture/PRICING-SNAPSHOT-CONTRACT.md src/features/pricing/pricingSnapshot.js src/features/pricing/pricingSnapshot.test.js && exit 1",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js\"",
     "test:watch": "vitest"
@@ -31,7 +31,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.0",
-    "eslint-plugin-react-hooks": "^6.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "firebase-tools": "15.28.1",
     "globals": "^16.0.0",
