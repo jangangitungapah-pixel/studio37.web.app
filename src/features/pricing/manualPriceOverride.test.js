@@ -9,10 +9,7 @@ import {
   applyAuthorizedManualPriceOverride,
   MANUAL_PRICE_OVERRIDE_REASON_MAX_LENGTH,
 } from './manualPriceOverride.js';
-import {
-  PRICING_RULE_MODELS,
-  PRICING_RULE_STATUSES,
-} from './pricingRules.js';
+import { PRICING_RULE_MODELS, PRICING_RULE_STATUSES } from './pricingRules.js';
 import { buildPricingSnapshot } from './pricingSnapshot.js';
 
 const pricingTime = new Date('2026-08-29T10:00:00.000Z');
@@ -171,7 +168,8 @@ describe('authorized manual price override', () => {
 
   it('supports both upward and downward override amounts including zero IDR', () => {
     expect(
-      applyAuthorizedManualPriceOverride(createInput({ overrideAmountIdr: 650_000 })).finalAmountIdr,
+      applyAuthorizedManualPriceOverride(createInput({ overrideAmountIdr: 650_000 }))
+        .finalAmountIdr,
     ).toBe(650_000);
     expect(
       applyAuthorizedManualPriceOverride(createInput({ overrideAmountIdr: 0 })).finalAmountIdr,
@@ -214,9 +212,9 @@ describe('authorized manual price override', () => {
       ),
     ).toThrow(/cannot be earlier than pricingTime/);
 
-    expect(() => applyAuthorizedManualPriceOverride(createInput({ overrideTime: '2026-08-29' }))).toThrow(
-      /must be a Date or Firestore Timestamp/,
-    );
+    expect(() =>
+      applyAuthorizedManualPriceOverride(createInput({ overrideTime: '2026-08-29' })),
+    ).toThrow(/must be a Date or Firestore Timestamp/);
   });
 
   it('derives the original amount and rule identity from the pricing snapshot', () => {
@@ -228,9 +226,7 @@ describe('authorized manual price override', () => {
       }),
     );
 
-    expect(result.manualOverride.calculatedOriginalAmountIdr).toBe(
-      snapshot.amounts.finalAmountIdr,
-    );
+    expect(result.manualOverride.calculatedOriginalAmountIdr).toBe(snapshot.amounts.finalAmountIdr);
     expect(result.pricingRuleId).toBe(snapshot.rule.id);
   });
 
@@ -298,9 +294,7 @@ describe('authorized manual price override', () => {
   it('returns frozen audit metadata without mutating the pricing snapshot', () => {
     const snapshot = createPricingSnapshot();
     const originalSnapshotJson = JSON.stringify(snapshot);
-    const result = applyAuthorizedManualPriceOverride(
-      createInput({ pricingSnapshot: snapshot }),
-    );
+    const result = applyAuthorizedManualPriceOverride(createInput({ pricingSnapshot: snapshot }));
 
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.manualOverride)).toBe(true);
