@@ -345,7 +345,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement discount calculations.
 - [x] Implement deterministic rule priority.
 - [x] Reject ambiguous rule matches.
-- [ ] Implement pricing snapshot builder.
+- [x] Implement pricing snapshot builder.
 - [ ] Implement authorized manual override model.
 
 ## 5.2 Price Settings UI
@@ -465,8 +465,17 @@ Phase 5 progress on 2026-08-24:
   `highestPriority` sequencing so bypassed or malformed pipeline inputs fail closed. GitHub Actions
   Quality run `33268564767` passed formatting, zero-warning lint, all unit/component tests,
   Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Pricing snapshots, manual overrides, discount/add-on persistence, Price Settings UI, and all final
-  Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A12 implemented a pure versioned pricing snapshot builder that binds normalized base
+  calculation output to the exact selected pricing-rule configuration, replays base/add-on/discount
+  calculations to detect tampered derived values, and reconciles base, add-ons, partial/full discount
+  scope, and final integer-IDR totals before history is captured.
+- Snapshot output freezes detached rule/configuration context, calculation breakdowns, pricing time,
+  source-update metadata, and explicit snapshot/calculation versions so later source-object/settings
+  mutation cannot rewrite the in-memory historical result. GitHub Actions Quality run `33269361587`
+  passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization
+  tests, production build, and Vite development-server smoke.
+- Manual overrides, Firestore Booking persistence/integration, discount/add-on persistence, Price
+  Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -880,3 +889,4 @@ Implementation status:
   - [x] Phase 5A9 — pure fixed/percentage discount calculation, integer-basis-point percentage arithmetic, non-negative final totals, and automated coverage implemented and quality-gated.
   - [x] Phase 5A10 — deterministic highest-priority candidate selection with equal-highest preservation and automated coverage implemented and quality-gated.
   - [x] Phase 5A11 — explicit unique-match resolution and typed equal-highest ambiguity rejection with fail-closed pipeline validation implemented and quality-gated.
+  - [x] Phase 5A12 — pure versioned pricing snapshot construction, selected-rule binding, calculator replay integrity, reconciled totals, and historical-detachment coverage implemented and quality-gated.
