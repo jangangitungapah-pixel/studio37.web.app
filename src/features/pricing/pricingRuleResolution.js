@@ -88,18 +88,15 @@ function requireStudioCandidateSet(rules) {
 
 function isEffectiveAt(rule, pricingTimeMs) {
   const startsOnTime = rule.effectiveFrom === null || rule.effectiveFrom.getTime() <= pricingTimeMs;
-  const endsAfterTime = rule.effectiveUntil === null || pricingTimeMs < rule.effectiveUntil.getTime();
+  const endsAfterTime =
+    rule.effectiveUntil === null || pricingTimeMs < rule.effectiveUntil.getTime();
 
   return startsOnTime && endsAfterTime;
 }
 
 export function filterEligiblePricingRules(value) {
   const input = requireRecord(value, 'pricingRuleResolution eligibility input');
-  requireExactFields(
-    input,
-    eligibilityInputFieldNames,
-    'pricingRuleResolution eligibility input',
-  );
+  requireExactFields(input, eligibilityInputFieldNames, 'pricingRuleResolution eligibility input');
 
   const rules = normalizeRules(input.rules);
   const pricingTime = toJavaScriptDate(input.pricingTime, {
@@ -126,11 +123,7 @@ export function filterEligiblePricingRules(value) {
 
 export function resolveStudioPricingScope(value) {
   const input = requireRecord(value, 'pricingRuleResolution studio input');
-  requireExactFields(
-    input,
-    studioResolutionInputFieldNames,
-    'pricingRuleResolution studio input',
-  );
+  requireExactFields(input, studioResolutionInputFieldNames, 'pricingRuleResolution studio input');
 
   const rules = requireStudioCandidateSet(normalizeRules(input.rules));
   const studioId = normalizeNullableStudioId(input.studioId);
