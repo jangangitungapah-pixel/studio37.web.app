@@ -341,7 +341,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement duration package calculation.
 - [x] Implement base + additional-time calculation.
 - [x] Implement studio-specific rule resolution.
-- [ ] Implement add-on calculations.
+- [x] Implement add-on calculations.
 - [ ] Implement discount calculations.
 - [ ] Implement deterministic rule priority.
 - [ ] Reject ambiguous rule matches.
@@ -434,8 +434,17 @@ Phase 5 progress on 2026-08-24:
   arrays fail closed. GitHub Actions Quality run `33224744380` passed formatting, zero-warning lint,
   all unit/component tests, Firestore Emulator authorization tests, production build, and Vite
   development-server smoke.
-- Deterministic priority, ambiguity rejection, add-ons, discounts, snapshots, manual overrides,
-  Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5A8 implemented a pure add-on calculator for fixed, quantity-based, and time-based optional
+  services. It preserves explicit add-on identity, rejects duplicate selections, uses checked
+  safe-integer IDR multiplication/addition, and returns a frozen normalized add-on breakdown and
+  subtotal without mutating the base pricing result.
+- Time-based add-ons support exact-increment rejection and deterministic round-up billing while
+  already-aligned duration remains unchanged. GitHub Actions Quality run `33225271093` passed
+  formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
+  production build, and Vite development-server smoke.
+- Discount calculation, deterministic priority, ambiguity rejection, snapshots, manual overrides,
+  add-on persistence/Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains
+  in progress.
 
 ---
 
@@ -845,3 +854,4 @@ Implementation status:
   - [x] Phase 5A5 — pure duration-package pricing calculation, explicit extra-time policies, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
   - [x] Phase 5A6 — pure base-plus-additional pricing calculation, base-window coverage, explicit additional-time rounding, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
   - [x] Phase 5A7 — active/effective eligibility filtering and exact-studio/general-scope pricing-rule resolution implemented and quality-gated.
+  - [x] Phase 5A8 — pure fixed/quantity/time add-on calculation, checked integer-IDR arithmetic, strict validation, and automated coverage implemented and quality-gated.
