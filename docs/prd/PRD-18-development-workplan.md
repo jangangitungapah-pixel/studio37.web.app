@@ -342,7 +342,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Implement base + additional-time calculation.
 - [x] Implement studio-specific rule resolution.
 - [x] Implement add-on calculations.
-- [ ] Implement discount calculations.
+- [x] Implement discount calculations.
 - [ ] Implement deterministic rule priority.
 - [ ] Reject ambiguous rule matches.
 - [ ] Implement pricing snapshot builder.
@@ -442,9 +442,18 @@ Phase 5 progress on 2026-08-24:
   already-aligned duration remains unchanged. GitHub Actions Quality run `33225271093` passed
   formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
   production build, and Vite development-server smoke.
-- Discount calculation, deterministic priority, ambiguity rejection, snapshots, manual overrides,
-  add-on persistence/Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains
-  in progress.
+- Phase 5A9 implemented a pure fixed/percentage discount calculator with an explicit caller-owned
+  `discountableAmountIdr` boundary. Fixed discounts fail closed when they exceed the eligible amount,
+  while percentage configuration uses integer basis points from 0 through 10000 and rounds any
+  fractional-rupiah discount down deterministically.
+- The percentage algorithm avoids unsafe large intermediate multiplication, supports zero through
+  100-percent discounts, and returns a frozen normalized result without Firestore, permission,
+  snapshot, override, React, or Booking coupling. GitHub Actions Quality run `33258165384` passed
+  formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization tests,
+  production build, and Vite development-server smoke.
+- Deterministic priority, ambiguity rejection, snapshots, manual overrides, discount/add-on
+  persistence, Price Settings UI, and all final Phase 5 gates remain pending; Phase 5 remains in
+  progress.
 
 ---
 
@@ -855,3 +864,4 @@ Implementation status:
   - [x] Phase 5A6 — pure base-plus-additional pricing calculation, base-window coverage, explicit additional-time rounding, checked integer-IDR arithmetic, and automated coverage implemented and quality-gated.
   - [x] Phase 5A7 — active/effective eligibility filtering and exact-studio/general-scope pricing-rule resolution implemented and quality-gated.
   - [x] Phase 5A8 — pure fixed/quantity/time add-on calculation, checked integer-IDR arithmetic, strict validation, and automated coverage implemented and quality-gated.
+  - [x] Phase 5A9 — pure fixed/percentage discount calculation, integer-basis-point percentage arithmetic, non-negative final totals, and automated coverage implemented and quality-gated.
