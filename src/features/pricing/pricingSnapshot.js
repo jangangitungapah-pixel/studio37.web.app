@@ -1,6 +1,6 @@
 import { toIsoDateTime, toJavaScriptDate } from '../../lib/datetime/timestamps.js';
 import { requireIntegerIdr, sumIntegerIdr } from '../../lib/money/idr.js';
-import { calculateAddOnPrices, ADD_ON_PRICING_TYPES } from './addOnPricing.js';
+import { ADD_ON_PRICING_TYPES, calculateAddOnPrices } from './addOnPricing.js';
 import { calculateBaseAdditionalPrice } from './baseAdditionalPricing.js';
 import { calculateDiscount, DISCOUNT_TYPES } from './discountPricing.js';
 import { calculateDurationPackagePrice } from './durationPackagePricing.js';
@@ -116,19 +116,18 @@ function requireExactFields(value, expectedFields, label) {
 }
 
 function assertSamePrimitiveRecord(actual, expected, label) {
-  const fields = Object.keys(expected);
-  requireExactFields(actual, fields, label);
+  requireExactFields(actual, Object.keys(expected), label);
 
-  for (const field of fields) {
+  for (const field of Object.keys(expected)) {
     if (!Object.is(actual[field], expected[field])) {
       throw new RangeError(`${label}.${field} does not match the canonical calculation result.`);
     }
   }
 }
 
-function replayBaseCalculation(value, pricingModel) {
+function replayBaseCalculation(value, rule) {
   const calculation = requireRecord(value, 'pricingSnapshot.baseCalculation');
-  const expectedFields = baseCalculationFieldNames[pricingModel];
+  const expectedFields = baseCalculationFieldNames[rule.pricingModel];
 
   if (!expectedFields) {
     throw new RangeError('pricingSnapshot pricing model is not supported.');
@@ -138,50 +137,32 @@ function replayBaseCalculation(value, pricingModel) {
 
   let canonical;
 
-  switch (pricingModel) {
+  switch (rule.pricingModel) {
     case PRICING_RULE_MODELS.HOURLY:
       canonical = calculateHourlyPrice({
-        configuration: {
-          amountPerIncrementIdr: calculation.amountPerIncrementIdr,
-          incrementMinutes: calculation.incrementMinutes,
-          minimumDurationMinutes: calculation.minimumDurationMinutes,
-          roundingMode: calculation.roundingMode,
-        },
+        configuration: rule.configuration,
         durationMinutes: calculation.inputDurationMinutes,
-        pricingModel,
+        pricingModel: rule.pricingModel,
       });
       break;
     case PRICING_RULE_MODELS.FIXED_SESSION:
       canonical = calculateFixedSessionPrice({
-        configuration: { amountIdr: calculation.amountIdr },
-        pricingModel,
+        configuration: rule.configuration,
+        pricingModel: rule.pricingModel,
       });
       break;
     case PRICING_RULE_MODELS.DURATION_PACKAGE:
       canonical = calculateDurationPackagePrice({
-        configuration: {
-          additionalAmountPerIncrementIdr: calculation.additionalAmountPerIncrementIdr,
-          additionalIncrementMinutes: calculation.additionalIncrementMinutes,
-          amountIdr: calculation.packageAmountIdr,
-          durationMinutes: calculation.packageDurationMinutes,
-          extraTimePolicy: calculation.extraTimePolicy,
-          roundingMode: calculation.roundingMode,
-        },
+        configuration: rule.configuration,
         durationMinutes: calculation.inputDurationMinutes,
-        pricingModel,
+        pricingModel: rule.pricingModel,
       });
       break;
     case PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL:
       canonical = calculateBaseAdditionalPrice({
-        configuration: {
-          additionalAmountPerIncrementIdr: calculation.additionalAmountPerIncrementIdr,
-          additionalIncrementMinutes: calculation.additionalIncrementMinutes,
-          baseAmountIdr: calculation.baseAmountIdr,
-          baseDurationMinutes: calculation.baseDurationMinutes,
-          roundingMode: calculation.roundingMode,
-        },
+        configuration: rule.configuration,
         durationMinutes: calculation.inputDurationMinutes,
-        pricingModel,
+        pricingModel: rule.pricingModel,
       });
       break;
     default:
@@ -307,14 +288,6 @@ function replayDiscountCalculation(value) {
   return canonical;
 }
 
-function cloneConfiguration(configuration) {
-  return Object.freeze({ ...configuration });
-}
-
-function cloneBaseCalculation(calculation) {
-  return Object.freeze({ ...calculation });
-}
-
 function cloneAddOnCalculation(calculation) {
   return Object.freeze({
     items: Object.freeze(calculation.items.map((item) => Object.freeze({ ...item }))),
@@ -322,13 +295,9 @@ function cloneAddOnCalculation(calculation) {
   });
 }
 
-function cloneDiscountCalculation(calculation) {
-  return Object.freeze({ ...calculation });
-}
-
 function buildRuleSnapshot(rule) {
   return Object.freeze({
-    configuration: cloneConfiguration(rule.configuration),
+    configuration: Object.freeze({ ...rule.configuration }),
     effectiveFromIso: toIsoDateTime(rule.effectiveFrom, {
       allowNull: true,
       label: 'pricingSnapshot.pricingRule.effectiveFrom',
@@ -375,14 +344,9 @@ export function buildPricingSnapshot(value) {
   });
   assertRuleSelectableAtPricingTime(rule, pricingTime);
 
-  const baseCalculation = replayBaseCalculation(input.baseCalculation, rule.pricingModel);
+  const baseCalculation = replayBaseCalculation(input.baseCalculation, rule);
   const addOnCalculation = replayAddOnCalculation(input.addOnCalculation);
   const discountCalculation = replayDiscountCalculation(input.discountCalculation);
-
-  if (baseCalculation.pricingModel !== rule.pricingModel) {
-    throw new RangeError('pricingSnapshot.baseCalculation.pricingModel must match pricingRule.');
-  }
-
   const baseAmountIdr = requireIntegerIdr(baseCalculation.totalAmountIdr, {
     label: 'pricingSnapshot.baseAmountIdr',
   });
@@ -420,9 +384,9 @@ export function buildPricingSnapshot(value) {
   return Object.freeze({
     addOnCalculation: cloneAddOnCalculation(addOnCalculation),
     amounts,
-    baseCalculation: cloneBaseCalculation(baseCalculation),
+    baseCalculation: Object.freeze({ ...baseCalculation }),
     calculationVersion: PRICING_CALCULATION_VERSION,
-    discountCalculation: cloneDiscountCalculation(discountCalculation),
+    discountCalculation: Object.freeze({ ...discountCalculation }),
     pricingTimeIso: pricingTime.toISOString(),
     rule: buildRuleSnapshot(rule),
     snapshotVersion: PRICING_SNAPSHOT_VERSION,
