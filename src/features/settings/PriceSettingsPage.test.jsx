@@ -149,9 +149,7 @@ describe('PriceSettingsPage session type workflow', () => {
     const repository = createRepository([createSessionType()]);
     renderPage({ repository });
 
-    await interaction.click(
-      await screen.findByRole('button', { name: 'Nonaktifkan Rehearsal' }),
-    );
+    await interaction.click(await screen.findByRole('button', { name: 'Nonaktifkan Rehearsal' }));
     expect(screen.getByText(/snapshot historis tetap dipertahankan/i)).toBeInTheDocument();
     await interaction.click(screen.getByRole('button', { name: 'Nonaktifkan' }));
 
