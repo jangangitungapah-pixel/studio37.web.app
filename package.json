@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/features/settings/PriceSettingsPage.jsx src/features/settings/PriceSettingsPage.test.jsx src/features/settings/SessionTypeEditorDialog.jsx src/features/settings/sessionTypeSettings.js src/features/settings/sessionTypeSettings.test.js && git diff -- src/features/settings/PriceSettingsPage.jsx src/features/settings/PriceSettingsPage.test.jsx src/features/settings/SessionTypeEditorDialog.jsx src/features/settings/sessionTypeSettings.js src/features/settings/sessionTypeSettings.test.js && exit 1",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js\"",
     "test:watch": "vitest"
