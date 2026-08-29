@@ -215,9 +215,9 @@ describe('pricing rule unique-match validation', () => {
   });
 
   it('rejects unsupported input shapes, malformed documents, and invalid highest priority', () => {
-    expect(() => resolveUniquePricingRuleMatch({ highestPriority: null, rules: [], extra: true })).toThrow(
-      /unsupported input shape/,
-    );
+    expect(() =>
+      resolveUniquePricingRuleMatch({ highestPriority: null, rules: [], extra: true }),
+    ).toThrow(/unsupported input shape/);
     expect(() =>
       resolveUniquePricingRuleMatch({
         highestPriority: 100,
