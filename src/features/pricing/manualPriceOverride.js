@@ -2,10 +2,7 @@ import { toJavaScriptDate } from '../../lib/datetime/timestamps.js';
 import { requireIntegerIdr, sumIntegerIdr } from '../../lib/money/idr.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { USER_PROFILE_ROLES, USER_PROFILE_STATUSES } from '../auth/userProfile.js';
-import {
-  PRICING_CALCULATION_VERSION,
-  PRICING_SNAPSHOT_VERSION,
-} from './pricingSnapshot.js';
+import { PRICING_CALCULATION_VERSION, PRICING_SNAPSHOT_VERSION } from './pricingSnapshot.js';
 
 export const MANUAL_PRICE_OVERRIDE_REASON_MAX_LENGTH = 500;
 
