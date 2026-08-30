@@ -8,6 +8,7 @@ import { sessionTypeRepository } from '../../services/sessionTypeRepository.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
 import { SESSION_TYPE_LIST_LIMIT, SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
+import { PricingRulesSection } from './PricingRulesSection.jsx';
 import { SessionTypeEditorDialog } from './SessionTypeEditorDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import { getNextSessionTypeDisplayOrder } from './sessionTypeSettings.js';
@@ -35,7 +36,10 @@ function formatDurationSummary(sessionType) {
   return `Default ${sessionType.defaultDurationMinutes} mnt · Min ${sessionType.minimumDurationMinutes} mnt`;
 }
 
-export function PriceSettingsPage({ repository = sessionTypeRepository }) {
+export function PriceSettingsPage({
+  pricingRulesRepository,
+  repository = sessionTypeRepository,
+}) {
   const access = useAuth();
   const { pushToast } = useToast();
   const canEdit = hasCapability(access, CAPABILITIES.SETTINGS_PRICING_EDIT);
@@ -189,7 +193,7 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
   return (
     <SettingsWorkspace
       title="Price Settings"
-      description="Kelola jenis layanan sebagai pintu masuk konfigurasi harga. Pricing rule dan package editor menyusul pada checkpoint berikutnya."
+      description="Kelola jenis layanan dan pricing rule tanpa menyentuh source code atau raw JSON."
       actions={
         <span className="settings-access-badge" data-editable={canEdit || undefined}>
           {canEdit ? 'Dapat mengedit' : 'Lihat saja'}
@@ -279,7 +283,7 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
             <div>
               <p className="settings-placeholder__title">Belum ada session type</p>
               <p className="settings-placeholder__description">
-                Tambahkan layanan pertama sebelum membuat pricing rule pada checkpoint berikutnya.
+                Tambahkan layanan pertama sebelum membuat pricing rule.
               </p>
             </div>
           </div>
@@ -347,20 +351,12 @@ export function PriceSettingsPage({ repository = sessionTypeRepository }) {
         ) : null}
       </section>
 
-      <section
-        className="settings-card price-settings-next"
-        aria-labelledby="price-rules-next-heading"
-      >
-        <div>
-          <p className="settings-card__eyebrow">Checkpoint berikutnya</p>
-          <h2 id="price-rules-next-heading">Pricing rules</h2>
-          <p>
-            Model harga, studio scope, package, add-on, preview, dan ambiguity validation sengaja
-            belum dibuka di 5B1 supaya perubahan tetap atomik dan mudah diaudit.
-          </p>
-        </div>
-        <Badge tone="neutral">Belum diimplementasikan</Badge>
-      </section>
+      <PricingRulesSection
+        access={access}
+        canEdit={canEdit}
+        repository={pricingRulesRepository}
+        sessionTypes={loadState === 'ready' ? sessionTypes : []}
+      />
 
       <SessionTypeEditorDialog
         dialogError={dialogError}
