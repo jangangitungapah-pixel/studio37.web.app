@@ -373,9 +373,9 @@ export function PricingRuleEditorDialog({
 
   const preservesAdvancedMetadata = Boolean(
     editingRule &&
-      (editingRule.studioId !== null ||
-        editingRule.effectiveFrom !== null ||
-        editingRule.effectiveUntil !== null),
+    (editingRule.studioId !== null ||
+      editingRule.effectiveFrom !== null ||
+      editingRule.effectiveUntil !== null),
   );
 
   return (
@@ -421,7 +421,12 @@ export function PricingRuleEditorDialog({
         </div>
       ) : null}
 
-      <form id="pricing-rule-editor-form" className="pricing-rule-form" onSubmit={submit} noValidate>
+      <form
+        id="pricing-rule-editor-form"
+        className="pricing-rule-form"
+        onSubmit={submit}
+        noValidate
+      >
         <div className="settings-form__grid">
           <Input
             label="Nama pricing rule"
