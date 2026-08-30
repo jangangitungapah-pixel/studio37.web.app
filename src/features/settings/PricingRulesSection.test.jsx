@@ -193,7 +193,9 @@ describe('PricingRulesSection', () => {
     await interaction.type(screen.getByLabelText(/^Harga session \(IDR\)/), '400000');
     await interaction.click(screen.getByRole('button', { name: 'Simpan pricing rule' }));
 
-    expect(await screen.findByText(/session, studio scope, dan priority yang sama/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/session, studio scope, dan priority yang sama/i),
+    ).toBeInTheDocument();
     expect(repository.createPricingRule).not.toHaveBeenCalled();
   });
 
