@@ -121,7 +121,9 @@ export function DurationPackageEditorDialog({
     <Dialog
       open={open}
       size="lg"
-      title={editingRule ? 'Edit package' : templateRule ? 'Tambah package ke set' : 'Tambah package'}
+      title={
+        editingRule ? 'Edit package' : templateRule ? 'Tambah package ke set' : 'Tambah package'
+      }
       description="Kelola satu pilihan durasi tanpa menyentuh JSON pricing rule atau metadata resolusi di belakangnya."
       onClose={onClose}
       footer={
@@ -230,7 +232,9 @@ export function DurationPackageEditorDialog({
           <div className="pricing-rule-config-panel">
             <div className="pricing-rule-config-panel__intro">
               <strong>Extra time berbayar</strong>
-              <span>Tentukan nominal, increment, dan rounding setelah durasi package terlewati.</span>
+              <span>
+                Tentukan nominal, increment, dan rounding setelah durasi package terlewati.
+              </span>
             </div>
             <div className="settings-form__grid">
               <Input
