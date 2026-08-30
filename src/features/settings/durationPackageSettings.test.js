@@ -174,7 +174,9 @@ describe('durationPackageSettings', () => {
 
     expect(groups).toHaveLength(2);
     const generalGroup = groups.find((group) => group.studioId === null);
-    expect(generalGroup.rules.map((rule) => rule.configuration.durationMinutes)).toEqual([180, 360]);
+    expect(generalGroup.rules.map((rule) => rule.configuration.durationMinutes)).toEqual([
+      180, 360,
+    ]);
     expect(Object.isFrozen(groups)).toBe(true);
     expect(Object.isFrozen(generalGroup.rules)).toBe(true);
   });
@@ -199,7 +201,9 @@ describe('durationPackageSettings', () => {
     });
 
     expect(formatDurationPackageExtraTime(blocked)).toBe('Extra time diblokir');
-    expect(formatDurationPackageExtraTime(anotherPackage)).toBe('Extra time wajib pilih paket lain');
+    expect(formatDurationPackageExtraTime(anotherPackage)).toBe(
+      'Extra time wajib pilih paket lain',
+    );
     expect(formatDurationPackageExtraTime(additional)).toMatch(/100\.000/);
     expect(formatDurationPackageExtraTime(additional)).toMatch(/bulatkan ke atas/);
   });
