@@ -36,10 +36,7 @@ function formatDurationSummary(sessionType) {
   return `Default ${sessionType.defaultDurationMinutes} mnt · Min ${sessionType.minimumDurationMinutes} mnt`;
 }
 
-export function PriceSettingsPage({
-  pricingRulesRepository,
-  repository = sessionTypeRepository,
-}) {
+export function PriceSettingsPage({ pricingRulesRepository, repository = sessionTypeRepository }) {
   const access = useAuth();
   const { pushToast } = useToast();
   const canEdit = hasCapability(access, CAPABILITIES.SETTINGS_PRICING_EDIT);
