@@ -352,7 +352,7 @@ Phase 4 progress on 2026-08-22:
 
 - [x] Session type CRUD/deactivation UI.
 - [x] Pricing rule editor.
-- [ ] Package editor.
+- [x] Package editor.
 - [ ] Duration/minimum/increment configuration.
 - [ ] Studio scope selector.
 - [ ] Add-on configuration.
@@ -506,10 +506,20 @@ Phase 5 progress on 2026-08-24:
   adaptation. GitHub Actions Quality run `33304072715` passed formatting, zero-warning lint, all
   unit/component tests, Firestore Emulator authorization tests, production build, and Vite
   development-server smoke.
-- Dedicated Package Editor, studio-scope/effective-period controls, add-on configuration, pricing
-  preview, full model/package-aware configuration validation, Firestore Booking persistence,
-  server-authoritative override writes/timestamps, and all final Phase 5 gates remain pending; Phase
-  5 remains in progress.
+- Phase 5B3 added a dedicated Duration Package workspace without introducing another Firestore query
+  or package collection. It groups existing `duration_package` rules by session, studio scope,
+  priority, and effective window, sorts sibling choices by duration, and lets an editor create a new
+  general package or add a sibling that inherits the exact package-set envelope.
+- Package editing preserves session/studio/priority/effective metadata, all three canonical extra-time
+  policies remain available, soft status changes preserve historical snapshots, and the shared
+  pre-write guard is now package-aware: distinct durations may coexist while duplicate active
+  durations and package/non-package envelope collisions are blocked conservatively. GitHub Actions
+  Quality run `33308411999` passed formatting, zero-warning lint, all unit/component tests, Firestore
+  Emulator authorization tests, production build, and Vite development-server smoke.
+- Duration/minimum/increment workflow refinement, studio-scope/effective-period controls, add-on
+  configuration, pricing preview, full model/package/effective-window validation, Firestore Booking
+  persistence, server-authoritative override writes/timestamps, and all final Phase 5 gates remain
+  pending; Phase 5 remains in progress.
 
 ---
 
@@ -927,3 +937,4 @@ Implementation status:
   - [x] Phase 5A13 — authorized manual price override with existing capability enforcement, immutable automatic baseline preservation, explicit audit metadata, and automated coverage implemented and quality-gated.
   - [x] Phase 5B1 — bounded capability-aware Session Type Price Settings CRUD/deactivation UI, responsive states, and automated coverage implemented and quality-gated.
   - [x] Phase 5B2 — bounded Pricing Rule editor/status workflow for all four canonical models, advanced metadata preservation, conservative collision guard, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B3 — dedicated duration-package set editor with package-aware collision safety, envelope inheritance, responsive states, and automated coverage implemented and quality-gated.
