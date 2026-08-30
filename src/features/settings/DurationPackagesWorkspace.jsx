@@ -213,7 +213,10 @@ export function DurationPackagesWorkspace({
             ? `${statusTarget.name} kembali tersedia sebagai pilihan package untuk pricing baru.`
             : `${statusTarget.name} tidak lagi tersedia untuk pricing baru; snapshot historis tetap aman.`,
         tone: 'success',
-        title: nextStatus === PRICING_RULE_STATUSES.ACTIVE ? 'Package diaktifkan' : 'Package dinonaktifkan',
+        title:
+          nextStatus === PRICING_RULE_STATUSES.ACTIVE
+            ? 'Package diaktifkan'
+            : 'Package dinonaktifkan',
       });
       setStatusTarget(null);
       onChanged();
@@ -262,9 +265,7 @@ export function DurationPackagesWorkspace({
           {groups.map((group) => {
             const sessionType = sessionTypeById.get(group.sessionTypeId);
             const canAddSibling =
-              canEdit &&
-              !limitReached &&
-              sessionType?.status === SESSION_TYPE_STATUSES.ACTIVE;
+              canEdit && !limitReached && sessionType?.status === SESSION_TYPE_STATUSES.ACTIVE;
             const template = group.rules[0];
 
             return (
@@ -273,12 +274,18 @@ export function DurationPackagesWorkspace({
                   <div>
                     <div className="duration-package-group__title-row">
                       <h4>{sessionType?.name ?? `Session ${group.sessionTypeId}`}</h4>
-                      <Badge tone={sessionType?.status === SESSION_TYPE_STATUSES.ACTIVE ? 'brand' : 'neutral'}>
+                      <Badge
+                        tone={
+                          sessionType?.status === SESSION_TYPE_STATUSES.ACTIVE ? 'brand' : 'neutral'
+                        }
+                      >
                         {sessionType?.code ?? group.sessionTypeId}
                       </Badge>
                     </div>
                     <div className="duration-package-group__meta">
-                      <span>{group.studioId === null ? 'Semua studio' : `Studio ${group.studioId}`}</span>
+                      <span>
+                        {group.studioId === null ? 'Semua studio' : `Studio ${group.studioId}`}
+                      </span>
                       <span>Priority {group.priority}</span>
                       <span>{formatEffectiveWindow(group)}</span>
                     </div>
@@ -295,7 +302,10 @@ export function DurationPackagesWorkspace({
                   ) : null}
                 </header>
 
-                <div className="duration-package-list" aria-label={`Package ${sessionType?.name ?? group.sessionTypeId}`}>
+                <div
+                  className="duration-package-list"
+                  aria-label={`Package ${sessionType?.name ?? group.sessionTypeId}`}
+                >
                   {group.rules.map((rule) => {
                     const isActive = rule.status === PRICING_RULE_STATUSES.ACTIVE;
 
