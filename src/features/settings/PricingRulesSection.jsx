@@ -7,7 +7,9 @@ import { Button } from '../../components/ui/Button.jsx';
 import { pricingRuleRepository } from '../../services/pricingRuleRepository.js';
 import { PRICING_RULE_LIST_LIMIT, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
+import { DurationPackagesWorkspace } from './DurationPackagesWorkspace.jsx';
 import { PricingRuleEditorDialog } from './PricingRuleEditorDialog.jsx';
+import { hasPricingRuleWriteCollision } from './pricingRuleCollision.js';
 import {
   formatPricingRuleConfigurationSummary,
   getPricingRuleModelLabel,
@@ -24,17 +26,6 @@ function getSafeFirebaseMessage(error, action) {
   }
 
   return `Pricing rule belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
-}
-
-function hasEqualPriorityScopeCollision(pricingRules, details, { excludeId = null } = {}) {
-  return pricingRules.some(
-    (rule) =>
-      rule.id !== excludeId &&
-      rule.status === PRICING_RULE_STATUSES.ACTIVE &&
-      rule.sessionTypeId === details.sessionTypeId &&
-      rule.studioId === details.studioId &&
-      rule.priority === details.priority,
-  );
 }
 
 function formatEffectiveWindow(rule) {
@@ -151,10 +142,10 @@ export function PricingRulesSection({
 
     if (
       (createsActiveRule || editsActiveRule) &&
-      hasEqualPriorityScopeCollision(pricingRules, details, { excludeId: editingRule?.id ?? null })
+      hasPricingRuleWriteCollision(pricingRules, details, { excludeId: editingRule?.id ?? null })
     ) {
       setDialogError(
-        'Ada pricing rule aktif dengan session, studio scope, dan priority yang sama. Gunakan priority berbeda agar 5B2 tidak membuat match yang jelas ambigu.',
+        'Ada pricing rule aktif yang berpotensi ambigu pada session, studio scope, dan priority yang sama. Duration package dengan durasi berbeda diperbolehkan; duplicate durasi tetap diblok.',
       );
       return;
     }
@@ -213,10 +204,10 @@ export function PricingRulesSection({
       }
 
       if (
-        hasEqualPriorityScopeCollision(pricingRules, statusTarget, { excludeId: statusTarget.id })
+        hasPricingRuleWriteCollision(pricingRules, statusTarget, { excludeId: statusTarget.id })
       ) {
         setStatusError(
-          'Aktivasi diblok karena ada rule aktif dengan session, studio scope, dan priority yang sama.',
+          'Aktivasi diblok karena rule aktif lain membuat envelope ini berpotensi ambigu. Duration package dengan durasi berbeda tetap diperbolehkan.',
         );
         return;
       }
@@ -396,11 +387,25 @@ export function PricingRulesSection({
         </div>
       ) : null}
 
+      {loadState === 'ready' ? (
+        <DurationPackagesWorkspace
+          access={access}
+          canEdit={canEdit}
+          limitReached={limitReached}
+          listLimit={listLimit}
+          onChanged={() => setReloadKey((value) => value + 1)}
+          pricingRules={pricingRules}
+          repository={repository}
+          sessionTypes={sessionTypes}
+        />
+      ) : null}
+
       <div className="pricing-rule-scope-note">
-        <strong>Yang belum dibuka di 5B2</strong>
+        <strong>Yang belum dibuka setelah 5B3</strong>
         <span>
-          Dedicated multi-package workspace, studio scope selector, effective period editor, add-on,
-          calculation preview, dan full ambiguity validation tetap checkpoint berikutnya.
+          Duration/minimum/increment workflow lanjutan, studio scope selector, effective period
+          editor, add-on, calculation preview, dan full ambiguity validation tetap checkpoint
+          berikutnya.
         </span>
       </div>
 
@@ -421,7 +426,7 @@ export function PricingRulesSection({
         title={`${nextStatusLabel} ${statusTarget?.name ?? 'pricing rule'}?`}
         description={
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Rule akan kembali ikut resolusi harga untuk booking baru setelah collision guard 5B2 lolos.'
+            ? 'Rule akan kembali ikut resolusi harga untuk booking baru setelah package-aware collision guard lolos.'
             : 'Rule tidak lagi dipilih untuk pricing baru, tetapi snapshot dan referensi historis tetap dipertahankan.'
         }
         onClose={closeStatusDialog}
