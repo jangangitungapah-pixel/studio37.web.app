@@ -351,7 +351,7 @@ Phase 4 progress on 2026-08-22:
 ## 5.2 Price Settings UI
 
 - [x] Session type CRUD/deactivation UI.
-- [ ] Pricing rule editor.
+- [x] Pricing rule editor.
 - [ ] Package editor.
 - [ ] Duration/minimum/increment configuration.
 - [ ] Studio scope selector.
@@ -494,9 +494,22 @@ Phase 5 progress on 2026-08-24:
   read-only capability boundaries, duplicate-code rejection, and recoverable bounded-query retry.
   GitHub Actions Quality run `33271762345` passed formatting, zero-warning lint, all unit/component
   tests, Firestore Emulator authorization tests, production build, and Vite development-server smoke.
-- Pricing-rule/package/studio-scope/add-on/preview/validation UI, Firestore Booking
-  persistence/integration, server-authoritative override writes/timestamps, and all final Phase 5
-  gates remain pending; Phase 5 remains in progress.
+- Phase 5B2 added bounded Pricing Rule administration to `/settings/pricing` on top of the existing
+  Phase 5A2 repository. The workflow supports human-readable create/edit and soft status management
+  for hourly, fixed-session, duration-package, and base-plus-additional rule configurations, creates
+  new rules in general studio scope, and preserves existing studio/effective metadata when advanced
+  rules are edited.
+- A conservative UI guard blocks an obvious active collision with the same session type, studio
+  scope, and priority, while the 200-rule saturation state blocks create/edit/reactivate so the UI
+  never decides from a potentially truncated candidate set. Focused form/UI coverage also validates
+  view-only behavior, recoverable list retry, advanced-metadata preservation, and canonical model
+  adaptation. GitHub Actions Quality run `33304072715` passed formatting, zero-warning lint, all
+  unit/component tests, Firestore Emulator authorization tests, production build, and Vite
+  development-server smoke.
+- Dedicated Package Editor, studio-scope/effective-period controls, add-on configuration, pricing
+  preview, full model/package-aware configuration validation, Firestore Booking persistence,
+  server-authoritative override writes/timestamps, and all final Phase 5 gates remain pending; Phase
+  5 remains in progress.
 
 ---
 
@@ -913,3 +926,4 @@ Implementation status:
   - [x] Phase 5A12 — pure versioned pricing snapshot construction, selected-rule binding, calculator replay integrity, reconciled totals, and historical-detachment coverage implemented and quality-gated.
   - [x] Phase 5A13 — authorized manual price override with existing capability enforcement, immutable automatic baseline preservation, explicit audit metadata, and automated coverage implemented and quality-gated.
   - [x] Phase 5B1 — bounded capability-aware Session Type Price Settings CRUD/deactivation UI, responsive states, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B2 — bounded Pricing Rule editor/status workflow for all four canonical models, advanced metadata preservation, conservative collision guard, and automated coverage implemented and quality-gated.

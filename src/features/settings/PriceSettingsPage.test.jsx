@@ -37,6 +37,16 @@ function createRepository(sessionTypes = []) {
   };
 }
 
+function createPricingRulesRepository(pricingRules = []) {
+  return {
+    createPricingRule: vi.fn(async () => 'pricing-rule-created'),
+    listLimit: 200,
+    listPricingRules: vi.fn(async () => pricingRules),
+    setPricingRuleStatus: vi.fn(async (pricingRuleId) => pricingRuleId),
+    updatePricingRule: vi.fn(async (pricingRuleId) => pricingRuleId),
+  };
+}
+
 function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {}) {
   return {
     capabilities,
@@ -52,12 +62,19 @@ function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {
   };
 }
 
-function renderPage({ access = createAccess(), repository = createRepository() } = {}) {
+function renderPage({
+  access = createAccess(),
+  pricingRulesRepository = createPricingRulesRepository(),
+  repository = createRepository(),
+} = {}) {
   return render(
     <ToastProvider>
       <AuthContext.Provider value={access}>
         <MemoryRouter initialEntries={['/settings/pricing']}>
-          <PriceSettingsPage repository={repository} />
+          <PriceSettingsPage
+            pricingRulesRepository={pricingRulesRepository}
+            repository={repository}
+          />
         </MemoryRouter>
       </AuthContext.Provider>
     </ToastProvider>,
@@ -178,6 +195,7 @@ describe('PriceSettingsPage session type workflow', () => {
     expect(screen.queryByRole('button', { name: 'Tambah session type' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit Rehearsal' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nonaktifkan Rehearsal' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah pricing rule' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Harga' })).toBeInTheDocument();
     expect(repository.createSessionType).not.toHaveBeenCalled();
     expect(repository.updateSessionType).not.toHaveBeenCalled();
