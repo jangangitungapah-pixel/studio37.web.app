@@ -23,6 +23,7 @@ export function AppRouter({
   operatorAccountInvitationRepository,
   operatorRepository,
   permissionAdministrationRepository,
+  pricingRuleRepository,
   sessionTypeRepository,
   studioRoomRepository,
   studioSettingsRepository,
@@ -75,7 +76,12 @@ export function AppRouter({
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.PRICING} />}>
             <Route
               path="settings/pricing"
-              element={<PriceSettingsPage repository={sessionTypeRepository} />}
+              element={
+                <PriceSettingsPage
+                  pricingRulesRepository={pricingRuleRepository}
+                  repository={sessionTypeRepository}
+                />
+              }
             />
           </Route>
 
