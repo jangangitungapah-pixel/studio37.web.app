@@ -5,10 +5,7 @@ import { Dialog } from '../../components/feedback/Dialog.jsx';
 import { useToast } from '../../components/feedback/toast-context.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { pricingRuleRepository } from '../../services/pricingRuleRepository.js';
-import {
-  PRICING_RULE_LIST_LIMIT,
-  PRICING_RULE_STATUSES,
-} from '../pricing/pricingRules.js';
+import { PRICING_RULE_LIST_LIMIT, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { PricingRuleEditorDialog } from './PricingRuleEditorDialog.jsx';
 import {
@@ -266,9 +263,7 @@ export function PricingRulesSection({
         {canEdit ? (
           <Button
             size="sm"
-            disabled={
-              loadState !== 'ready' || limitReached || activeSessionTypes.length === 0
-            }
+            disabled={loadState !== 'ready' || limitReached || activeSessionTypes.length === 0}
             onClick={openCreateDialog}
           >
             Tambah pricing rule
@@ -298,11 +293,7 @@ export function PricingRulesSection({
             <p className="settings-state__title">Pricing rules gagal dimuat</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setReloadKey((value) => value + 1)}
-          >
+          <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
             Coba lagi pricing rules
           </Button>
         </div>
@@ -350,7 +341,10 @@ export function PricingRulesSection({
                 data-disabled={!isActive || undefined}
                 key={rule.id}
               >
-                <div className="pricing-rule-row__priority" aria-label={`Priority ${rule.priority}`}>
+                <div
+                  className="pricing-rule-row__priority"
+                  aria-label={`Priority ${rule.priority}`}
+                >
                   <span>Priority</span>
                   <strong>{rule.priority}</strong>
                 </div>
@@ -368,7 +362,9 @@ export function PricingRulesSection({
                         ? `${sessionType.name} · ${sessionType.code}`
                         : `Session ${rule.sessionTypeId}`}
                     </span>
-                    <span>{rule.studioId === null ? 'Semua studio' : `Studio ${rule.studioId}`}</span>
+                    <span>
+                      {rule.studioId === null ? 'Semua studio' : `Studio ${rule.studioId}`}
+                    </span>
                     <span>{formatEffectiveWindow(rule)}</span>
                   </div>
                   <p>{formatPricingRuleConfigurationSummary(rule)}</p>
@@ -451,7 +447,9 @@ export function PricingRulesSection({
           </div>
         ) : (
           <div className="pricing-rule-status-summary">
-            <strong>{statusTarget ? getPricingRuleModelLabel(statusTarget.pricingModel) : ''}</strong>
+            <strong>
+              {statusTarget ? getPricingRuleModelLabel(statusTarget.pricingModel) : ''}
+            </strong>
             <span>
               {nextStatus === PRICING_RULE_STATUSES.DISABLED
                 ? 'Tidak ada hard delete. Histori pricing yang sudah tersnapshot tetap utuh.'
