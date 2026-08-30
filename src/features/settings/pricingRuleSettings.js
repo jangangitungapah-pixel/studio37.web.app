@@ -12,7 +12,10 @@ export const PRICING_RULE_MODEL_OPTIONS = Object.freeze([
   Object.freeze({ label: 'Per jam / increment', value: PRICING_RULE_MODELS.HOURLY }),
   Object.freeze({ label: 'Harga tetap per session', value: PRICING_RULE_MODELS.FIXED_SESSION }),
   Object.freeze({ label: 'Paket durasi', value: PRICING_RULE_MODELS.DURATION_PACKAGE }),
-  Object.freeze({ label: 'Harga dasar + waktu tambahan', value: PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL }),
+  Object.freeze({
+    label: 'Harga dasar + waktu tambahan',
+    value: PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL,
+  }),
 ]);
 
 export const PRICING_RULE_ROUNDING_OPTIONS = Object.freeze([
@@ -21,9 +24,18 @@ export const PRICING_RULE_ROUNDING_OPTIONS = Object.freeze([
 ]);
 
 export const PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS = Object.freeze([
-  Object.freeze({ label: 'Blokir waktu tambahan', value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.BLOCKED }),
-  Object.freeze({ label: 'Tagih waktu tambahan', value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ADDITIONAL }),
-  Object.freeze({ label: 'Harus pilih paket lain', value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE }),
+  Object.freeze({
+    label: 'Blokir waktu tambahan',
+    value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.BLOCKED,
+  }),
+  Object.freeze({
+    label: 'Tagih waktu tambahan',
+    value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ADDITIONAL,
+  }),
+  Object.freeze({
+    label: 'Harus pilih paket lain',
+    value: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE,
+  }),
 ]);
 
 export const DEFAULT_PRICING_RULE_FORM_VALUES = Object.freeze({
