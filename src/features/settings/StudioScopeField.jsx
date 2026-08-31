@@ -1,8 +1,5 @@
 import { Combobox } from '../../components/forms/Select.jsx';
-import {
-  buildStudioScopeOptions,
-  getStudioScopeFieldDescription,
-} from './studioScopeSettings.js';
+import { buildStudioScopeOptions, getStudioScopeFieldDescription } from './studioScopeSettings.js';
 
 export function StudioScopeField({
   disabled = false,
