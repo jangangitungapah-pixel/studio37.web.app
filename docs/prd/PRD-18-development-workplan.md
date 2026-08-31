@@ -354,8 +354,8 @@ Phase 4 progress on 2026-08-22:
 - [x] Pricing rule editor.
 - [x] Package editor.
 - [x] Duration/minimum/increment configuration.
-- [ ] Studio scope selector.
-- [ ] Add-on configuration.
+- [x] Studio scope selector.
+- [x] Add-on configuration.
 - [ ] Human-readable pricing preview.
 - [ ] Configuration validation/errors.
 
@@ -528,10 +528,30 @@ Phase 5 progress on 2026-08-24:
   and regressions across the existing Settings workflows. GitHub Actions Quality run `33355128819`
   passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization
   tests, production build, and Vite development-server smoke.
-- Studio-scope/effective-period controls, add-on configuration, pricing preview, full
-  model/package/effective-window validation, Firestore Booking persistence, server-authoritative
-  override writes/timestamps, and all final Phase 5 gates remain pending; Phase 5 remains in
-  progress.
+- Phase 5B5 exposed canonical general-versus-exact studio scope in Price Settings while preserving
+  Phase 5A7 exact-studio precedence. The editor reuses the existing bounded Studio Room query,
+  renders human-readable room context, keeps disabled/missing current references fail-safe, and
+  preserves package-set scope plus effective-window metadata without introducing a new pricing
+  resolver, Firestore schema, query index, or widening of room permissions. GitHub Actions Quality
+  run `33371982775` passed formatting, zero-warning lint, all unit/component tests, Firestore
+  Emulator authorization tests, production build, and Vite development-server smoke.
+- Phase 5B6 implemented strict Owner-managed `addOns/{addOnId}` configuration for fixed, quantity,
+  and time pricing shapes that match the Phase 5A8 calculator. The bounded `displayOrder asc +
+  limit(100)` repository supports create/edit/soft status, general or exact Session Type scope,
+  server-owned metadata, and no hard delete; quantity and actual duration remain Booking transaction
+  inputs rather than settings data.
+- Price Settings now provides human-readable add-on administration with loading/empty/error/retry,
+  saturation, view-only, create/edit, and soft-status states. Firestore Security Rules independently
+  enforce pricing capabilities, canonical discriminated configuration, existing Session Type
+  references, bounded reads, immutable creation metadata, and hard-delete denial. Dedicated add-on
+  emulator coverage runs alongside the existing authorization suite. GitHub Actions Quality run
+  `33446112774` passed formatting, zero-warning lint, all unit/component tests, both Firestore
+  Emulator authorization suites, production build, and Vite development-server smoke.
+- Effective-period controls, human-readable composed pricing preview, full
+  model/package/effective-window configuration validation, discount administration UI, Firestore
+  Booking persistence, Booking add-on quantity/duration inputs, server-authoritative override
+  writes/timestamps, final responsive Price Settings browser acceptance, and all final Phase 5 gates
+  remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -951,3 +971,5 @@ Implementation status:
   - [x] Phase 5B2 — bounded Pricing Rule editor/status workflow for all four canonical models, advanced metadata preservation, conservative collision guard, and automated coverage implemented and quality-gated.
   - [x] Phase 5B3 — dedicated duration-package set editor with package-aware collision safety, envelope inheritance, responsive states, and automated coverage implemented and quality-gated.
   - [x] Phase 5B4 — shared duration/minimum/increment controls with canonical-minute presets, human-readable behavior summaries, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B5 — general/exact studio scope selector, bounded room context, package-scope preservation, permission-aware behavior, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B6 — strict add-on configuration domain/repository/Security Rules plus fixed/quantity/time Price Settings administration and automated coverage implemented and quality-gated.
