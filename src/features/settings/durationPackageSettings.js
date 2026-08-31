@@ -21,6 +21,7 @@ export const DEFAULT_DURATION_PACKAGE_FORM_VALUES = Object.freeze({
   name: '',
   roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
   sessionTypeId: '',
+  studioId: '',
 });
 
 function parseSafeInteger(value, label, errors, { min = 0, max = Number.MAX_SAFE_INTEGER } = {}) {
@@ -38,6 +39,18 @@ function parseSafeInteger(value, label, errors, { min = 0, max = Number.MAX_SAFE
   }
 
   return parsed;
+}
+
+function parseOptionalReference(value, label, errors) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return null;
+
+  if (normalized.length > 128 || normalized.includes('/')) {
+    errors[label] = true;
+    return null;
+  }
+
+  return normalized;
 }
 
 function parseDuration(value, label, errors) {
@@ -62,7 +75,7 @@ function requireDurationPackageEnvelopeSource(rule, label) {
   return rule;
 }
 
-function getEnvelope(editingRule, templateRule, sessionTypeId) {
+function getEnvelope(editingRule, templateRule, sessionTypeId, studioId) {
   const source =
     requireDurationPackageEnvelopeSource(editingRule, 'editingRule') ??
     requireDurationPackageEnvelopeSource(templateRule, 'templateRule');
@@ -73,7 +86,7 @@ function getEnvelope(editingRule, templateRule, sessionTypeId) {
       effectiveUntil: null,
       priority: 100,
       sessionTypeId,
-      studioId: null,
+      studioId,
     };
   }
 
@@ -123,6 +136,7 @@ export function toDurationPackageFormValues(rule) {
     name: rule.name,
     roundingMode: configuration.roundingMode ?? PRICING_RULE_ROUNDING_MODES.EXACT,
     sessionTypeId: rule.sessionTypeId,
+    studioId: rule.studioId ?? '',
   };
 }
 
@@ -133,8 +147,10 @@ export function validateDurationPackageForm(
   const errors = {};
   const name = String(formValues.name ?? '').trim();
   const requestedSessionTypeId = String(formValues.sessionTypeId ?? '').trim();
+  const requestedStudioId = parseOptionalReference(formValues.studioId, 'studioId', errors);
   const envelopeSource = editingRule ?? templateRule;
   const sessionTypeId = envelopeSource?.sessionTypeId ?? requestedSessionTypeId;
+  const studioId = envelopeSource?.studioId ?? requestedStudioId;
 
   if (!name || name.length > 100) errors.name = true;
   if (!sessionTypeId || sessionTypeId.length > 128 || sessionTypeId.includes('/')) {
@@ -171,7 +187,7 @@ export function validateDurationPackageForm(
   }
 
   try {
-    const envelope = getEnvelope(editingRule, templateRule, sessionTypeId);
+    const envelope = getEnvelope(editingRule, templateRule, sessionTypeId, studioId);
     const value = normalizePricingRuleDetails({
       configuration: {
         additionalAmountPerIncrementIdr,
