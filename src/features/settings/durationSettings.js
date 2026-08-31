@@ -41,7 +41,11 @@ export function getDurationPresetLabel(minutes) {
   return formatDurationMinutes(minutes) ?? `${minutes} menit`;
 }
 
-export function getHourlyDurationBehavior({ incrementMinutes, minimumDurationMinutes, roundingMode }) {
+export function getHourlyDurationBehavior({
+  incrementMinutes,
+  minimumDurationMinutes,
+  roundingMode,
+}) {
   const increment = toAlignedDuration(incrementMinutes);
   const minimum = toAlignedDuration(minimumDurationMinutes);
 
@@ -67,7 +71,10 @@ export function getHourlyDurationBehavior({ incrementMinutes, minimumDurationMin
   return null;
 }
 
-export function getBaseAdditionalDurationBehavior({ baseDurationMinutes, additionalIncrementMinutes }) {
+export function getBaseAdditionalDurationBehavior({
+  baseDurationMinutes,
+  additionalIncrementMinutes,
+}) {
   const baseDuration = toAlignedDuration(baseDurationMinutes);
   const additionalIncrement = toAlignedDuration(additionalIncrementMinutes);
   if (baseDuration === null || additionalIncrement === null) return null;
