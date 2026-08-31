@@ -5,6 +5,8 @@ import { Dialog } from '../../components/feedback/Dialog.jsx';
 import { useToast } from '../../components/feedback/toast-context.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { pricingRuleRepository } from '../../services/pricingRuleRepository.js';
+import { studioRoomRepository } from '../../services/studioRoomRepository.js';
+import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { PRICING_RULE_LIST_LIMIT, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { DurationPackagesWorkspace } from './DurationPackagesWorkspace.jsx';
@@ -14,6 +16,7 @@ import {
   formatPricingRuleConfigurationSummary,
   getPricingRuleModelLabel,
 } from './pricingRuleSettings.js';
+import { formatStudioScopeLabel } from './studioScopeSettings.js';
 import './pricing-rule-settings.css';
 
 function getSafeFirebaseMessage(error, action) {
@@ -26,6 +29,18 @@ function getSafeFirebaseMessage(error, action) {
   }
 
   return `Pricing rule belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
+}
+
+function getSafeStudioMessage(error) {
+  if (error?.code === 'permission-denied') {
+    return 'Daftar studio tidak dapat dibaca oleh akun ini. Scope exact dikunci, tetapi rule general tetap dapat dikelola.';
+  }
+
+  if (error?.code === 'unavailable') {
+    return 'Daftar studio belum tersedia karena koneksi Firestore. Scope exact dikunci sampai daftar berhasil dimuat.';
+  }
+
+  return 'Daftar studio belum bisa dimuat. Scope exact dikunci agar referensi studio tidak berubah tanpa konteks room.';
 }
 
 function formatEffectiveWindow(rule) {
@@ -48,6 +63,7 @@ export function PricingRulesSection({
   canEdit,
   repository = pricingRuleRepository,
   sessionTypes,
+  studioRepository = studioRoomRepository,
 }) {
   const { pushToast } = useToast();
   const [dialogError, setDialogError] = useState('');
@@ -61,9 +77,14 @@ export function PricingRulesSection({
   const [statusError, setStatusError] = useState('');
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusTarget, setStatusTarget] = useState(null);
+  const [studioLoadError, setStudioLoadError] = useState('');
+  const [studioLoadState, setStudioLoadState] = useState('loading');
+  const [studioReloadKey, setStudioReloadKey] = useState(0);
+  const [studioRooms, setStudioRooms] = useState([]);
 
   const listLimit = repository.listLimit ?? PRICING_RULE_LIST_LIMIT;
   const limitReached = pricingRules.length >= listLimit;
+  const canViewStudioRooms = hasCapability(access, CAPABILITIES.SETTINGS_STUDIO_VIEW);
   const activeSessionTypes = useMemo(
     () => sessionTypes.filter((sessionType) => sessionType.status === SESSION_TYPE_STATUSES.ACTIVE),
     [sessionTypes],
@@ -101,6 +122,40 @@ export function PricingRulesSection({
       active = false;
     };
   }, [reloadKey, repository]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!canViewStudioRooms) {
+      setStudioRooms([]);
+      setStudioLoadError('');
+      setStudioLoadState('unavailable');
+      return () => {
+        active = false;
+      };
+    }
+
+    setStudioLoadError('');
+    setStudioLoadState('loading');
+
+    studioRepository
+      .listStudioRooms()
+      .then((nextStudioRooms) => {
+        if (!active) return;
+        setStudioRooms([...nextStudioRooms]);
+        setStudioLoadState('ready');
+      })
+      .catch((error) => {
+        if (!active) return;
+        setStudioRooms([]);
+        setStudioLoadError(getSafeStudioMessage(error));
+        setStudioLoadState('error');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canViewStudioRooms, studioReloadKey, studioRepository]);
 
   const openCreateDialog = () => {
     if (!canEdit || limitReached || activeSessionTypes.length === 0) return;
@@ -247,8 +302,8 @@ export function PricingRulesSection({
           <p className="settings-card__eyebrow">Aturan harga</p>
           <h2 id="price-rules-heading">Pricing rules</h2>
           <p className="settings-card__subtitle">
-            Kelola rule per session type dengan empat model harga canonical. Rule baru masih memakai
-            scope semua studio pada checkpoint ini.
+            Kelola rule per session type dengan scope general atau studio tertentu. Exact studio
+            diprioritaskan sebelum fallback ke rule general.
           </p>
         </div>
         {canEdit ? (
@@ -290,6 +345,26 @@ export function PricingRulesSection({
         </div>
       ) : null}
 
+      {canEdit && studioLoadState === 'error' ? (
+        <div className="settings-notice" data-tone="warning" role="status">
+          <strong>Studio scope exact sementara dikunci.</strong>
+          <span>{studioLoadError}</span>
+          <Button size="sm" variant="secondary" onClick={() => setStudioReloadKey((value) => value + 1)}>
+            Coba lagi studio
+          </Button>
+        </div>
+      ) : null}
+
+      {canEdit && studioLoadState === 'unavailable' ? (
+        <div className="settings-notice" data-tone="warning" role="status">
+          <strong>Studio scope exact tidak tersedia untuk akun ini.</strong>
+          <span>
+            Pemilihan room tertentu memerlukan capability settings.studio.view. Rule general tetap
+            dapat dibuat dan existing exact scope dipertahankan tanpa perubahan.
+          </span>
+        </div>
+      ) : null}
+
       {loadState === 'ready' && activeSessionTypes.length === 0 ? (
         <div className="settings-notice" data-tone="warning" role="status">
           <strong>Belum ada session type aktif.</strong>
@@ -313,8 +388,8 @@ export function PricingRulesSection({
           <div>
             <p className="settings-placeholder__title">Belum ada pricing rule</p>
             <p className="settings-placeholder__description">
-              Tambahkan rule pertama setelah session type siap. Rule baru dibuat aktif dan berlaku
-              untuk semua studio.
+              Tambahkan rule pertama setelah session type siap. Pilih scope general atau studio
+              tertentu sesuai konfigurasi harga yang dibutuhkan.
             </p>
           </div>
         </div>
@@ -353,9 +428,7 @@ export function PricingRulesSection({
                         ? `${sessionType.name} · ${sessionType.code}`
                         : `Session ${rule.sessionTypeId}`}
                     </span>
-                    <span>
-                      {rule.studioId === null ? 'Semua studio' : `Studio ${rule.studioId}`}
-                    </span>
+                    <span>{formatStudioScopeLabel(rule.studioId, studioRooms)}</span>
                     <span>{formatEffectiveWindow(rule)}</span>
                   </div>
                   <p>{formatPricingRuleConfigurationSummary(rule)}</p>
@@ -397,15 +470,16 @@ export function PricingRulesSection({
           pricingRules={pricingRules}
           repository={repository}
           sessionTypes={sessionTypes}
+          studioRooms={studioRooms}
+          studioScopeState={studioLoadState}
         />
       ) : null}
 
       <div className="pricing-rule-scope-note">
-        <strong>Yang belum dibuka setelah 5B3</strong>
+        <strong>Yang belum dibuka setelah 5B5</strong>
         <span>
-          Duration/minimum/increment workflow lanjutan, studio scope selector, effective period
-          editor, add-on, calculation preview, dan full ambiguity validation tetap checkpoint
-          berikutnya.
+          Effective period editor, add-on configuration, calculation preview, dan full
+          model/package/effective-window ambiguity validation tetap checkpoint berikutnya.
         </span>
       </div>
 
@@ -418,6 +492,8 @@ export function PricingRulesSection({
         open={editorOpen}
         saving={saving}
         sessionTypes={sessionTypes}
+        studioRooms={studioRooms}
+        studioScopeState={studioLoadState}
       />
 
       <Dialog
