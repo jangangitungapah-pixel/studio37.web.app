@@ -423,9 +423,9 @@ export function PricingRuleEditorDialog({
       <div className="settings-notice" role="status">
         <strong>Duration controls 5B4 aktif.</strong>
         <span>
-          Durasi tetap disimpan sebagai menit canonical, tetapi preset dan ringkasan perilaku membantu
-          membaca minimum, increment, serta rounding sebelum save. Studio scope, effective period,
-          add-on, pricing preview, dan full ambiguity validation tetap checkpoint terpisah.
+          Durasi tetap disimpan sebagai menit canonical, tetapi preset dan ringkasan perilaku
+          membantu membaca minimum, increment, serta rounding sebelum save. Studio scope, effective
+          period, add-on, pricing preview, dan full ambiguity validation tetap checkpoint terpisah.
         </span>
       </div>
 
