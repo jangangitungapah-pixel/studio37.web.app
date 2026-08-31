@@ -349,7 +349,11 @@ export function PricingRulesSection({
         <div className="settings-notice" data-tone="warning" role="status">
           <strong>Studio scope exact sementara dikunci.</strong>
           <span>{studioLoadError}</span>
-          <Button size="sm" variant="secondary" onClick={() => setStudioReloadKey((value) => value + 1)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setStudioReloadKey((value) => value + 1)}
+          >
             Coba lagi studio
           </Button>
         </div>
