@@ -1,5 +1,9 @@
 import { Input } from '../../components/forms/Field.jsx';
-import { DURATION_PRESET_MINUTES, formatDurationMinutes, getDurationPresetLabel } from './durationSettings.js';
+import {
+  DURATION_PRESET_MINUTES,
+  formatDurationMinutes,
+  getDurationPresetLabel,
+} from './durationSettings.js';
 import './duration-settings.css';
 
 export function DurationMinutesField({
@@ -32,7 +36,9 @@ export function DurationMinutesField({
       />
 
       <div className="duration-field__meta" aria-live="polite">
-        <span>{formattedValue ? `Terbaca sebagai ${formattedValue}` : 'Gunakan kelipatan 15 menit.'}</span>
+        <span>
+          {formattedValue ? `Terbaca sebagai ${formattedValue}` : 'Gunakan kelipatan 15 menit.'}
+        </span>
         <span>Grid 15 menit · maksimum 24 jam</span>
       </div>
 
