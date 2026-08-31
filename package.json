@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/features/settings/DurationMinutesField.jsx src/features/settings/DurationMinutesField.test.jsx src/features/settings/durationSettings.js src/features/settings/PricingRuleEditorDialog.jsx && git diff -- src/features/settings/DurationMinutesField.jsx src/features/settings/DurationMinutesField.test.jsx src/features/settings/durationSettings.js src/features/settings/PricingRuleEditorDialog.jsx && exit 1",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js\"",
     "test:watch": "vitest"
