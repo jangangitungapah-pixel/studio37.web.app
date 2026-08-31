@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { DurationMinutesField } from './DurationMinutesField.jsx';
+import { StudioScopeField } from './StudioScopeField.jsx';
 import { getPackageDurationBehavior } from './durationSettings.js';
 import {
   DEFAULT_DURATION_PACKAGE_FORM_VALUES,
@@ -23,6 +24,7 @@ function getUserFacingErrors(errors) {
 
   if (errors.name) translated.name = 'Nama paket wajib diisi dan maksimal 100 karakter.';
   if (errors.sessionTypeId) translated.sessionTypeId = 'Pilih session type aktif yang valid.';
+  if (errors.studioId) translated.studioId = 'Pilih studio scope yang valid.';
   if (errors.durationMinutes) {
     translated.durationMinutes = 'Durasi paket harus kelipatan 15 menit antara 15–1440.';
   }
@@ -67,6 +69,8 @@ export function DurationPackageEditorDialog({
   open,
   saving,
   sessionTypes,
+  studioRooms = [],
+  studioScopeState = 'ready',
   templateRule,
 }) {
   const [fieldErrors, setFieldErrors] = useState({});
@@ -85,6 +89,7 @@ export function DurationPackageEditorDialog({
         : {
             ...DEFAULT_DURATION_PACKAGE_FORM_VALUES,
             sessionTypeId: templateRule?.sessionTypeId ?? initialSessionTypeId ?? '',
+            studioId: templateRule?.studioId ?? '',
           },
     );
   }, [editingRule, initialSessionTypeId, open, templateRule]);
@@ -154,8 +159,8 @@ export function DurationPackageEditorDialog({
       <div className="settings-notice" role="status">
         <strong>Satu package = satu pricing rule.</strong>
         <span>
-          Paket dengan durasi berbeda boleh berada dalam set yang sama. Preset durasi hanya
-          mempercepat input; nilai canonical tetap menit pada grid 15 menit.
+          Package baru dapat memakai scope general atau studio tertentu. Sibling package tetap
+          mewarisi scope set agar pilihan durasi tidak pecah menjadi envelope berbeda.
         </span>
       </div>
 
@@ -164,7 +169,7 @@ export function DurationPackageEditorDialog({
           <strong>Envelope package set dikunci.</strong>
           <span>
             Session, studio scope, priority, dan effective window diwarisi dari package set ini.
-            Ubah metadata tersebut lewat checkpoint editor khususnya, bukan dari Package Editor.
+            Ubah metadata tersebut lewat workflow yang menjaga seluruh set, bukan satu sibling saja.
           </span>
         </div>
       ) : null}
@@ -198,6 +203,15 @@ export function DurationPackageEditorDialog({
             onChange={changeField('sessionTypeId')}
           />
         </div>
+
+        <StudioScopeField
+          value={formValues.studioId}
+          error={fieldErrors.studioId}
+          state={studioScopeState}
+          studioRooms={studioRooms}
+          disabled={saving || locksEnvelope}
+          onValueChange={(nextValue) => setFieldValue('studioId', nextValue)}
+        />
 
         <div className="settings-form__grid">
           <DurationMinutesField
