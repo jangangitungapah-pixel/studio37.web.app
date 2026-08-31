@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -33,19 +33,14 @@ describe('DurationMinutesField', () => {
     expect(onValueChange).toHaveBeenCalledWith('120');
   });
 
-  it('keeps custom aligned minute entry available alongside presets', async () => {
-    const interaction = userEvent.setup();
+  it('keeps custom aligned minute entry available alongside presets', () => {
     const onValueChange = vi.fn();
     render(
       <DurationMinutesField label="Durasi package" value="60" onValueChange={onValueChange} />,
     );
 
-    const input = screen.getByLabelText(/^Durasi package/);
-    await interaction.clear(input);
-    await interaction.type(input, '150');
-
-    expect(onValueChange).toHaveBeenCalled();
-    expect(onValueChange.mock.calls.at(-1)[0]).toBe('0');
+    fireEvent.change(screen.getByLabelText(/^Durasi package/), { target: { value: '150' } });
+    expect(onValueChange).toHaveBeenCalledWith('150');
   });
 
   it('disables both manual entry and presets when the parent form is saving', () => {
