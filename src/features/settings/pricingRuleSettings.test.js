@@ -65,6 +65,17 @@ describe('pricingRuleSettings form adapter', () => {
     });
   });
 
+  it('builds a canonical exact-studio rule from the form scope', () => {
+    const result = validate({
+      amountIdr: '500000',
+      pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
+      studioId: 'studio-a',
+    });
+
+    expect(result.errors).toEqual({});
+    expect(result.value.studioId).toBe('studio-a');
+  });
+
   it('supports canonical hourly configuration', () => {
     const result = validate({
       amountPerIncrementIdr: '120000',
@@ -164,7 +175,18 @@ describe('pricingRuleSettings form adapter', () => {
     expect(result.errors.incrementMinutes).toBe(true);
   });
 
-  it('preserves hidden studio/effective metadata while editing', () => {
+  it('rejects malformed studio references before repository write', () => {
+    const result = validate({
+      amountIdr: '500000',
+      pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
+      studioId: 'bad/id',
+    });
+
+    expect(result.value).toBeNull();
+    expect(result.errors.studioId).toBe(true);
+  });
+
+  it('allows studio scope edits while preserving hidden effective metadata', () => {
     const editingRule = createPersistedRule({
       effectiveFrom: new Date('2026-09-01T00:00:00.000Z'),
       effectiveUntil: new Date('2026-10-01T00:00:00.000Z'),
@@ -173,24 +195,26 @@ describe('pricingRuleSettings form adapter', () => {
     const result = validate(
       {
         amountIdr: '550000',
-        name: 'Mixing Studio A',
+        name: 'Mixing Studio B',
         pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
+        studioId: 'studio-b',
       },
       { editingRule },
     );
 
-    expect(result.value.studioId).toBe('studio-a');
+    expect(result.value.studioId).toBe('studio-b');
     expect(result.value.effectiveFrom).toEqual(editingRule.effectiveFrom);
     expect(result.value.effectiveUntil).toEqual(editingRule.effectiveUntil);
   });
 
-  it('round-trips existing model configuration into editable strings', () => {
-    expect(toPricingRuleFormValues(createPersistedRule())).toMatchObject({
+  it('round-trips existing studio scope and model configuration into editable strings', () => {
+    expect(toPricingRuleFormValues(createPersistedRule({ studioId: 'studio-a' }))).toMatchObject({
       amountIdr: '500000',
       name: 'Mixing fixed',
       pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
       priority: '100',
       sessionTypeId: 'session-mixing',
+      studioId: 'studio-a',
     });
   });
 

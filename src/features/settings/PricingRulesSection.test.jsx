@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ToastProvider } from '../../components/feedback/ToastProvider.jsx';
+import { CAPABILITIES } from '../auth/capabilities.js';
 import {
   PRICING_RULE_MODELS,
   PRICING_RULE_ROUNDING_MODES,
@@ -49,6 +50,16 @@ function createPricingRule(overrides = {}) {
   };
 }
 
+function createStudioRoom(id = 'studio-a', overrides = {}) {
+  return {
+    code: id === 'studio-a' ? 'A' : 'B',
+    id,
+    name: id === 'studio-a' ? 'Studio A' : 'Studio B',
+    status: 'active',
+    ...overrides,
+  };
+}
+
 function createRepository(pricingRules = []) {
   return {
     createPricingRule: vi.fn(async () => 'rule-created'),
@@ -59,12 +70,20 @@ function createRepository(pricingRules = []) {
   };
 }
 
-function createAccess(uid = 'owner-1') {
+function createStudioRepository(studioRooms = [createStudioRoom()]) {
   return {
+    listLimit: 50,
+    listStudioRooms: vi.fn(async () => studioRooms),
+  };
+}
+
+function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {}) {
+  return {
+    capabilities,
     profile: {
-      displayName: 'Studio37 Owner',
-      permissionSetId: null,
-      role: 'owner',
+      displayName: role === 'owner' ? 'Studio37 Owner' : 'Pricing Editor',
+      permissionSetId: role === 'owner' ? null : 'pricing-editor',
+      role,
       status: 'active',
       uid,
     },
@@ -78,6 +97,7 @@ function renderSection({
   canEdit = true,
   repository = createRepository(),
   sessionTypes = [createSessionType()],
+  studioRepository = createStudioRepository(),
 } = {}) {
   return render(
     <ToastProvider>
@@ -86,21 +106,30 @@ function renderSection({
         canEdit={canEdit}
         repository={repository}
         sessionTypes={sessionTypes}
+        studioRepository={studioRepository}
       />
     </ToastProvider>,
   );
 }
 
+async function selectStudioScope(interaction, optionName) {
+  const studioScope = screen.getByLabelText('Studio scope');
+  await interaction.click(studioScope);
+  await interaction.click(screen.getByRole('option', { name: optionName }));
+}
+
 describe('PricingRulesSection', () => {
-  it('loads bounded rules with human-readable session and configuration context', async () => {
-    const repository = createRepository([createPricingRule()]);
-    renderSection({ repository });
+  it('loads bounded rules with human-readable session and studio context', async () => {
+    const repository = createRepository([createPricingRule({ studioId: 'studio-a' })]);
+    const studioRepository = createStudioRepository([createStudioRoom()]);
+    renderSection({ repository, studioRepository });
 
     expect(await screen.findByRole('heading', { name: 'Rehearsal fixed' })).toBeInTheDocument();
     expect(screen.getByText('Rehearsal · REHEARSAL')).toBeInTheDocument();
-    expect(screen.getByText('Semua studio')).toBeInTheDocument();
+    expect(screen.getByText('Studio A · A')).toBeInTheDocument();
     expect(screen.getByText(/500\.000/)).toBeInTheDocument();
     expect(repository.listPricingRules).toHaveBeenCalledOnce();
+    expect(studioRepository.listStudioRooms).toHaveBeenCalledOnce();
   });
 
   it('creates a general-scope fixed-session rule through the Phase 5A2 repository', async () => {
@@ -136,7 +165,40 @@ describe('PricingRulesSection', () => {
     expect(await screen.findByText('Pricing rule ditambahkan')).toBeInTheDocument();
   });
 
-  it('preserves existing studio scope and effective window when editing', async () => {
+  it('creates an exact-studio rule from the bounded active room choices', async () => {
+    const interaction = userEvent.setup();
+    const repository = createRepository([]);
+    renderSection({
+      repository,
+      studioRepository: createStudioRepository([
+        createStudioRoom('studio-a'),
+        createStudioRoom('studio-b'),
+      ]),
+    });
+
+    await screen.findByText('Belum ada pricing rule');
+    await interaction.click(screen.getByRole('button', { name: 'Tambah pricing rule' }));
+    await interaction.type(screen.getByLabelText(/^Nama pricing rule/), 'Rehearsal Studio A');
+    await interaction.selectOptions(
+      screen.getByLabelText(/^Model harga/),
+      PRICING_RULE_MODELS.FIXED_SESSION,
+    );
+    await selectStudioScope(interaction, 'Studio A · A');
+    await interaction.type(screen.getByLabelText(/^Harga session \(IDR\)/), '375000');
+    await interaction.click(screen.getByRole('button', { name: 'Simpan pricing rule' }));
+
+    await waitFor(() => {
+      expect(repository.createPricingRule).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Rehearsal Studio A',
+          studioId: 'studio-a',
+        }),
+        { actorUid: 'owner-1' },
+      );
+    });
+  });
+
+  it('changes studio scope while preserving the existing effective window', async () => {
     const interaction = userEvent.setup();
     const effectiveFrom = new Date('2026-09-01T00:00:00.000Z');
     const effectiveUntil = new Date('2026-10-01T00:00:00.000Z');
@@ -153,12 +215,19 @@ describe('PricingRulesSection', () => {
       studioId: 'studio-a',
     });
     const repository = createRepository([existingRule]);
-    renderSection({ repository });
+    renderSection({
+      repository,
+      studioRepository: createStudioRepository([
+        createStudioRoom('studio-a'),
+        createStudioRoom('studio-b'),
+      ]),
+    });
 
     await interaction.click(
       await screen.findByRole('button', { name: 'Edit pricing rule Rehearsal fixed' }),
     );
-    expect(screen.getByText('Metadata advanced dipertahankan.')).toBeInTheDocument();
+    expect(screen.getByText('Effective window dipertahankan.')).toBeInTheDocument();
+    await selectStudioScope(interaction, 'Studio B · B');
     const amountInput = screen.getByLabelText(/^Harga per increment \(IDR\)/);
     await interaction.clear(amountInput);
     await interaction.type(amountInput, '130000');
@@ -171,14 +240,38 @@ describe('PricingRulesSection', () => {
           configuration: expect.objectContaining({ amountPerIncrementIdr: 130000 }),
           effectiveFrom,
           effectiveUntil,
-          studioId: 'studio-a',
+          studioId: 'studio-b',
         }),
         { actorUid: 'owner-1' },
       );
     });
   });
 
-  it('blocks an obvious equal-priority active collision before Firestore write', async () => {
+  it('allows exact and general scope at the same priority because exact scope resolves first', async () => {
+    const interaction = userEvent.setup();
+    const repository = createRepository([createPricingRule()]);
+    renderSection({ repository });
+
+    await screen.findByRole('heading', { name: 'Rehearsal fixed' });
+    await interaction.click(screen.getByRole('button', { name: 'Tambah pricing rule' }));
+    await interaction.type(screen.getByLabelText(/^Nama pricing rule/), 'Studio A override');
+    await interaction.selectOptions(
+      screen.getByLabelText(/^Model harga/),
+      PRICING_RULE_MODELS.FIXED_SESSION,
+    );
+    await selectStudioScope(interaction, 'Studio A · A');
+    await interaction.type(screen.getByLabelText(/^Harga session \(IDR\)/), '400000');
+    await interaction.click(screen.getByRole('button', { name: 'Simpan pricing rule' }));
+
+    await waitFor(() => {
+      expect(repository.createPricingRule).toHaveBeenCalledWith(
+        expect.objectContaining({ studioId: 'studio-a' }),
+        { actorUid: 'owner-1' },
+      );
+    });
+  });
+
+  it('blocks an obvious equal-priority active collision inside the same studio scope', async () => {
     const interaction = userEvent.setup();
     const repository = createRepository([createPricingRule()]);
     renderSection({ repository });
@@ -197,6 +290,27 @@ describe('PricingRulesSection', () => {
       await screen.findByText(/session, studio scope, dan priority yang sama/i),
     ).toBeInTheDocument();
     expect(repository.createPricingRule).not.toHaveBeenCalled();
+  });
+
+  it('keeps exact-studio selection unavailable without settings.studio.view', async () => {
+    const interaction = userEvent.setup();
+    const studioRepository = createStudioRepository([createStudioRoom()]);
+    renderSection({
+      access: createAccess({
+        capabilities: [CAPABILITIES.SETTINGS_PRICING_VIEW, CAPABILITIES.SETTINGS_PRICING_EDIT],
+        role: 'studio_operator',
+        uid: 'operator-1',
+      }),
+      studioRepository,
+    });
+
+    expect(
+      await screen.findByText('Studio scope exact tidak tersedia untuk akun ini.'),
+    ).toBeInTheDocument();
+    expect(studioRepository.listStudioRooms).not.toHaveBeenCalled();
+
+    await interaction.click(screen.getByRole('button', { name: 'Tambah pricing rule' }));
+    expect(screen.getByLabelText('Studio scope')).toBeDisabled();
   });
 
   it('soft-deactivates an active pricing rule', async () => {

@@ -20,6 +20,16 @@ function createSessionType(overrides = {}) {
   };
 }
 
+function createStudioRoom(id = 'studio-a', overrides = {}) {
+  return {
+    code: id === 'studio-a' ? 'A' : 'B',
+    id,
+    name: id === 'studio-a' ? 'Studio A' : 'Studio B',
+    status: 'active',
+    ...overrides,
+  };
+}
+
 function createPackageRule(durationMinutes, overrides = {}) {
   return {
     configuration: {
@@ -63,6 +73,8 @@ function renderWorkspace({
   pricingRules = [],
   repository = createRepository(),
   sessionTypes = [createSessionType()],
+  studioRooms = [createStudioRoom()],
+  studioScopeState = 'ready',
 } = {}) {
   const onChanged = vi.fn();
   render(
@@ -76,6 +88,8 @@ function renderWorkspace({
         pricingRules={pricingRules}
         repository={repository}
         sessionTypes={sessionTypes}
+        studioRooms={studioRooms}
+        studioScopeState={studioScopeState}
       />
     </ToastProvider>,
   );
@@ -83,8 +97,13 @@ function renderWorkspace({
   return { onChanged, repository };
 }
 
+async function selectStudioScope(interaction, optionName) {
+  await interaction.click(screen.getByLabelText('Studio scope'));
+  await interaction.click(screen.getByRole('option', { name: optionName }));
+}
+
 describe('DurationPackagesWorkspace', () => {
-  it('groups sibling packages into one set and renders them in duration order', () => {
+  it('groups sibling packages into one set and renders human-readable studio context', () => {
     renderWorkspace({ pricingRules: [createPackageRule(360), createPackageRule(180)] });
 
     const packageList = screen.getByRole('generic', { name: 'Package Recording' });
@@ -93,8 +112,33 @@ describe('DurationPackagesWorkspace', () => {
     expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByText('180')).toBeInTheDocument();
     expect(within(rows[1]).getByText('360')).toBeInTheDocument();
-    expect(screen.getByText('Studio studio-a')).toBeInTheDocument();
+    expect(screen.getByText('Studio A · A')).toBeInTheDocument();
     expect(screen.getByText('Priority 200')).toBeInTheDocument();
+  });
+
+  it('creates a new exact-studio package when starting a package set', async () => {
+    const interaction = userEvent.setup();
+    const { repository } = renderWorkspace({
+      pricingRules: [],
+      studioRooms: [createStudioRoom('studio-a'), createStudioRoom('studio-b')],
+    });
+
+    await interaction.click(screen.getByRole('button', { name: 'Tambah package' }));
+    await interaction.type(screen.getByLabelText(/^Nama package/), 'Recording Studio B 3 jam');
+    await selectStudioScope(interaction, 'Studio B · B');
+    await interaction.type(screen.getByLabelText(/^Harga package/), '500000');
+    await interaction.click(screen.getByRole('button', { name: 'Simpan package' }));
+
+    await waitFor(() => {
+      expect(repository.createPricingRule).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Recording Studio B 3 jam',
+          sessionTypeId: 'session-recording',
+          studioId: 'studio-b',
+        }),
+        { actorUid: 'owner-1' },
+      );
+    });
   });
 
   it('creates a sibling package while inheriting the package-set envelope', async () => {
@@ -105,6 +149,7 @@ describe('DurationPackagesWorkspace', () => {
     const { onChanged, repository } = renderWorkspace({ pricingRules: [template] });
 
     await interaction.click(screen.getByRole('button', { name: 'Tambah ke set ini' }));
+    expect(screen.getByLabelText('Studio scope')).toBeDisabled();
     await interaction.type(screen.getByLabelText(/^Nama package/), 'Recording 6 jam');
     await interaction.clear(screen.getByLabelText(/^Durasi package/));
     await interaction.type(screen.getByLabelText(/^Durasi package/), '360');
@@ -155,6 +200,7 @@ describe('DurationPackagesWorkspace', () => {
     const { repository } = renderWorkspace({ pricingRules: [existing] });
 
     await interaction.click(screen.getByRole('button', { name: 'Edit package Recording 3 jam' }));
+    expect(screen.getByLabelText('Studio scope')).toBeDisabled();
     const amountInput = screen.getByLabelText(/^Harga package/);
     await interaction.clear(amountInput);
     await interaction.type(amountInput, '475000');

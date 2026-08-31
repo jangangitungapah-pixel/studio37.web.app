@@ -47,6 +47,13 @@ function createPricingRulesRepository(pricingRules = []) {
   };
 }
 
+function createStudioRoomsRepository(studioRooms = []) {
+  return {
+    listLimit: 50,
+    listStudioRooms: vi.fn(async () => studioRooms),
+  };
+}
+
 function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {}) {
   return {
     capabilities,
@@ -66,6 +73,7 @@ function renderPage({
   access = createAccess(),
   pricingRulesRepository = createPricingRulesRepository(),
   repository = createRepository(),
+  studioRoomsRepository = createStudioRoomsRepository(),
 } = {}) {
   return render(
     <ToastProvider>
@@ -74,6 +82,7 @@ function renderPage({
           <PriceSettingsPage
             pricingRulesRepository={pricingRulesRepository}
             repository={repository}
+            studioRoomsRepository={studioRoomsRepository}
           />
         </MemoryRouter>
       </AuthContext.Provider>
@@ -182,6 +191,7 @@ describe('PriceSettingsPage session type workflow', () => {
 
   it('renders a pricing-view-only Studio Operator without mutation controls', async () => {
     const repository = createRepository([createSessionType()]);
+    const studioRoomsRepository = createStudioRoomsRepository();
     renderPage({
       access: createAccess({
         capabilities: [CAPABILITIES.SETTINGS_PRICING_VIEW],
@@ -189,6 +199,7 @@ describe('PriceSettingsPage session type workflow', () => {
         uid: 'operator-1',
       }),
       repository,
+      studioRoomsRepository,
     });
 
     expect(await screen.findByText('Mode lihat saja.')).toBeInTheDocument();
@@ -199,6 +210,7 @@ describe('PriceSettingsPage session type workflow', () => {
     expect(screen.getByRole('link', { name: 'Harga' })).toBeInTheDocument();
     expect(repository.createSessionType).not.toHaveBeenCalled();
     expect(repository.updateSessionType).not.toHaveBeenCalled();
+    expect(studioRoomsRepository.listStudioRooms).not.toHaveBeenCalled();
   });
 
   it('shows a recoverable list error and retries the bounded query', async () => {

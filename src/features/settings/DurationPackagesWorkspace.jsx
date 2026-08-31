@@ -13,6 +13,7 @@ import {
   groupDurationPackageRules,
 } from './durationPackageSettings.js';
 import { hasPricingRuleWriteCollision } from './pricingRuleCollision.js';
+import { formatStudioScopeLabel } from './studioScopeSettings.js';
 import './duration-package-settings.css';
 
 function getSafeFirebaseMessage(error, action) {
@@ -51,6 +52,8 @@ export function DurationPackagesWorkspace({
   pricingRules,
   repository,
   sessionTypes,
+  studioRooms = [],
+  studioScopeState = 'ready',
 }) {
   const { pushToast } = useToast();
   const [dialogError, setDialogError] = useState('');
@@ -255,8 +258,8 @@ export function DurationPackagesWorkspace({
           <div>
             <p className="settings-placeholder__title">Belum ada duration package</p>
             <p className="settings-placeholder__description">
-              Buat package pertama, lalu tambahkan sibling package 3 jam, 6 jam, atau durasi lain
-              tanpa hardcode di Booking UI.
+              Buat package pertama, pilih scope general atau studio tertentu, lalu tambahkan sibling
+              package tanpa hardcode di Booking UI.
             </p>
           </div>
         </div>
@@ -283,9 +286,7 @@ export function DurationPackagesWorkspace({
                       </Badge>
                     </div>
                     <div className="duration-package-group__meta">
-                      <span>
-                        {group.studioId === null ? 'Semua studio' : `Studio ${group.studioId}`}
-                      </span>
+                      <span>{formatStudioScopeLabel(group.studioId, studioRooms)}</span>
                       <span>Priority {group.priority}</span>
                       <span>{formatEffectiveWindow(group)}</span>
                     </div>
@@ -365,11 +366,11 @@ export function DurationPackagesWorkspace({
       )}
 
       <div className="duration-package-workspace__note">
-        <strong>Boundary 5B3</strong>
+        <strong>Boundary 5B5</strong>
         <span>
-          Package Editor mengelola kumpulan duration-package rule. Studio scope selector, effective
-          period editor, add-on, preview kalkulasi, dan full ambiguity validation tetap checkpoint
-          terpisah.
+          Package baru dapat memilih studio scope. Sibling/edit tetap menjaga envelope set;
+          effective period, add-on, preview kalkulasi, dan full ambiguity validation tetap
+          checkpoint terpisah.
         </span>
       </div>
 
@@ -382,6 +383,8 @@ export function DurationPackagesWorkspace({
         open={editorOpen}
         saving={saving}
         sessionTypes={sessionTypes}
+        studioRooms={studioRooms}
+        studioScopeState={studioScopeState}
         templateRule={templateRule}
       />
 
