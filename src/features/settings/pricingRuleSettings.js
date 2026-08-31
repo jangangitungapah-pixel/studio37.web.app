@@ -54,6 +54,7 @@ export const DEFAULT_PRICING_RULE_FORM_VALUES = Object.freeze({
   priority: '100',
   roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
   sessionTypeId: '',
+  studioId: '',
 });
 
 function parseSafeInteger(value, label, errors, { min = 0, max = Number.MAX_SAFE_INTEGER } = {}) {
@@ -71,6 +72,18 @@ function parseSafeInteger(value, label, errors, { min = 0, max = Number.MAX_SAFE
   }
 
   return parsed;
+}
+
+function parseOptionalReference(value, label, errors) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return null;
+
+  if (normalized.length > 128 || normalized.includes('/')) {
+    errors[label] = true;
+    return null;
+  }
+
+  return normalized;
 }
 
 function parseDuration(value, label, errors) {
@@ -170,6 +183,7 @@ export function toPricingRuleFormValues(pricingRule) {
     pricingModel: pricingRule.pricingModel,
     priority: String(pricingRule.priority),
     sessionTypeId: pricingRule.sessionTypeId,
+    studioId: pricingRule.studioId ?? '',
   };
   const configuration = pricingRule.configuration;
 
@@ -222,6 +236,7 @@ export function validatePricingRuleForm(formValues, { editingRule = null } = {})
   const errors = {};
   const name = String(formValues.name ?? '').trim();
   const sessionTypeId = String(formValues.sessionTypeId ?? '').trim();
+  const studioId = parseOptionalReference(formValues.studioId, 'studioId', errors);
   const priority = parseSafeInteger(formValues.priority, 'priority', errors, { min: 1, max: 999 });
 
   if (!name || name.length > 100) errors.name = true;
@@ -243,7 +258,7 @@ export function validatePricingRuleForm(formValues, { editingRule = null } = {})
       pricingModel: formValues.pricingModel,
       priority,
       sessionTypeId,
-      studioId: editingRule?.studioId ?? null,
+      studioId,
     });
 
     return Object.freeze({ errors: Object.freeze({}), value });
