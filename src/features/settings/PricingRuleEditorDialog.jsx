@@ -10,6 +10,7 @@ import {
 } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { DurationMinutesField } from './DurationMinutesField.jsx';
+import { StudioScopeField } from './StudioScopeField.jsx';
 import {
   getBaseAdditionalDurationBehavior,
   getHourlyDurationBehavior,
@@ -29,6 +30,7 @@ function getUserFacingErrors(errors) {
 
   if (errors.name) translated.name = 'Nama rule wajib diisi dan maksimal 100 karakter.';
   if (errors.sessionTypeId) translated.sessionTypeId = 'Pilih session type yang valid.';
+  if (errors.studioId) translated.studioId = 'Pilih studio scope yang valid.';
   if (errors.pricingModel) translated.pricingModel = 'Pilih model harga.';
   if (errors.priority) translated.priority = 'Priority harus berupa angka bulat 1–999.';
   if (errors.amountIdr) translated.amountIdr = 'Harga harus berupa integer IDR 0 atau lebih.';
@@ -342,6 +344,8 @@ export function PricingRuleEditorDialog({
   open,
   saving,
   sessionTypes,
+  studioRooms = [],
+  studioScopeState = 'ready',
 }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formValues, setFormValues] = useState(() => ({ ...DEFAULT_PRICING_RULE_FORM_VALUES }));
@@ -388,11 +392,8 @@ export function PricingRuleEditorDialog({
     onSubmit(validation.value);
   };
 
-  const preservesAdvancedMetadata = Boolean(
-    editingRule &&
-    (editingRule.studioId !== null ||
-      editingRule.effectiveFrom !== null ||
-      editingRule.effectiveUntil !== null),
+  const preservesEffectiveMetadata = Boolean(
+    editingRule && (editingRule.effectiveFrom !== null || editingRule.effectiveUntil !== null),
   );
 
   return (
@@ -421,20 +422,20 @@ export function PricingRuleEditorDialog({
       ) : null}
 
       <div className="settings-notice" role="status">
-        <strong>Duration controls 5B4 aktif.</strong>
+        <strong>Studio scope 5B5 aktif.</strong>
         <span>
-          Durasi tetap disimpan sebagai menit canonical, tetapi preset dan ringkasan perilaku
-          membantu membaca minimum, increment, serta rounding sebelum save. Studio scope, effective
-          period, add-on, pricing preview, dan full ambiguity validation tetap checkpoint terpisah.
+          Scope general berlaku ke semua studio. Scope studio tertentu menang atas general setelah
+          session dan effective-time eligibility cocok; priority baru dibandingkan di dalam scope
+          yang terpilih.
         </span>
       </div>
 
-      {preservesAdvancedMetadata ? (
+      {preservesEffectiveMetadata ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Metadata advanced dipertahankan.</strong>
+          <strong>Effective window dipertahankan.</strong>
           <span>
-            Rule ini sudah memiliki studio scope atau effective window. Editor ini tidak mengubah
-            field tersebut sampai workflow khususnya tersedia.
+            Rule ini sudah memiliki effective window. 5B5 tidak mengubah tanggal tersebut; workflow
+            effective-period tetap checkpoint terpisah.
           </span>
         </div>
       ) : null}
@@ -494,6 +495,15 @@ export function PricingRuleEditorDialog({
             onChange={changeField('pricingModel')}
           />
         </div>
+
+        <StudioScopeField
+          value={formValues.studioId}
+          error={fieldErrors.studioId}
+          state={studioScopeState}
+          studioRooms={studioRooms}
+          disabled={saving}
+          onValueChange={(nextValue) => setFieldValue('studioId', nextValue)}
+        />
 
         <ConfigurationFields
           fieldErrors={fieldErrors}
