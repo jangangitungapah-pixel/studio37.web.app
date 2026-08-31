@@ -22,13 +22,13 @@
 .duration-field__preset {
   min-height: 2rem;
   padding: 0.35rem 0.65rem;
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   font: inherit;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 1.2;
   cursor: pointer;
   transition:
@@ -39,17 +39,18 @@
 
 .duration-field__preset:hover:not(:disabled) {
   border-color: var(--color-border-strong);
-  color: var(--color-text-primary);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .duration-field__preset[data-selected='true'] {
-  border-color: var(--color-brand-border);
-  background: var(--color-brand-soft);
-  color: var(--color-brand-strong);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .duration-field__preset:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 
@@ -62,18 +63,18 @@
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
 }
 
 .duration-behavior-summary strong {
-  color: var(--color-text-primary);
+  color: var(--color-text);
   font-size: 0.82rem;
 }
 
 .duration-behavior-summary span {
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
   line-height: 1.5;
 }
