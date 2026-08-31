@@ -66,9 +66,9 @@ describe('studioScopeSettings', () => {
   });
 
   it('explains fail-safe locking when a current exact scope cannot be resolved', () => {
-    expect(
-      getStudioScopeFieldDescription({ currentStudioId: 'studio-a', state: 'error' }),
-    ).toMatch(/dikunci/i);
+    expect(getStudioScopeFieldDescription({ currentStudioId: 'studio-a', state: 'error' })).toMatch(
+      /dikunci/i,
+    );
     expect(getStudioScopeFieldDescription({ state: 'unavailable' })).toMatch(
       /settings\.studio\.view/i,
     );
