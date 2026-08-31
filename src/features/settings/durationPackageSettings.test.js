@@ -45,12 +45,13 @@ function createForm(overrides = {}) {
     name: 'Recording 3 jam',
     roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
     sessionTypeId: 'session-recording',
+    studioId: '',
     ...overrides,
   };
 }
 
 describe('durationPackageSettings', () => {
-  it('builds a new general-scope package with the 5B3 default envelope', () => {
+  it('builds a new general-scope package with the default envelope', () => {
     const result = validateDurationPackageForm(createForm());
 
     expect(result.errors).toEqual({});
@@ -73,6 +74,13 @@ describe('durationPackageSettings', () => {
     });
   });
 
+  it('builds a new exact-studio package set from the selected scope', () => {
+    const result = validateDurationPackageForm(createForm({ studioId: 'studio-a' }));
+
+    expect(result.errors).toEqual({});
+    expect(result.value.studioId).toBe('studio-a');
+  });
+
   it('inherits session, studio, priority, and effective window from a package-set template', () => {
     const effectiveFrom = new Date('2026-09-01T00:00:00.000Z');
     const effectiveUntil = new Date('2026-10-01T00:00:00.000Z');
@@ -82,9 +90,10 @@ describe('durationPackageSettings', () => {
       priority: 220,
       studioId: 'studio-a',
     });
-    const result = validateDurationPackageForm(createForm({ durationMinutes: '360' }), {
-      templateRule,
-    });
+    const result = validateDurationPackageForm(
+      createForm({ durationMinutes: '360', studioId: 'studio-b' }),
+      { templateRule },
+    );
 
     expect(result.value).toEqual(
       expect.objectContaining({
@@ -118,13 +127,14 @@ describe('durationPackageSettings', () => {
     });
   });
 
-  it('rejects malformed money, duration, policy, and session values without producing a write', () => {
+  it('rejects malformed money, duration, policy, session, and studio values without a write', () => {
     const result = validateDurationPackageForm(
       createForm({
         amountIdr: '-1',
         durationMinutes: '181',
         extraTimePolicy: 'mystery',
         sessionTypeId: 'bad/id',
+        studioId: 'bad/studio',
       }),
     );
 
@@ -135,11 +145,12 @@ describe('durationPackageSettings', () => {
         durationMinutes: true,
         extraTimePolicy: true,
         sessionTypeId: true,
+        studioId: true,
       }),
     );
   });
 
-  it('round-trips an existing package into form values', () => {
+  it('round-trips an existing exact-studio package into form values', () => {
     const rule = createPackageRule(180, {
       configuration: {
         additionalAmountPerIncrementIdr: 90000,
@@ -150,6 +161,7 @@ describe('durationPackageSettings', () => {
         roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
       },
       name: 'Recording 3 jam',
+      studioId: 'studio-a',
     });
 
     expect(toDurationPackageFormValues(rule)).toEqual(
@@ -160,6 +172,7 @@ describe('durationPackageSettings', () => {
         durationMinutes: '180',
         name: 'Recording 3 jam',
         sessionTypeId: 'session-recording',
+        studioId: 'studio-a',
       }),
     );
   });
