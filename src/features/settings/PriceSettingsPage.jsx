@@ -8,6 +8,7 @@ import { sessionTypeRepository } from '../../services/sessionTypeRepository.js';
 import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
 import { SESSION_TYPE_LIST_LIMIT, SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
+import { AddOnsSection } from './AddOnsSection.jsx';
 import { PricingRulesSection } from './PricingRulesSection.jsx';
 import { SessionTypeEditorDialog } from './SessionTypeEditorDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
@@ -37,6 +38,7 @@ function formatDurationSummary(sessionType) {
 }
 
 export function PriceSettingsPage({
+  addOnsRepository,
   pricingRulesRepository,
   repository = sessionTypeRepository,
   studioRoomsRepository,
@@ -358,6 +360,13 @@ export function PriceSettingsPage({
         repository={pricingRulesRepository}
         sessionTypes={loadState === 'ready' ? sessionTypes : []}
         studioRepository={studioRoomsRepository}
+      />
+
+      <AddOnsSection
+        access={access}
+        canEdit={canEdit}
+        repository={addOnsRepository}
+        sessionTypes={loadState === 'ready' ? sessionTypes : []}
       />
 
       <SessionTypeEditorDialog
