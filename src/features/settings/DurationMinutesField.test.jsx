@@ -7,12 +7,7 @@ import { DurationMinutesField } from './DurationMinutesField.jsx';
 describe('DurationMinutesField', () => {
   it('shows a human-readable duration and selected preset state', () => {
     render(
-      <DurationMinutesField
-        label="Durasi minimum"
-        value="90"
-        required
-        onValueChange={() => {}}
-      />,
+      <DurationMinutesField label="Durasi minimum" value="90" required onValueChange={() => {}} />,
     );
 
     expect(screen.getByText('Terbaca sebagai 1 jam 30 menit')).toBeInTheDocument();
@@ -45,12 +40,7 @@ describe('DurationMinutesField', () => {
 
   it('disables both manual entry and presets when the parent form is saving', () => {
     render(
-      <DurationMinutesField
-        label="Durasi dasar"
-        value="120"
-        disabled
-        onValueChange={() => {}}
-      />,
+      <DurationMinutesField label="Durasi dasar" value="120" disabled onValueChange={() => {}} />,
     );
 
     expect(screen.getByLabelText(/^Durasi dasar/)).toBeDisabled();
