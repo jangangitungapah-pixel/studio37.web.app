@@ -47,6 +47,16 @@ function createPricingRulesRepository(pricingRules = []) {
   };
 }
 
+function createAddOnsRepository(addOns = []) {
+  return {
+    createAddOn: vi.fn(async () => 'addon-created'),
+    listAddOns: vi.fn(async () => addOns),
+    listLimit: 100,
+    setAddOnStatus: vi.fn(async (addOnId) => addOnId),
+    updateAddOn: vi.fn(async (addOnId) => addOnId),
+  };
+}
+
 function createStudioRoomsRepository(studioRooms = []) {
   return {
     listLimit: 50,
@@ -71,6 +81,7 @@ function createAccess({ capabilities = [], role = 'owner', uid = 'owner-1' } = {
 
 function renderPage({
   access = createAccess(),
+  addOnsRepository = createAddOnsRepository(),
   pricingRulesRepository = createPricingRulesRepository(),
   repository = createRepository(),
   studioRoomsRepository = createStudioRoomsRepository(),
@@ -80,6 +91,7 @@ function renderPage({
       <AuthContext.Provider value={access}>
         <MemoryRouter initialEntries={['/settings/pricing']}>
           <PriceSettingsPage
+            addOnsRepository={addOnsRepository}
             pricingRulesRepository={pricingRulesRepository}
             repository={repository}
             studioRoomsRepository={studioRoomsRepository}
@@ -207,6 +219,7 @@ describe('PriceSettingsPage session type workflow', () => {
     expect(screen.queryByRole('button', { name: 'Edit Rehearsal' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nonaktifkan Rehearsal' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tambah pricing rule' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah add-on' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Harga' })).toBeInTheDocument();
     expect(repository.createSessionType).not.toHaveBeenCalled();
     expect(repository.updateSessionType).not.toHaveBeenCalled();
