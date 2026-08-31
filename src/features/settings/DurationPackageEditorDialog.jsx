@@ -6,6 +6,8 @@ import { Select } from '../../components/forms/Select.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
+import { DurationMinutesField } from './DurationMinutesField.jsx';
+import { getPackageDurationBehavior } from './durationSettings.js';
 import {
   DEFAULT_DURATION_PACKAGE_FORM_VALUES,
   toDurationPackageFormValues,
@@ -92,8 +94,7 @@ export function DurationPackageEditorDialog({
     [sessionTypes, sourceRule],
   );
 
-  const changeField = (fieldName) => (event) => {
-    const nextValue = event.target.value;
+  const setFieldValue = (fieldName, nextValue) => {
     setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
     setFieldErrors((current) => {
       if (!current[fieldName] && !current.form) return current;
@@ -103,6 +104,8 @@ export function DurationPackageEditorDialog({
       return nextErrors;
     });
   };
+
+  const changeField = (fieldName) => (event) => setFieldValue(fieldName, event.target.value);
 
   const submit = (event) => {
     event.preventDefault();
@@ -116,6 +119,10 @@ export function DurationPackageEditorDialog({
   const usesAdditional =
     formValues.extraTimePolicy === PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ADDITIONAL;
   const locksEnvelope = Boolean(sourceRule);
+  const durationBehavior = getPackageDurationBehavior({
+    durationMinutes: formValues.durationMinutes,
+    additionalIncrementMinutes: usesAdditional ? formValues.additionalIncrementMinutes : null,
+  });
 
   return (
     <Dialog
@@ -147,8 +154,8 @@ export function DurationPackageEditorDialog({
       <div className="settings-notice" role="status">
         <strong>Satu package = satu pricing rule.</strong>
         <span>
-          Paket dengan durasi berbeda boleh berada dalam set yang sama. Package dengan durasi sama
-          pada envelope aktif yang sama diblok untuk mencegah pilihan ganda yang ambigu.
+          Paket dengan durasi berbeda boleh berada dalam set yang sama. Preset durasi hanya
+          mempercepat input; nilai canonical tetap menit pada grid 15 menit.
         </span>
       </div>
 
@@ -193,17 +200,13 @@ export function DurationPackageEditorDialog({
         </div>
 
         <div className="settings-form__grid">
-          <Input
-            type="number"
-            label="Durasi package (menit)"
+          <DurationMinutesField
+            label="Durasi package"
             value={formValues.durationMinutes}
             error={fieldErrors.durationMinutes}
-            min={15}
-            max={1440}
-            step={15}
             required
             disabled={saving}
-            onChange={changeField('durationMinutes')}
+            onValueChange={(nextValue) => setFieldValue('durationMinutes', nextValue)}
           />
           <Input
             type="number"
@@ -248,17 +251,15 @@ export function DurationPackageEditorDialog({
                 disabled={saving}
                 onChange={changeField('additionalAmountPerIncrementIdr')}
               />
-              <Input
-                type="number"
-                label="Increment tambahan (menit)"
+              <DurationMinutesField
+                label="Increment tambahan"
                 value={formValues.additionalIncrementMinutes}
                 error={fieldErrors.additionalIncrementMinutes}
-                min={15}
-                max={1440}
-                step={15}
                 required
                 disabled={saving}
-                onChange={changeField('additionalIncrementMinutes')}
+                onValueChange={(nextValue) =>
+                  setFieldValue('additionalIncrementMinutes', nextValue)
+                }
               />
             </div>
             <Select
@@ -270,6 +271,13 @@ export function DurationPackageEditorDialog({
               disabled={saving}
               onChange={changeField('roundingMode')}
             />
+          </div>
+        ) : null}
+
+        {durationBehavior ? (
+          <div className="duration-behavior-summary" role="status">
+            <strong>Perilaku durasi package</strong>
+            <span>{durationBehavior}</span>
           </div>
         ) : null}
       </form>
