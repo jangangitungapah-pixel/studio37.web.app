@@ -9,6 +9,12 @@ import {
   PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES,
 } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
+import { DurationMinutesField } from './DurationMinutesField.jsx';
+import {
+  getBaseAdditionalDurationBehavior,
+  getHourlyDurationBehavior,
+  getPackageDurationBehavior,
+} from './durationSettings.js';
 import {
   DEFAULT_PRICING_RULE_FORM_VALUES,
   PRICING_RULE_MODEL_OPTIONS,
@@ -75,7 +81,18 @@ function buildSessionOptions(sessionTypes, editingRule) {
     }));
 }
 
-function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
+function DurationBehaviorSummary({ children }) {
+  if (!children) return null;
+
+  return (
+    <div className="duration-behavior-summary" role="status">
+      <strong>Perilaku durasi</strong>
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChange, saving }) {
   if (!formValues.pricingModel) {
     return (
       <div className="pricing-rule-model-empty">
@@ -108,6 +125,12 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
   }
 
   if (formValues.pricingModel === PRICING_RULE_MODELS.HOURLY) {
+    const durationBehavior = getHourlyDurationBehavior({
+      incrementMinutes: formValues.incrementMinutes,
+      minimumDurationMinutes: formValues.minimumDurationMinutes,
+      roundingMode: formValues.roundingMode,
+    });
+
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
@@ -126,31 +149,25 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
             disabled={saving}
             onChange={onChange('amountPerIncrementIdr')}
           />
-          <Input
-            type="number"
-            label="Increment harga (menit)"
+          <DurationMinutesField
+            label="Increment harga"
             value={formValues.incrementMinutes}
             error={fieldErrors.incrementMinutes}
-            min={15}
-            max={1440}
-            step={15}
             required
             disabled={saving}
-            onChange={onChange('incrementMinutes')}
+            description="Unit waktu yang dipakai untuk satu langkah penagihan."
+            onValueChange={onDurationChange('incrementMinutes')}
           />
         </div>
         <div className="settings-form__grid">
-          <Input
-            type="number"
-            label="Durasi minimum (menit)"
+          <DurationMinutesField
+            label="Durasi minimum"
             value={formValues.minimumDurationMinutes}
             error={fieldErrors.minimumDurationMinutes}
-            min={15}
-            max={1440}
-            step={15}
             required
             disabled={saving}
-            onChange={onChange('minimumDurationMinutes')}
+            description="Booking di bawah durasi ini ditolak pricing engine."
+            onValueChange={onDurationChange('minimumDurationMinutes')}
           />
           <Select
             label="Rounding"
@@ -161,6 +178,7 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
             onChange={onChange('roundingMode')}
           />
         </div>
+        <DurationBehaviorSummary>{durationBehavior?.text}</DurationBehaviorSummary>
       </div>
     );
   }
@@ -168,28 +186,28 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
   if (formValues.pricingModel === PRICING_RULE_MODELS.DURATION_PACKAGE) {
     const usesAdditional =
       formValues.extraTimePolicy === PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ADDITIONAL;
+    const durationBehavior = getPackageDurationBehavior({
+      durationMinutes: formValues.durationMinutes,
+      additionalIncrementMinutes: usesAdditional ? formValues.additionalIncrementMinutes : null,
+    });
 
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
           <strong>Satu paket durasi</strong>
           <span>
-            Satu pricing rule mewakili satu paket. Pengelolaan beberapa paket sebagai satu workspace
-            tetap checkpoint Package Editor berikutnya.
+            Satu pricing rule mewakili satu paket. Dedicated Package Workspace mengelola beberapa
+            durasi sebagai satu set.
           </span>
         </div>
         <div className="settings-form__grid">
-          <Input
-            type="number"
-            label="Durasi paket (menit)"
+          <DurationMinutesField
+            label="Durasi paket"
             value={formValues.durationMinutes}
             error={fieldErrors.durationMinutes}
-            min={15}
-            max={1440}
-            step={15}
             required
             disabled={saving}
-            onChange={onChange('durationMinutes')}
+            onValueChange={onDurationChange('durationMinutes')}
           />
           <Input
             type="number"
@@ -224,17 +242,13 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
               disabled={saving}
               onChange={onChange('additionalAmountPerIncrementIdr')}
             />
-            <Input
-              type="number"
-              label="Increment tambahan (menit)"
+            <DurationMinutesField
+              label="Increment tambahan"
               value={formValues.additionalIncrementMinutes}
               error={fieldErrors.additionalIncrementMinutes}
-              min={15}
-              max={1440}
-              step={15}
               required
               disabled={saving}
-              onChange={onChange('additionalIncrementMinutes')}
+              onValueChange={onDurationChange('additionalIncrementMinutes')}
             />
             <Select
               label="Rounding tambahan"
@@ -246,9 +260,15 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
             />
           </div>
         ) : null}
+        <DurationBehaviorSummary>{durationBehavior}</DurationBehaviorSummary>
       </div>
     );
   }
+
+  const durationBehavior = getBaseAdditionalDurationBehavior({
+    additionalIncrementMinutes: formValues.additionalIncrementMinutes,
+    baseDurationMinutes: formValues.baseDurationMinutes,
+  });
 
   return (
     <div className="pricing-rule-config-panel">
@@ -257,17 +277,14 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
         <span>Harga dasar menutup window awal; kelebihannya dihitung per increment tambahan.</span>
       </div>
       <div className="settings-form__grid">
-        <Input
-          type="number"
-          label="Durasi dasar (menit)"
+        <DurationMinutesField
+          label="Durasi dasar"
           value={formValues.baseDurationMinutes}
           error={fieldErrors.baseDurationMinutes}
-          min={15}
-          max={1440}
-          step={15}
           required
           disabled={saving}
-          onChange={onChange('baseDurationMinutes')}
+          description="Window waktu yang sudah tercakup oleh harga dasar."
+          onValueChange={onDurationChange('baseDurationMinutes')}
         />
         <Input
           type="number"
@@ -282,17 +299,14 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
         />
       </div>
       <div className="settings-form__grid">
-        <Input
-          type="number"
-          label="Increment tambahan (menit)"
+        <DurationMinutesField
+          label="Increment tambahan"
           value={formValues.additionalIncrementMinutes}
           error={fieldErrors.additionalIncrementMinutes}
-          min={15}
-          max={1440}
-          step={15}
           required
           disabled={saving}
-          onChange={onChange('additionalIncrementMinutes')}
+          description="Unit waktu untuk setiap tagihan setelah window dasar lewat."
+          onValueChange={onDurationChange('additionalIncrementMinutes')}
         />
         <Input
           type="number"
@@ -314,6 +328,7 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, saving }) {
         disabled={saving}
         onChange={onChange('roundingMode')}
       />
+      <DurationBehaviorSummary>{durationBehavior}</DurationBehaviorSummary>
     </div>
   );
 }
@@ -350,8 +365,7 @@ export function PricingRuleEditorDialog({
     [editingRule, sessionTypes],
   );
 
-  const changeField = (fieldName) => (event) => {
-    const nextValue = event.target.value;
+  const setFieldValue = (fieldName, nextValue) => {
     setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
     setFieldErrors((current) => {
       if (!current[fieldName] && !current.form) return current;
@@ -361,6 +375,9 @@ export function PricingRuleEditorDialog({
       return nextErrors;
     });
   };
+
+  const changeField = (fieldName) => (event) => setFieldValue(fieldName, event.target.value);
+  const changeDurationField = (fieldName) => (nextValue) => setFieldValue(fieldName, nextValue);
 
   const submit = (event) => {
     event.preventDefault();
@@ -404,10 +421,11 @@ export function PricingRuleEditorDialog({
       ) : null}
 
       <div className="settings-notice" role="status">
-        <strong>Scope 5B2.</strong>
+        <strong>Duration controls 5B4 aktif.</strong>
         <span>
-          Rule baru dibuat untuk semua studio. Studio-specific scope, effective period, add-on,
-          preview kalkulasi, dan ambiguity preflight tetap checkpoint terpisah.
+          Durasi tetap disimpan sebagai menit canonical, tetapi preset dan ringkasan perilaku membantu
+          membaca minimum, increment, serta rounding sebelum save. Studio scope, effective period,
+          add-on, pricing preview, dan full ambiguity validation tetap checkpoint terpisah.
         </span>
       </div>
 
@@ -415,8 +433,8 @@ export function PricingRuleEditorDialog({
         <div className="settings-notice" data-tone="warning" role="status">
           <strong>Metadata advanced dipertahankan.</strong>
           <span>
-            Rule ini sudah memiliki studio scope atau effective window. 5B2 tidak mengubah field
-            tersebut sampai editor khususnya tersedia.
+            Rule ini sudah memiliki studio scope atau effective window. Editor ini tidak mengubah
+            field tersebut sampai workflow khususnya tersedia.
           </span>
         </div>
       ) : null}
@@ -481,6 +499,7 @@ export function PricingRuleEditorDialog({
           fieldErrors={fieldErrors}
           formValues={formValues}
           onChange={changeField}
+          onDurationChange={changeDurationField}
           saving={saving}
         />
       </form>
