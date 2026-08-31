@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/feedback/Dialog.jsx';
 import { Input, Textarea } from '../../components/forms/Field.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { DurationMinutesField } from './DurationMinutesField.jsx';
+import { getSessionDurationBehavior } from './durationSettings.js';
 import {
   DEFAULT_SESSION_TYPE_FORM_VALUES,
   toSessionTypeFormValues,
@@ -67,17 +69,21 @@ export function SessionTypeEditorDialog({
     );
   }, [editingSessionType?.id, existingSessionTypes, formValues.code]);
 
+  const setFieldValue = (fieldName, nextValue) => {
+    setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
+    setFieldErrors((current) => {
+      if (!current[fieldName]) return current;
+      const nextErrors = { ...current };
+      delete nextErrors[fieldName];
+      return nextErrors;
+    });
+  };
+
   const changeTextField =
     (fieldName, { uppercase = false } = {}) =>
     (event) => {
       const nextValue = uppercase ? event.target.value.toUpperCase() : event.target.value;
-      setFormValues((current) => ({ ...current, [fieldName]: nextValue }));
-      setFieldErrors((current) => {
-        if (!current[fieldName]) return current;
-        const nextErrors = { ...current };
-        delete nextErrors[fieldName];
-        return nextErrors;
-      });
+      setFieldValue(fieldName, nextValue);
     };
 
   const changeReservation = (event) => {
@@ -135,6 +141,12 @@ export function SessionTypeEditorDialog({
 
   const durationConfigurationEnabled =
     formValues.requiresStudioReservation || formValues.useDurationConfiguration;
+  const durationBehavior = durationConfigurationEnabled
+    ? getSessionDurationBehavior({
+        defaultDurationMinutes: formValues.defaultDurationMinutes,
+        minimumDurationMinutes: formValues.minimumDurationMinutes,
+      })
+    : null;
   const title = editingSessionType ? 'Edit session type' : 'Tambah session type';
 
   return (
@@ -255,34 +267,37 @@ export function SessionTypeEditorDialog({
           <div className="price-session-duration-panel">
             <div>
               <strong>Durasi layanan</strong>
-              <span>Gunakan kelipatan 15 menit. Minimum tidak boleh melebihi default.</span>
+              <span>
+                Preset hanya mempercepat input. Nilai canonical tetap menit pada grid 15 menit dan
+                minimum tidak boleh melebihi default.
+              </span>
             </div>
             <div className="settings-form__grid">
-              <Input
-                type="number"
-                label="Durasi default (menit)"
+              <DurationMinutesField
+                label="Durasi default"
                 value={formValues.defaultDurationMinutes}
                 error={fieldErrors.defaultDurationMinutes}
-                min={15}
-                max={1440}
-                step={15}
                 required
                 disabled={saving}
-                onChange={changeTextField('defaultDurationMinutes')}
+                description="Nilai awal yang akan ditawarkan saat layanan dipilih."
+                onValueChange={(nextValue) => setFieldValue('defaultDurationMinutes', nextValue)}
               />
-              <Input
-                type="number"
-                label="Durasi minimum (menit)"
+              <DurationMinutesField
+                label="Durasi minimum"
                 value={formValues.minimumDurationMinutes}
                 error={fieldErrors.minimumDurationMinutes}
-                min={15}
-                max={1440}
-                step={15}
                 required
                 disabled={saving}
-                onChange={changeTextField('minimumDurationMinutes')}
+                description="Batas bawah durasi layanan sebelum pricing rule diterapkan."
+                onValueChange={(nextValue) => setFieldValue('minimumDurationMinutes', nextValue)}
               />
             </div>
+            {durationBehavior ? (
+              <div className="duration-behavior-summary" role="status">
+                <strong>Ringkasan durasi layanan</strong>
+                <span>{durationBehavior}</span>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </form>
