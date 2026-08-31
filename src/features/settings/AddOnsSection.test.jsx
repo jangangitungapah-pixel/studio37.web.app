@@ -161,7 +161,9 @@ describe('AddOnsSection', () => {
     const repository = createRepository([createAddOn()]);
     renderSection({ repository });
 
-    await interaction.click(await screen.findByRole('button', { name: 'Edit add-on Extra microphone' }));
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Edit add-on Extra microphone' }),
+    );
     const amountInput = screen.getByLabelText(/^Harga add-on \(IDR\)/);
     await interaction.clear(amountInput);
     await interaction.type(amountInput, '60000');
@@ -177,7 +179,9 @@ describe('AddOnsSection', () => {
 
     repository.listAddOns.mockResolvedValueOnce([createAddOn()]);
     await waitFor(() => expect(repository.listAddOns).toHaveBeenCalledTimes(2));
-    await interaction.click(screen.getByRole('button', { name: 'Nonaktifkan add-on Extra microphone' }));
+    await interaction.click(
+      screen.getByRole('button', { name: 'Nonaktifkan add-on Extra microphone' }),
+    );
     await interaction.click(screen.getByRole('button', { name: 'Nonaktifkan' }));
 
     await waitFor(() => {
@@ -192,7 +196,9 @@ describe('AddOnsSection', () => {
 
     expect(await screen.findByRole('heading', { name: 'Extra microphone' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tambah add-on' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Edit add-on Extra microphone' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Edit add-on Extra microphone' }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows a recoverable list error and retries the bounded query', async () => {

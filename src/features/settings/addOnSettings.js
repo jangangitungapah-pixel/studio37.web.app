@@ -155,7 +155,9 @@ export function toAddOnFormValues(addOn) {
 }
 
 export function getAddOnPricingTypeLabel(pricingType) {
-  return ADD_ON_PRICING_TYPE_OPTIONS.find((option) => option.value === pricingType)?.label ?? pricingType;
+  return (
+    ADD_ON_PRICING_TYPE_OPTIONS.find((option) => option.value === pricingType)?.label ?? pricingType
+  );
 }
 
 export function formatAddOnPricingSummary(addOn) {

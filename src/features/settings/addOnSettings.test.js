@@ -32,9 +32,7 @@ function createAddOn(overrides = {}) {
 
 describe('addOnSettings form adapter', () => {
   it('builds general fixed and exact-session quantity configuration', () => {
-    expect(
-      validate({ amountIdr: '50000', pricingType: ADD_ON_PRICING_TYPES.FIXED }).value,
-    ).toEqual(
+    expect(validate({ amountIdr: '50000', pricingType: ADD_ON_PRICING_TYPES.FIXED }).value).toEqual(
       expect.objectContaining({
         configuration: { amountIdr: 50_000 },
         sessionTypeId: null,

@@ -24,12 +24,7 @@ function getNextDisplayOrder(addOns) {
   return Math.min(999, Math.max(...addOns.map((addOn) => addOn.displayOrder)) + 1);
 }
 
-export function AddOnsSection({
-  access,
-  canEdit,
-  repository = addOnRepository,
-  sessionTypes,
-}) {
+export function AddOnsSection({ access, canEdit, repository = addOnRepository, sessionTypes }) {
   const { pushToast } = useToast();
   const [addOns, setAddOns] = useState([]);
   const [dialogError, setDialogError] = useState('');
@@ -163,8 +158,7 @@ export function AddOnsSection({
             ? `${statusTarget.name} kembali tersedia untuk booking baru.`
             : `${statusTarget.name} tidak lagi tersedia untuk booking baru; snapshot historis tetap utuh.`,
         tone: 'success',
-        title:
-          nextStatus === ADD_ON_STATUSES.ACTIVE ? 'Add-on diaktifkan' : 'Add-on dinonaktifkan',
+        title: nextStatus === ADD_ON_STATUSES.ACTIVE ? 'Add-on diaktifkan' : 'Add-on dinonaktifkan',
       });
       setStatusTarget(null);
       setReloadKey((value) => value + 1);
@@ -187,14 +181,22 @@ export function AddOnsSection({
           </p>
         </div>
         {canEdit ? (
-          <Button size="sm" disabled={loadState !== 'ready' || limitReached} onClick={openCreateDialog}>
+          <Button
+            size="sm"
+            disabled={loadState !== 'ready' || limitReached}
+            onClick={openCreateDialog}
+          >
             Tambah add-on
           </Button>
         ) : null}
       </header>
 
       {loadState === 'loading' ? (
-        <div className="settings-state settings-state--embedded" aria-busy="true" aria-live="polite">
+        <div
+          className="settings-state settings-state--embedded"
+          aria-busy="true"
+          aria-live="polite"
+        >
           <span className="settings-state__spinner" aria-hidden="true" />
           <div>
             <p className="settings-state__title">Memuat add-ons</p>
@@ -250,14 +252,23 @@ export function AddOnsSection({
               : 'Semua session type';
 
             return (
-              <article className="price-session-row" data-disabled={!isActive || undefined} key={addOn.id}>
-                <div className="price-session-row__order" aria-label={`Urutan ${addOn.displayOrder}`}>
+              <article
+                className="price-session-row"
+                data-disabled={!isActive || undefined}
+                key={addOn.id}
+              >
+                <div
+                  className="price-session-row__order"
+                  aria-label={`Urutan ${addOn.displayOrder}`}
+                >
                   {addOn.displayOrder}
                 </div>
                 <div className="price-session-row__content">
                   <div className="price-session-row__heading">
                     <h3>{addOn.name}</h3>
-                    <Badge tone={isActive ? 'success' : 'neutral'}>{isActive ? 'Aktif' : 'Nonaktif'}</Badge>
+                    <Badge tone={isActive ? 'success' : 'neutral'}>
+                      {isActive ? 'Aktif' : 'Nonaktif'}
+                    </Badge>
                     <Badge tone="brand">{getAddOnPricingTypeLabel(addOn.pricingType)}</Badge>
                   </div>
                   <div className="price-session-row__meta">
@@ -336,9 +347,12 @@ export function AddOnsSection({
           </div>
         ) : (
           <div className="price-session-status-summary">
-            <strong>{statusTarget ? getAddOnPricingTypeLabel(statusTarget.pricingType) : ''}</strong>
+            <strong>
+              {statusTarget ? getAddOnPricingTypeLabel(statusTarget.pricingType) : ''}
+            </strong>
             <span>
-              Tidak ada hard delete. Konfigurasi lama tetap dapat direkonstruksi dari snapshot booking.
+              Tidak ada hard delete. Konfigurasi lama tetap dapat direkonstruksi dari snapshot
+              booking.
             </span>
           </div>
         )}

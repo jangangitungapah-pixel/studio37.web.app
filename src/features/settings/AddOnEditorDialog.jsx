@@ -113,7 +113,9 @@ function PricingFields({ fieldErrors, formValues, onChange, onDurationChange, sa
     <div className="pricing-rule-config-panel">
       <div className="pricing-rule-config-panel__intro">
         <strong>Harga per waktu</strong>
-        <span>Durasi aktual datang dari Booking; konfigurasi menentukan increment dan rounding.</span>
+        <span>
+          Durasi aktual datang dari Booking; konfigurasi menentukan increment dan rounding.
+        </span>
       </div>
       <div className="settings-form__grid">
         <Input

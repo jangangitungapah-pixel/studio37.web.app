@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/features/settings/AddOnEditorDialog.jsx src/features/settings/addOnSettings.js src/features/settings/addOnSettings.test.js src/features/settings/AddOnsSection.jsx src/features/settings/AddOnsSection.test.jsx && git diff -- src/features/settings/AddOnEditorDialog.jsx src/features/settings/addOnSettings.js src/features/settings/addOnSettings.test.js src/features/settings/AddOnsSection.jsx src/features/settings/AddOnsSection.test.jsx && exit 1",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js\"",
     "test:watch": "vitest"
