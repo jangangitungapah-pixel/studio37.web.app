@@ -631,6 +631,80 @@ service cloud.firestore {
           || exists(studioPath(data.studioId)));
     }
 
+    function isValidAddOnConfiguration(pricingType, data) {
+      return (pricingType == 'fixed'
+          && data is map
+          && data.keys().hasAll(['amountIdr'])
+          && data.keys().hasOnly(['amountIdr'])
+          && isValidPricingAmount(data.amountIdr))
+        || (pricingType == 'quantity'
+          && data is map
+          && data.keys().hasAll(['amountPerUnitIdr'])
+          && data.keys().hasOnly(['amountPerUnitIdr'])
+          && isValidPricingAmount(data.amountPerUnitIdr))
+        || (pricingType == 'time'
+          && data is map
+          && data.keys().hasAll(['amountPerIncrementIdr', 'incrementMinutes', 'roundingMode'])
+          && data.keys().hasOnly(['amountPerIncrementIdr', 'incrementMinutes', 'roundingMode'])
+          && isValidPricingAmount(data.amountPerIncrementIdr)
+          && isValidPricingDuration(data.incrementMinutes)
+          && isValidPricingRoundingMode(data.roundingMode));
+    }
+
+    function isValidAddOn(data) {
+      return data.keys().hasAll([
+          'name',
+          'description',
+          'displayOrder',
+          'sessionTypeId',
+          'pricingType',
+          'configuration',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.keys().hasOnly([
+          'name',
+          'description',
+          'displayOrder',
+          'sessionTypeId',
+          'pricingType',
+          'configuration',
+          'status',
+          'createdAt',
+          'createdByUid',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.description is string
+        && data.description.size() <= 240
+        && data.displayOrder is int
+        && data.displayOrder >= 1
+        && data.displayOrder <= 999
+        && hasValidOptionalReference(data.sessionTypeId)
+        && data.pricingType in ['fixed', 'quantity', 'time']
+        && isValidAddOnConfiguration(data.pricingType, data.configuration)
+        && data.status in ['active', 'disabled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && data.createdByUid is string
+        && data.createdByUid.size() > 0
+        && data.createdByUid.size() <= 128
+        && data.updatedByUid is string
+        && data.updatedByUid.size() > 0
+        && data.updatedByUid.size() <= 128;
+    }
+
+    function hasValidAddOnReferences(data) {
+      return data.sessionTypeId == null || exists(sessionTypePath(data.sessionTypeId));
+    }
+
     function hasValidOperatorTypes(value) {
       return value is list
         && value.size() >= 1
@@ -926,6 +1000,21 @@ service cloud.firestore {
         && request.resource.data.updatedByUid == request.auth.uid;
     }
 
+    function usesAddOnCreateMetadata() {
+      return request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
+    function preservesAddOnHistory() {
+      return request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdByUid == resource.data.createdByUid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedByUid == request.auth.uid;
+    }
+
     function usesOperatorCreateMetadata() {
       return request.resource.data.linkedUserUid == null
         && request.resource.data.createdAt == request.time
@@ -1182,6 +1271,25 @@ service cloud.firestore {
         && isValidPricingRule(request.resource.data)
         && hasValidPricingRuleReferences(request.resource.data)
         && preservesPricingRuleHistory();
+
+      allow delete: if false;
+    }
+
+    match /addOns/{addOnId} {
+      allow get: if hasCapability('settings.pricing.view');
+      allow list: if hasCapability('settings.pricing.view')
+        && request.query.limit != null
+        && request.query.limit <= 100;
+
+      allow create: if hasCapability('settings.pricing.edit')
+        && isValidAddOn(request.resource.data)
+        && hasValidAddOnReferences(request.resource.data)
+        && usesAddOnCreateMetadata();
+
+      allow update: if hasCapability('settings.pricing.edit')
+        && isValidAddOn(request.resource.data)
+        && hasValidAddOnReferences(request.resource.data)
+        && preservesAddOnHistory();
 
       allow delete: if false;
     }
