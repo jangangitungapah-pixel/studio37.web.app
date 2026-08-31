@@ -103,8 +103,8 @@ describe('PriceSettingsPage session type workflow', () => {
     await interaction.type(screen.getByLabelText(/^Nama session type/), 'Rehearsal');
     await interaction.type(screen.getByLabelText(/^Kode/), 'rehearsal');
     await interaction.type(screen.getByLabelText('Deskripsi'), 'Latihan reguler');
-    await interaction.clear(screen.getByLabelText(/^Durasi default \(menit\)/));
-    await interaction.type(screen.getByLabelText(/^Durasi default \(menit\)/), '120');
+    await interaction.clear(screen.getByLabelText(/^Durasi default/));
+    await interaction.type(screen.getByLabelText(/^Durasi default/), '120');
     await interaction.click(screen.getByRole('button', { name: 'Simpan session type' }));
 
     await waitFor(() => {

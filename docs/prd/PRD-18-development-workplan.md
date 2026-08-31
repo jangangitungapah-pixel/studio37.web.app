@@ -353,7 +353,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Session type CRUD/deactivation UI.
 - [x] Pricing rule editor.
 - [x] Package editor.
-- [ ] Duration/minimum/increment configuration.
+- [x] Duration/minimum/increment configuration.
 - [ ] Studio scope selector.
 - [ ] Add-on configuration.
 - [ ] Human-readable pricing preview.
@@ -516,10 +516,22 @@ Phase 5 progress on 2026-08-24:
   durations and package/non-package envelope collisions are blocked conservatively. GitHub Actions
   Quality run `33308411999` passed formatting, zero-warning lint, all unit/component tests, Firestore
   Emulator authorization tests, production build, and Vite development-server smoke.
-- Duration/minimum/increment workflow refinement, studio-scope/effective-period controls, add-on
-  configuration, pricing preview, full model/package/effective-window validation, Firestore Booking
-  persistence, server-authoritative override writes/timestamps, and all final Phase 5 gates remain
-  pending; Phase 5 remains in progress.
+- Phase 5B4 added one reusable duration control across Session Type, Pricing Rule, and Package
+  editors. Canonical persistence remains integer minutes on the existing 15-minute grid, while
+  common presets, human-readable hour/minute labels, and explicit behavior summaries make default,
+  minimum, package, base-window, billing-increment, and additional-increment relationships visible
+  before save.
+- Hourly exact mode now explains the first valid aligned duration when a configured minimum is not
+  itself an increment multiple, without inventing a stricter rule than the existing pricing engine.
+  Focused helper/component/dialog integration coverage verifies preset-to-canonical minute payloads,
+  accessible `aria-pressed` state, custom valid minute entry, malformed-display fail-closed behavior,
+  and regressions across the existing Settings workflows. GitHub Actions Quality run `33355128819`
+  passed formatting, zero-warning lint, all unit/component tests, Firestore Emulator authorization
+  tests, production build, and Vite development-server smoke.
+- Studio-scope/effective-period controls, add-on configuration, pricing preview, full
+  model/package/effective-window validation, Firestore Booking persistence, server-authoritative
+  override writes/timestamps, and all final Phase 5 gates remain pending; Phase 5 remains in
+  progress.
 
 ---
 
@@ -938,3 +950,4 @@ Implementation status:
   - [x] Phase 5B1 — bounded capability-aware Session Type Price Settings CRUD/deactivation UI, responsive states, and automated coverage implemented and quality-gated.
   - [x] Phase 5B2 — bounded Pricing Rule editor/status workflow for all four canonical models, advanced metadata preservation, conservative collision guard, and automated coverage implemented and quality-gated.
   - [x] Phase 5B3 — dedicated duration-package set editor with package-aware collision safety, envelope inheritance, responsive states, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B4 — shared duration/minimum/increment controls with canonical-minute presets, human-readable behavior summaries, and automated coverage implemented and quality-gated.
