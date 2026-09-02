@@ -121,6 +121,44 @@ describe('buildPricingPreview', () => {
     expect(preview.totalAmountIdr).toBe(550_000);
   });
 
+  it('preserves the canonical blocked-package failure instead of inventing preview logic', () => {
+    const pricingRule = createPricingRule({
+      configuration: {
+        additionalAmountPerIncrementIdr: null,
+        additionalIncrementMinutes: null,
+        amountIdr: 450_000,
+        durationMinutes: 180,
+        extraTimePolicy: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.BLOCKED,
+        roundingMode: null,
+      },
+      id: 'rule-package-blocked',
+      pricingModel: PRICING_RULE_MODELS.DURATION_PACKAGE,
+    });
+
+    expect(() =>
+      buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule }),
+    ).toThrow(/extra time is blocked by the configured package/i);
+  });
+
+  it('preserves the canonical another-package failure instead of auto-resolving siblings', () => {
+    const pricingRule = createPricingRule({
+      configuration: {
+        additionalAmountPerIncrementIdr: null,
+        additionalIncrementMinutes: null,
+        amountIdr: 450_000,
+        durationMinutes: 180,
+        extraTimePolicy: PRICING_RULE_PACKAGE_EXTRA_TIME_POLICIES.ANOTHER_PACKAGE,
+        roundingMode: null,
+      },
+      id: 'rule-package-another',
+      pricingModel: PRICING_RULE_MODELS.DURATION_PACKAGE,
+    });
+
+    expect(() =>
+      buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule }),
+    ).toThrow(/extra time requires another package/i);
+  });
+
   it('uses the canonical base-plus-additional calculator', () => {
     const preview = buildPricingPreview({
       addOns: [],
@@ -192,6 +230,18 @@ describe('buildPricingPreview', () => {
       }),
     ]);
     expect(preview.totalAmountIdr).toBe(500_000);
+  });
+
+  it('rejects duplicate persisted add-ons through the canonical add-on calculator', () => {
+    const addOn = createAddOn();
+
+    expect(() =>
+      buildPricingPreview({
+        addOns: [selection(addOn), selection(addOn)],
+        durationMinutes: 60,
+        pricingRule: createPricingRule(),
+      }),
+    ).toThrow(/duplicate addOnId addon-mic/i);
   });
 
   it('allows disabled persisted configuration to be simulated without making it selectable for booking', () => {
