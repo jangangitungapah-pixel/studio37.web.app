@@ -90,9 +90,9 @@ describe('buildPricingPreview', () => {
     expect(
       buildPricingPreview({ addOns: [], durationMinutes: null, pricingRule }).totalAmountIdr,
     ).toBe(500_000);
-    expect(() =>
-      buildPricingPreview({ addOns: [], durationMinutes: 60, pricingRule }),
-    ).toThrow(/must be null for fixed-session/i);
+    expect(() => buildPricingPreview({ addOns: [], durationMinutes: 60, pricingRule })).toThrow(
+      /must be null for fixed-session/i,
+    );
   });
 
   it('uses the canonical duration-package calculator including configured additional time', () => {
