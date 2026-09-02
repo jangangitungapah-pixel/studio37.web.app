@@ -41,7 +41,9 @@ function calculateBasePrice(rule, durationMinutes) {
 
     case PRICING_RULE_MODELS.FIXED_SESSION:
       if (durationMinutes !== null) {
-        throw new TypeError('pricingPreview.durationMinutes must be null for fixed-session pricing.');
+        throw new TypeError(
+          'pricingPreview.durationMinutes must be null for fixed-session pricing.',
+        );
       }
       return calculateFixedSessionPrice({
         configuration: rule.configuration,
