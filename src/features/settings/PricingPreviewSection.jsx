@@ -200,7 +200,9 @@ function PricingPreviewRuleCard({ rule, sessionType, studioLoadState, studioRoom
         <dl className="pricing-preview__facts">
           <div>
             <dt>Session</dt>
-            <dd>{sessionType ? `${sessionType.name} · ${sessionType.code}` : rule.sessionTypeId}</dd>
+            <dd>
+              {sessionType ? `${sessionType.name} · ${sessionType.code}` : rule.sessionTypeId}
+            </dd>
           </div>
           <div>
             <dt>Studio scope</dt>
