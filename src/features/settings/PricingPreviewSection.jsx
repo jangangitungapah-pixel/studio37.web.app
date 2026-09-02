@@ -26,12 +26,14 @@ import {
 import { formatStudioScopeLabel } from './studioScopeSettings.js';
 
 function getDefaultDurationMinutes(rule) {
-  if (!rule) return '';
+  if (!rule || rule.pricingModel === PRICING_RULE_MODELS.FIXED_SESSION) {
+    return '';
+  }
 
-  if (rule.pricingModel === PRICING_RULE_MODELS.FIXED_SESSION) return '';
   if (rule.pricingModel === PRICING_RULE_MODELS.DURATION_PACKAGE) {
     return String(rule.configuration.durationMinutes);
   }
+
   if (rule.pricingModel === PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL) {
     return String(rule.configuration.baseDurationMinutes);
   }
@@ -40,6 +42,7 @@ function getDefaultDurationMinutes(rule) {
   if (roundingMode === PRICING_RULE_ROUNDING_MODES.EXACT) {
     return String(Math.ceil(minimumDurationMinutes / incrementMinutes) * incrementMinutes);
   }
+
   return String(minimumDurationMinutes);
 }
 
@@ -82,16 +85,19 @@ function getPreviewErrorMessage(error) {
 }
 
 function formatEffectiveWindow(rule) {
-  if (rule.effectiveFrom === null && rule.effectiveUntil === null) return 'Tanpa batas waktu';
+  if (rule.effectiveFrom === null && rule.effectiveUntil === null) {
+    return 'Tanpa batas waktu';
+  }
 
   const formatter = new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   });
-  return `${rule.effectiveFrom ? formatter.format(rule.effectiveFrom) : '∞'} → ${
-    rule.effectiveUntil ? formatter.format(rule.effectiveUntil) : '∞'
-  }`;
+
+  const from = rule.effectiveFrom ? formatter.format(rule.effectiveFrom) : '∞';
+  const until = rule.effectiveUntil ? formatter.format(rule.effectiveUntil) : '∞';
+  return `${from} → ${until}`;
 }
 
 function getBaseBreakdown(preview) {
@@ -101,7 +107,10 @@ function getBaseBreakdown(preview) {
     return [
       {
         amountIdr: calculation.totalAmountIdr,
-        detail: `${calculation.inputDurationMinutes} mnt diminta · ${calculation.billableDurationMinutes} mnt ditagih · ${calculation.billedIncrementCount} increment`,
+        detail:
+          `${calculation.inputDurationMinutes} mnt diminta · ` +
+          `${calculation.billableDurationMinutes} mnt ditagih · ` +
+          `${calculation.billedIncrementCount} increment`,
         label: 'Harga sesi',
       },
     ];
@@ -125,13 +134,17 @@ function getBaseBreakdown(preview) {
         label: 'Harga paket',
       },
     ];
+
     if (calculation.additionalAmountIdr > 0) {
       lines.push({
         amountIdr: calculation.additionalAmountIdr,
-        detail: `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ${calculation.billedAdditionalIncrementCount} increment`,
+        detail:
+          `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ` +
+          `${calculation.billedAdditionalIncrementCount} increment`,
         label: 'Waktu tambahan',
       });
     }
+
     return lines;
   }
 
@@ -142,22 +155,214 @@ function getBaseBreakdown(preview) {
       label: 'Harga dasar',
     },
   ];
+
   if (calculation.additionalAmountIdr > 0) {
     lines.push({
       amountIdr: calculation.additionalAmountIdr,
-      detail: `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ${calculation.billedAdditionalIncrementCount} increment`,
+      detail:
+        `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ` +
+        `${calculation.billedAdditionalIncrementCount} increment`,
       label: 'Waktu tambahan',
     });
   }
+
   return lines;
 }
 
 function getAddOnDetail(item) {
-  if (item.pricingType === ADD_ON_PRICING_TYPES.FIXED) return 'Dipilih 1 kali';
+  if (item.pricingType === ADD_ON_PRICING_TYPES.FIXED) {
+    return 'Dipilih 1 kali';
+  }
   if (item.pricingType === ADD_ON_PRICING_TYPES.QUANTITY) {
     return `${item.quantity} × ${formatIntegerIdr(item.unitAmountIdr)}`;
   }
-  return `${item.inputDurationMinutes} mnt diminta · ${item.billedDurationMinutes} mnt ditagih · ${item.billedIncrementCount} increment`;
+  return (
+    `${item.inputDurationMinutes} mnt diminta · ` +
+    `${item.billedDurationMinutes} mnt ditagih · ` +
+    `${item.billedIncrementCount} increment`
+  );
+}
+
+function PricingPreviewRuleCard({
+  rule,
+  sessionType,
+  studioLoadState,
+  studioRooms,
+}) {
+  const active = rule.status === PRICING_RULE_STATUSES.ACTIVE;
+
+  return (
+    <>
+      <div className="pricing-preview__rule-card">
+        <div className="pricing-preview__rule-heading">
+          <div>
+            <strong>{rule.name}</strong>
+            <span>{formatPricingRuleConfigurationSummary(rule)}</span>
+          </div>
+          <Badge tone={active ? 'success' : 'neutral'}>
+            {active ? 'Aktif' : 'Nonaktif'}
+          </Badge>
+        </div>
+
+        <dl className="pricing-preview__facts">
+          <div>
+            <dt>Session</dt>
+            <dd>
+              {sessionType
+                ? `${sessionType.name} · ${sessionType.code}`
+                : rule.sessionTypeId}
+            </dd>
+          </div>
+          <div>
+            <dt>Studio scope</dt>
+            <dd>{formatStudioScopeLabel(rule.studioId, studioRooms)}</dd>
+          </div>
+          <div>
+            <dt>Priority</dt>
+            <dd>{rule.priority}</dd>
+          </div>
+          <div>
+            <dt>Effective</dt>
+            <dd>{formatEffectiveWindow(rule)}</dd>
+          </div>
+        </dl>
+
+        {rule.studioId !== null && studioLoadState !== 'ready' ? (
+          <small>
+            Nama room tidak tersedia pada akun/koneksi ini; simulator tetap memakai exact studio
+            ID yang tersimpan pada rule.
+          </small>
+        ) : null}
+      </div>
+
+      {!active ? (
+        <div className="settings-notice" data-tone="warning" role="status">
+          <strong>Rule ini nonaktif.</strong>
+          <span>
+            Angka di bawah hanya simulasi dan tidak membuat rule tersedia untuk booking baru.
+          </span>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function PricingPreviewAddOn({ addOn, input, onFieldChange, onToggle }) {
+  const selected = Boolean(input?.selected);
+  const inactive = addOn.status !== ADD_ON_STATUSES.ACTIVE;
+
+  return (
+    <div
+      className="pricing-preview__addon"
+      data-disabled={inactive || undefined}
+    >
+      <label className="price-session-switch">
+        <input
+          type="checkbox"
+          checked={selected}
+          aria-label={`Pilih add-on ${addOn.name}`}
+          onChange={onToggle}
+        />
+        <span>
+          <strong>
+            {addOn.name}
+            {inactive ? ' · nonaktif' : ''}
+          </strong>
+          <small>{formatAddOnPricingSummary(addOn)}</small>
+        </span>
+      </label>
+
+      {selected && addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? (
+        <Input
+          type="number"
+          label={`Jumlah ${addOn.name}`}
+          value={input?.quantity ?? '1'}
+          min={1}
+          step={1}
+          required
+          onChange={(event) => onFieldChange('quantity', event.target.value)}
+        />
+      ) : null}
+
+      {selected && addOn.pricingType === ADD_ON_PRICING_TYPES.TIME ? (
+        <DurationMinutesField
+          label={`Durasi ${addOn.name}`}
+          value={input?.durationMinutes ?? ''}
+          required
+          description="Durasi add-on merupakan transaction input terpisah dari konfigurasi Settings."
+          onValueChange={(value) => onFieldChange('durationMinutes', value)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PricingPreviewResult({ addOnById, error, preview }) {
+  if (error) {
+    return (
+      <div className="settings-notice" data-tone="warning" role="status">
+        <strong>Preview belum dapat dihitung.</strong>
+        <span>{error}</span>
+      </div>
+    );
+  }
+
+  if (!preview) {
+    return (
+      <div className="pricing-preview__placeholder">
+        <strong>Pilih rule untuk mulai simulasi.</strong>
+        <span>Breakdown akan muncul tanpa menyimpan atau mengubah konfigurasi.</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="pricing-preview__total">
+        <span>Total preview</span>
+        <strong>{formatIntegerIdr(preview.totalAmountIdr)}</strong>
+      </div>
+
+      <div
+        className="pricing-preview__breakdown"
+        aria-label="Breakdown pricing preview"
+      >
+        {getBaseBreakdown(preview).map((line) => (
+          <div
+            className="pricing-preview__line"
+            key={`${line.label}-${line.amountIdr}`}
+          >
+            <div>
+              <strong>{line.label}</strong>
+              <span>{line.detail}</span>
+            </div>
+            <b>{formatIntegerIdr(line.amountIdr)}</b>
+          </div>
+        ))}
+
+        {preview.addOnCalculation.items.map((item) => {
+          const addOn = addOnById.get(item.addOnId);
+          return (
+            <div className="pricing-preview__line" key={item.addOnId}>
+              <div>
+                <strong>Add-on · {addOn?.name ?? item.addOnId}</strong>
+                <span>{getAddOnDetail(item)}</span>
+              </div>
+              <b>{formatIntegerIdr(item.totalAmountIdr)}</b>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="pricing-preview__footnote">
+        <strong>Belum termasuk discount atau manual override.</strong>
+        <span>
+          Dua concern itu tetap memakai calculator/authorization contract terpisah dan tidak
+          diimprovisasi oleh simulator ini.
+        </span>
+      </div>
+    </>
+  );
 }
 
 export function PricingPreviewSection({
@@ -177,14 +382,21 @@ export function PricingPreviewSection({
   const [selectedRuleId, setSelectedRuleId] = useState('');
   const [studioLoadState, setStudioLoadState] = useState('loading');
   const [studioRooms, setStudioRooms] = useState([]);
-  const canViewStudios = hasCapability(access, CAPABILITIES.SETTINGS_STUDIO_VIEW);
+
+  const canViewStudios = hasCapability(
+    access,
+    CAPABILITIES.SETTINGS_STUDIO_VIEW,
+  );
 
   useEffect(() => {
     let active = true;
     setLoadError('');
     setLoadState('loading');
 
-    Promise.all([pricingRulesRepository.listPricingRules(), addOnsRepository.listAddOns()])
+    Promise.all([
+      pricingRulesRepository.listPricingRules(),
+      addOnsRepository.listAddOns(),
+    ])
       .then(([nextRules, nextAddOns]) => {
         if (!active) return;
         setPricingRules([...nextRules]);
@@ -251,7 +463,8 @@ export function PricingPreviewSection({
       selectedRule
         ? addOns.filter(
             (addOn) =>
-              addOn.sessionTypeId === null || addOn.sessionTypeId === selectedRule.sessionTypeId,
+              addOn.sessionTypeId === null ||
+              addOn.sessionTypeId === selectedRule.sessionTypeId,
           )
         : [],
     [addOns, selectedRule],
@@ -259,16 +472,19 @@ export function PricingPreviewSection({
   const ruleOptions = useMemo(
     () =>
       pricingRules.map((rule) => ({
-        label: `${rule.name} · ${getPricingRuleModelLabel(rule.pricingModel)} · ${
-          rule.status === PRICING_RULE_STATUSES.ACTIVE ? 'aktif' : 'nonaktif'
-        }`,
+        label:
+          `${rule.name} · ${getPricingRuleModelLabel(rule.pricingModel)} · ` +
+          `${rule.status === PRICING_RULE_STATUSES.ACTIVE ? 'aktif' : 'nonaktif'}`,
         value: rule.id,
       })),
     [pricingRules],
   );
 
   useEffect(() => {
-    if (selectedRuleId && !pricingRules.some((rule) => rule.id === selectedRuleId)) {
+    if (
+      selectedRuleId &&
+      !pricingRules.some((rule) => rule.id === selectedRuleId)
+    ) {
       setSelectedRuleId('');
     }
   }, [pricingRules, selectedRuleId]);
@@ -298,15 +514,18 @@ export function PricingPreviewSection({
                 : null,
           };
         });
-      const value = buildPricingPreview({
-        addOns: addOnSelections,
-        durationMinutes:
-          selectedRule.pricingModel === PRICING_RULE_MODELS.FIXED_SESSION
-            ? null
-            : Number(durationMinutes),
-        pricingRule: selectedRule,
-      });
-      return { error: null, value };
+
+      return {
+        error: null,
+        value: buildPricingPreview({
+          addOns: addOnSelections,
+          durationMinutes:
+            selectedRule.pricingModel === PRICING_RULE_MODELS.FIXED_SESSION
+              ? null
+              : Number(durationMinutes),
+          pricingRule: selectedRule,
+        }),
+      };
     } catch (error) {
       return { error: getPreviewErrorMessage(error), value: null };
     }
@@ -326,7 +545,8 @@ export function PricingPreviewSection({
             addOn.pricingType === ADD_ON_PRICING_TYPES.TIME
               ? durationMinutes || String(addOn.configuration.incrementMinutes)
               : '',
-          quantity: addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? '1' : '',
+          quantity:
+            addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? '1' : '',
           selected: true,
         },
       };
@@ -343,11 +563,15 @@ export function PricingPreviewSection({
     }));
   };
 
-  const sessionType = selectedRule ? sessionTypeById.get(selectedRule.sessionTypeId) : null;
-  const baseBreakdown = previewState.value ? getBaseBreakdown(previewState.value) : [];
+  const sessionType = selectedRule
+    ? sessionTypeById.get(selectedRule.sessionTypeId)
+    : null;
 
   return (
-    <section className="settings-card pricing-preview" aria-labelledby="pricing-preview-heading">
+    <section
+      className="settings-card pricing-preview"
+      aria-labelledby="pricing-preview-heading"
+    >
       <header className="settings-card__header settings-card__header--with-action">
         <div>
           <p className="settings-card__eyebrow">Simulasi</p>
@@ -369,7 +593,11 @@ export function PricingPreviewSection({
       </div>
 
       {loadState === 'loading' ? (
-        <div className="settings-state settings-state--embedded" aria-busy="true" aria-live="polite">
+        <div
+          className="settings-state settings-state--embedded"
+          aria-busy="true"
+          aria-live="polite"
+        >
           <span className="settings-state__spinner" aria-hidden="true" />
           <div>
             <p className="settings-state__title">Menyiapkan pricing preview</p>
@@ -381,12 +609,20 @@ export function PricingPreviewSection({
       ) : null}
 
       {loadState === 'error' ? (
-        <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
+        <div
+          className="settings-state settings-state--embedded"
+          data-tone="danger"
+          role="alert"
+        >
           <div>
             <p className="settings-state__title">Pricing preview belum tersedia</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
-          <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setReloadKey((value) => value + 1)}
+          >
             Coba lagi preview
           </Button>
         </div>
@@ -417,55 +653,16 @@ export function PricingPreviewSection({
             />
 
             {selectedRule ? (
-              <div className="pricing-preview__rule-card">
-                <div className="pricing-preview__rule-heading">
-                  <div>
-                    <strong>{selectedRule.name}</strong>
-                    <span>{formatPricingRuleConfigurationSummary(selectedRule)}</span>
-                  </div>
-                  <Badge
-                    tone={
-                      selectedRule.status === PRICING_RULE_STATUSES.ACTIVE ? 'success' : 'neutral'
-                    }
-                  >
-                    {selectedRule.status === PRICING_RULE_STATUSES.ACTIVE ? 'Aktif' : 'Nonaktif'}
-                  </Badge>
-                </div>
-                <dl className="pricing-preview__facts">
-                  <div>
-                    <dt>Session</dt>
-                    <dd>{sessionType ? `${sessionType.name} · ${sessionType.code}` : selectedRule.sessionTypeId}</dd>
-                  </div>
-                  <div>
-                    <dt>Studio scope</dt>
-                    <dd>{formatStudioScopeLabel(selectedRule.studioId, studioRooms)}</dd>
-                  </div>
-                  <div>
-                    <dt>Priority</dt>
-                    <dd>{selectedRule.priority}</dd>
-                  </div>
-                  <div>
-                    <dt>Effective</dt>
-                    <dd>{formatEffectiveWindow(selectedRule)}</dd>
-                  </div>
-                </dl>
-                {selectedRule.studioId !== null && studioLoadState !== 'ready' ? (
-                  <small>
-                    Nama room tidak tersedia pada akun/koneksi ini; simulator tetap memakai exact
-                    studio ID yang tersimpan pada rule.
-                  </small>
-                ) : null}
-              </div>
+              <PricingPreviewRuleCard
+                rule={selectedRule}
+                sessionType={sessionType}
+                studioLoadState={studioLoadState}
+                studioRooms={studioRooms}
+              />
             ) : null}
 
-            {selectedRule && selectedRule.status === PRICING_RULE_STATUSES.DISABLED ? (
-              <div className="settings-notice" data-tone="warning" role="status">
-                <strong>Rule ini nonaktif.</strong>
-                <span>Angka di bawah hanya simulasi dan tidak membuat rule tersedia untuk booking baru.</span>
-              </div>
-            ) : null}
-
-            {selectedRule && selectedRule.pricingModel !== PRICING_RULE_MODELS.FIXED_SESSION ? (
+            {selectedRule &&
+            selectedRule.pricingModel !== PRICING_RULE_MODELS.FIXED_SESSION ? (
               <DurationMinutesField
                 label="Contoh durasi session"
                 value={durationMinutes}
@@ -480,113 +677,38 @@ export function PricingPreviewSection({
                 <div className="pricing-preview__subheading">
                   <strong>Add-ons</strong>
                   <span>
-                    Hanya add-on general atau yang scoped ke session {sessionType?.name ?? selectedRule.sessionTypeId}.
+                    Hanya add-on general atau yang scoped ke session{' '}
+                    {sessionType?.name ?? selectedRule.sessionTypeId}.
                   </span>
                 </div>
 
                 {applicableAddOns.length === 0 ? (
-                  <p className="pricing-preview__muted">Tidak ada add-on yang applicable untuk session ini.</p>
+                  <p className="pricing-preview__muted">
+                    Tidak ada add-on yang applicable untuk session ini.
+                  </p>
                 ) : (
-                  applicableAddOns.map((addOn) => {
-                    const selected = Boolean(selectedAddOns[addOn.id]?.selected);
-                    const inactive = addOn.status !== ADD_ON_STATUSES.ACTIVE;
-                    return (
-                      <div className="pricing-preview__addon" key={addOn.id} data-disabled={inactive || undefined}>
-                        <label className="price-session-switch">
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            aria-label={`Pilih add-on ${addOn.name}`}
-                            onChange={() => toggleAddOn(addOn)}
-                          />
-                          <span>
-                            <strong>{addOn.name}{inactive ? ' · nonaktif' : ''}</strong>
-                            <small>{formatAddOnPricingSummary(addOn)}</small>
-                          </span>
-                        </label>
-
-                        {selected && addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? (
-                          <Input
-                            type="number"
-                            label={`Jumlah ${addOn.name}`}
-                            value={selectedAddOns[addOn.id]?.quantity ?? '1'}
-                            min={1}
-                            step={1}
-                            required
-                            onChange={(event) => setAddOnField(addOn.id, 'quantity', event.target.value)}
-                          />
-                        ) : null}
-
-                        {selected && addOn.pricingType === ADD_ON_PRICING_TYPES.TIME ? (
-                          <DurationMinutesField
-                            label={`Durasi ${addOn.name}`}
-                            value={selectedAddOns[addOn.id]?.durationMinutes ?? ''}
-                            required
-                            description="Durasi add-on merupakan transaction input terpisah dari konfigurasi Settings."
-                            onValueChange={(value) => setAddOnField(addOn.id, 'durationMinutes', value)}
-                          />
-                        ) : null}
-                      </div>
-                    );
-                  })
+                  applicableAddOns.map((addOn) => (
+                    <PricingPreviewAddOn
+                      key={addOn.id}
+                      addOn={addOn}
+                      input={selectedAddOns[addOn.id]}
+                      onToggle={() => toggleAddOn(addOn)}
+                      onFieldChange={(fieldName, value) =>
+                        setAddOnField(addOn.id, fieldName, value)
+                      }
+                    />
+                  ))
                 )}
               </div>
             ) : null}
           </div>
 
           <div className="pricing-preview__result" aria-live="polite">
-            {!selectedRule ? (
-              <div className="pricing-preview__placeholder">
-                <strong>Pilih rule untuk mulai simulasi.</strong>
-                <span>Breakdown akan muncul tanpa menyimpan atau mengubah konfigurasi.</span>
-              </div>
-            ) : null}
-
-            {selectedRule && previewState.error ? (
-              <div className="settings-notice" data-tone="warning" role="status">
-                <strong>Preview belum dapat dihitung.</strong>
-                <span>{previewState.error}</span>
-              </div>
-            ) : null}
-
-            {previewState.value ? (
-              <>
-                <div className="pricing-preview__total">
-                  <span>Total preview</span>
-                  <strong>{formatIntegerIdr(previewState.value.totalAmountIdr)}</strong>
-                </div>
-                <div className="pricing-preview__breakdown" aria-label="Breakdown pricing preview">
-                  {baseBreakdown.map((line) => (
-                    <div className="pricing-preview__line" key={`${line.label}-${line.amountIdr}`}>
-                      <div>
-                        <strong>{line.label}</strong>
-                        <span>{line.detail}</span>
-                      </div>
-                      <b>{formatIntegerIdr(line.amountIdr)}</b>
-                    </div>
-                  ))}
-                  {previewState.value.addOnCalculation.items.map((item) => {
-                    const addOn = addOnById.get(item.addOnId);
-                    return (
-                      <div className="pricing-preview__line" key={item.addOnId}>
-                        <div>
-                          <strong>Add-on · {addOn?.name ?? item.addOnId}</strong>
-                          <span>{getAddOnDetail(item)}</span>
-                        </div>
-                        <b>{formatIntegerIdr(item.totalAmountIdr)}</b>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="pricing-preview__footnote">
-                  <strong>Belum termasuk discount atau manual override.</strong>
-                  <span>
-                    Dua concern itu tetap memakai calculator/authorization contract terpisah dan tidak
-                    diimprovisasi oleh simulator ini.
-                  </span>
-                </div>
-              </>
-            ) : null}
+            <PricingPreviewResult
+              addOnById={addOnById}
+              error={selectedRule ? previewState.error : null}
+              preview={previewState.value}
+            />
           </div>
         </div>
       ) : null}
