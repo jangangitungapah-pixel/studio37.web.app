@@ -135,9 +135,9 @@ describe('buildPricingPreview', () => {
       pricingModel: PRICING_RULE_MODELS.DURATION_PACKAGE,
     });
 
-    expect(() =>
-      buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule }),
-    ).toThrow(/extra time is blocked by the configured package/i);
+    expect(() => buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule })).toThrow(
+      /extra time is blocked by the configured package/i,
+    );
   });
 
   it('preserves the canonical another-package failure instead of auto-resolving siblings', () => {
@@ -154,9 +154,9 @@ describe('buildPricingPreview', () => {
       pricingModel: PRICING_RULE_MODELS.DURATION_PACKAGE,
     });
 
-    expect(() =>
-      buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule }),
-    ).toThrow(/extra time requires another package/i);
+    expect(() => buildPricingPreview({ addOns: [], durationMinutes: 240, pricingRule })).toThrow(
+      /extra time requires another package/i,
+    );
   });
 
   it('uses the canonical base-plus-additional calculator', () => {
