@@ -4,10 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { ADD_ON_PRICING_TYPES } from '../pricing/addOnPricing.js';
-import {
-  PRICING_RULE_MODELS,
-  PRICING_RULE_ROUNDING_MODES,
-} from '../pricing/pricingRules.js';
+import { PRICING_RULE_MODELS, PRICING_RULE_ROUNDING_MODES } from '../pricing/pricingRules.js';
 import { PricingPreviewSection } from './PricingPreviewSection.jsx';
 
 const FIXTURE_TIME = new Date('2026-09-02T02:00:00.000Z');
