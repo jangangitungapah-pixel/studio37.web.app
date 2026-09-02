@@ -183,12 +183,7 @@ function getAddOnDetail(item) {
   );
 }
 
-function PricingPreviewRuleCard({
-  rule,
-  sessionType,
-  studioLoadState,
-  studioRooms,
-}) {
+function PricingPreviewRuleCard({ rule, sessionType, studioLoadState, studioRooms }) {
   const active = rule.status === PRICING_RULE_STATUSES.ACTIVE;
 
   return (
@@ -199,19 +194,13 @@ function PricingPreviewRuleCard({
             <strong>{rule.name}</strong>
             <span>{formatPricingRuleConfigurationSummary(rule)}</span>
           </div>
-          <Badge tone={active ? 'success' : 'neutral'}>
-            {active ? 'Aktif' : 'Nonaktif'}
-          </Badge>
+          <Badge tone={active ? 'success' : 'neutral'}>{active ? 'Aktif' : 'Nonaktif'}</Badge>
         </div>
 
         <dl className="pricing-preview__facts">
           <div>
             <dt>Session</dt>
-            <dd>
-              {sessionType
-                ? `${sessionType.name} · ${sessionType.code}`
-                : rule.sessionTypeId}
-            </dd>
+            <dd>{sessionType ? `${sessionType.name} · ${sessionType.code}` : rule.sessionTypeId}</dd>
           </div>
           <div>
             <dt>Studio scope</dt>
@@ -229,8 +218,8 @@ function PricingPreviewRuleCard({
 
         {rule.studioId !== null && studioLoadState !== 'ready' ? (
           <small>
-            Nama room tidak tersedia pada akun/koneksi ini; simulator tetap memakai exact studio
-            ID yang tersimpan pada rule.
+            Nama room tidak tersedia pada akun/koneksi ini; simulator tetap memakai exact studio ID
+            yang tersimpan pada rule.
           </small>
         ) : null}
       </div>
@@ -252,10 +241,7 @@ function PricingPreviewAddOn({ addOn, input, onFieldChange, onToggle }) {
   const inactive = addOn.status !== ADD_ON_STATUSES.ACTIVE;
 
   return (
-    <div
-      className="pricing-preview__addon"
-      data-disabled={inactive || undefined}
-    >
+    <div className="pricing-preview__addon" data-disabled={inactive || undefined}>
       <label className="price-session-switch">
         <input
           type="checkbox"
@@ -323,15 +309,9 @@ function PricingPreviewResult({ addOnById, error, preview }) {
         <strong>{formatIntegerIdr(preview.totalAmountIdr)}</strong>
       </div>
 
-      <div
-        className="pricing-preview__breakdown"
-        aria-label="Breakdown pricing preview"
-      >
+      <div className="pricing-preview__breakdown" aria-label="Breakdown pricing preview">
         {getBaseBreakdown(preview).map((line) => (
-          <div
-            className="pricing-preview__line"
-            key={`${line.label}-${line.amountIdr}`}
-          >
+          <div className="pricing-preview__line" key={`${line.label}-${line.amountIdr}`}>
             <div>
               <strong>{line.label}</strong>
               <span>{line.detail}</span>
@@ -383,20 +363,14 @@ export function PricingPreviewSection({
   const [studioLoadState, setStudioLoadState] = useState('loading');
   const [studioRooms, setStudioRooms] = useState([]);
 
-  const canViewStudios = hasCapability(
-    access,
-    CAPABILITIES.SETTINGS_STUDIO_VIEW,
-  );
+  const canViewStudios = hasCapability(access, CAPABILITIES.SETTINGS_STUDIO_VIEW);
 
   useEffect(() => {
     let active = true;
     setLoadError('');
     setLoadState('loading');
 
-    Promise.all([
-      pricingRulesRepository.listPricingRules(),
-      addOnsRepository.listAddOns(),
-    ])
+    Promise.all([pricingRulesRepository.listPricingRules(), addOnsRepository.listAddOns()])
       .then(([nextRules, nextAddOns]) => {
         if (!active) return;
         setPricingRules([...nextRules]);
@@ -454,17 +428,13 @@ export function PricingPreviewSection({
     () => new Map(sessionTypes.map((sessionType) => [sessionType.id, sessionType])),
     [sessionTypes],
   );
-  const addOnById = useMemo(
-    () => new Map(addOns.map((addOn) => [addOn.id, addOn])),
-    [addOns],
-  );
+  const addOnById = useMemo(() => new Map(addOns.map((addOn) => [addOn.id, addOn])), [addOns]);
   const applicableAddOns = useMemo(
     () =>
       selectedRule
         ? addOns.filter(
             (addOn) =>
-              addOn.sessionTypeId === null ||
-              addOn.sessionTypeId === selectedRule.sessionTypeId,
+              addOn.sessionTypeId === null || addOn.sessionTypeId === selectedRule.sessionTypeId,
           )
         : [],
     [addOns, selectedRule],
@@ -481,10 +451,7 @@ export function PricingPreviewSection({
   );
 
   useEffect(() => {
-    if (
-      selectedRuleId &&
-      !pricingRules.some((rule) => rule.id === selectedRuleId)
-    ) {
+    if (selectedRuleId && !pricingRules.some((rule) => rule.id === selectedRuleId)) {
       setSelectedRuleId('');
     }
   }, [pricingRules, selectedRuleId]);
@@ -509,9 +476,7 @@ export function PricingPreviewSection({
                 ? Number(input.durationMinutes)
                 : null,
             quantity:
-              addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY
-                ? Number(input.quantity)
-                : null,
+              addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? Number(input.quantity) : null,
           };
         });
 
@@ -545,8 +510,7 @@ export function PricingPreviewSection({
             addOn.pricingType === ADD_ON_PRICING_TYPES.TIME
               ? durationMinutes || String(addOn.configuration.incrementMinutes)
               : '',
-          quantity:
-            addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? '1' : '',
+          quantity: addOn.pricingType === ADD_ON_PRICING_TYPES.QUANTITY ? '1' : '',
           selected: true,
         },
       };
@@ -563,15 +527,10 @@ export function PricingPreviewSection({
     }));
   };
 
-  const sessionType = selectedRule
-    ? sessionTypeById.get(selectedRule.sessionTypeId)
-    : null;
+  const sessionType = selectedRule ? sessionTypeById.get(selectedRule.sessionTypeId) : null;
 
   return (
-    <section
-      className="settings-card pricing-preview"
-      aria-labelledby="pricing-preview-heading"
-    >
+    <section className="settings-card pricing-preview" aria-labelledby="pricing-preview-heading">
       <header className="settings-card__header settings-card__header--with-action">
         <div>
           <p className="settings-card__eyebrow">Simulasi</p>
@@ -609,20 +568,12 @@ export function PricingPreviewSection({
       ) : null}
 
       {loadState === 'error' ? (
-        <div
-          className="settings-state settings-state--embedded"
-          data-tone="danger"
-          role="alert"
-        >
+        <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
           <div>
             <p className="settings-state__title">Pricing preview belum tersedia</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setReloadKey((value) => value + 1)}
-          >
+          <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
             Coba lagi preview
           </Button>
         </div>
@@ -661,8 +612,7 @@ export function PricingPreviewSection({
               />
             ) : null}
 
-            {selectedRule &&
-            selectedRule.pricingModel !== PRICING_RULE_MODELS.FIXED_SESSION ? (
+            {selectedRule && selectedRule.pricingModel !== PRICING_RULE_MODELS.FIXED_SESSION ? (
               <DurationMinutesField
                 label="Contoh durasi session"
                 value={durationMinutes}
