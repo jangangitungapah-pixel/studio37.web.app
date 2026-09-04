@@ -23,6 +23,9 @@ export const PRICING_CONFIGURATION_ISSUE_CODES = Object.freeze({
   UNVERIFIED_STUDIO_REFERENCE: 'unverified_studio_reference',
 });
 
+const DEFAULT_CANDIDATE_ID = '__pricing-rule-candidate__';
+const supportedCandidateStatuses = new Set(Object.values(PRICING_RULE_STATUSES));
+
 function requireArray(value, label) {
   if (!Array.isArray(value)) {
     throw new TypeError(`${label} must be an array.`);
@@ -37,6 +40,28 @@ function createIssue({ code, message, ruleIds = [], severity }) {
     message,
     ruleIds: Object.freeze([...ruleIds]),
     severity,
+  });
+}
+
+function createValidationResult(issues, { complete }) {
+  const frozenIssues = Object.freeze([...issues]);
+  const errors = Object.freeze(
+    frozenIssues.filter(
+      (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR,
+    ),
+  );
+  const warnings = Object.freeze(
+    frozenIssues.filter(
+      (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.WARNING,
+    ),
+  );
+
+  return Object.freeze({
+    blocking: errors.length > 0,
+    complete,
+    errors,
+    issues: frozenIssues,
+    warnings,
   });
 }
 
@@ -205,18 +230,61 @@ export function validatePricingConfiguration({
 
   collectAmbiguityIssues(validActiveRules, issues);
 
-  const errors = issues.filter(
-    (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR,
+  return createValidationResult(issues, { complete: !validationIncomplete });
+}
+
+export function validatePricingRuleCandidate({
+  candidateDetails,
+  candidateId = DEFAULT_CANDIDATE_ID,
+  candidateStatus = PRICING_RULE_STATUSES.ACTIVE,
+  limitReached = false,
+  pricingRules,
+  sessionTypes,
+  studioReferencesAvailable = true,
+  studioRooms = [],
+}) {
+  requireArray(pricingRules, 'pricingRules');
+  requireArray(sessionTypes, 'sessionTypes');
+  requireArray(studioRooms, 'studioRooms');
+
+  if (!candidateDetails || typeof candidateDetails !== 'object' || Array.isArray(candidateDetails)) {
+    throw new TypeError('candidateDetails must be an object.');
+  }
+
+  if (typeof candidateId !== 'string' || !candidateId.trim()) {
+    throw new TypeError('candidateId must be a non-empty string.');
+  }
+
+  if (!supportedCandidateStatuses.has(candidateStatus)) {
+    throw new RangeError('candidateStatus is not supported.');
+  }
+
+  const normalizedCandidateId = candidateId.trim();
+  const candidateRule = {
+    ...candidateDetails,
+    id: normalizedCandidateId,
+    status: candidateStatus,
+  };
+  const nextPricingRules = pricingRules.filter((rule) => rule.id !== normalizedCandidateId);
+  nextPricingRules.push(candidateRule);
+
+  const fullValidation = validatePricingConfiguration({
+    limitReached,
+    pricingRules: nextPricingRules,
+    sessionTypes,
+    studioReferencesAvailable,
+    studioRooms,
+  });
+  const candidateIssues = fullValidation.issues.filter(
+    (issue) =>
+      issue.code === PRICING_CONFIGURATION_ISSUE_CODES.SATURATED_RULE_SET ||
+      issue.ruleIds.includes(normalizedCandidateId),
   );
-  const warnings = issues.filter(
-    (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.WARNING,
+  const candidateValidationIncomplete = candidateIssues.some(
+    (issue) =>
+      issue.code === PRICING_CONFIGURATION_ISSUE_CODES.SATURATED_RULE_SET ||
+      issue.code === PRICING_CONFIGURATION_ISSUE_CODES.UNVERIFIED_STUDIO_REFERENCE,
   );
 
-  return Object.freeze({
-    blocking: errors.length > 0,
-    complete: !validationIncomplete,
-    errors: Object.freeze(errors),
-    issues: Object.freeze(issues),
-    warnings: Object.freeze(warnings),
-  });
+  return createValidationResult(candidateIssues, { complete: !candidateValidationIncomplete });
 }

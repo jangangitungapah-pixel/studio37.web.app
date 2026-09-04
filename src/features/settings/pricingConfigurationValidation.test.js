@@ -5,6 +5,7 @@ import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import {
   PRICING_CONFIGURATION_ISSUE_CODES,
   validatePricingConfiguration,
+  validatePricingRuleCandidate,
 } from './pricingConfigurationValidation.js';
 import { STUDIO_ROOM_STATUSES } from './studioRooms.js';
 
@@ -217,5 +218,91 @@ describe('validatePricingConfiguration', () => {
     expect(() =>
       validatePricingConfiguration({ pricingRules: null, sessionTypes: [], studioRooms: [] }),
     ).toThrow(TypeError);
+  });
+});
+
+describe('validatePricingRuleCandidate', () => {
+  it('blocks an active candidate that would create an ambiguity', () => {
+    const result = validatePricingRuleCandidate({
+      candidateDetails: createRule({ id: undefined, name: 'Duplicate rule' }),
+      pricingRules: [createRule()],
+      sessionTypes: [createSessionType()],
+      studioRooms: [],
+    });
+
+    expect(getCodes(result)).toContain(PRICING_CONFIGURATION_ISSUE_CODES.AMBIGUOUS_RULES);
+    expect(result.blocking).toBe(true);
+  });
+
+  it('allows a candidate whose effective window starts at the existing end boundary', () => {
+    const result = validatePricingRuleCandidate({
+      candidateDetails: createRule({
+        effectiveFrom: new Date('2026-10-01T00:00:00.000Z'),
+        effectiveUntil: null,
+        id: undefined,
+        name: 'Future rule',
+      }),
+      pricingRules: [
+        createRule({
+          effectiveFrom: new Date('2026-09-01T00:00:00.000Z'),
+          effectiveUntil: new Date('2026-10-01T00:00:00.000Z'),
+        }),
+      ],
+      sessionTypes: [createSessionType()],
+      studioRooms: [],
+    });
+
+    expect(result.blocking).toBe(false);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('does not let an unrelated existing ambiguity block a different candidate', () => {
+    const result = validatePricingRuleCandidate({
+      candidateDetails: createRule({
+        id: undefined,
+        name: 'Podcast fixed',
+        sessionTypeId: 'session-podcast',
+      }),
+      pricingRules: [
+        createRule(),
+        createRule({ id: 'rule-b', name: 'Existing duplicate' }),
+      ],
+      sessionTypes: [
+        createSessionType(),
+        createSessionType({ id: 'session-podcast', name: 'Podcast' }),
+      ],
+      studioRooms: [],
+    });
+
+    expect(result.blocking).toBe(false);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('blocks a candidate with a missing session reference', () => {
+    const result = validatePricingRuleCandidate({
+      candidateDetails: createRule({ id: undefined, sessionTypeId: 'session-missing' }),
+      pricingRules: [],
+      sessionTypes: [createSessionType()],
+      studioRooms: [],
+    });
+
+    expect(getCodes(result)).toContain(PRICING_CONFIGURATION_ISSUE_CODES.MISSING_SESSION_REFERENCE);
+    expect(result.blocking).toBe(true);
+  });
+
+  it('marks an exact-studio candidate incomplete when room references cannot be verified', () => {
+    const result = validatePricingRuleCandidate({
+      candidateDetails: createRule({ id: undefined, studioId: 'studio-a' }),
+      pricingRules: [],
+      sessionTypes: [createSessionType()],
+      studioReferencesAvailable: false,
+      studioRooms: [],
+    });
+
+    expect(getCodes(result)).toContain(
+      PRICING_CONFIGURATION_ISSUE_CODES.UNVERIFIED_STUDIO_REFERENCE,
+    );
+    expect(result.blocking).toBe(false);
+    expect(result.complete).toBe(false);
   });
 });
