@@ -357,7 +357,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Studio scope selector.
 - [x] Add-on configuration.
 - [x] Human-readable pricing preview.
-- [ ] Configuration validation/errors.
+- [x] Configuration validation/errors.
 
 ### Phase 5 gate
 
@@ -558,10 +558,22 @@ Phase 5 progress on 2026-08-24:
   add-on composition, exact-increment failures, and pricing-viewer boundaries. GitHub Actions
   Quality run `33911674929` passed formatting, zero-warning lint, the full unit/component suite,
   both Firestore Emulator authorization suites, production build, and Vite development-server smoke.
-- Effective-period controls, full model/package/effective-window configuration validation, discount
-  administration UI, Firestore Booking persistence, Booking add-on quantity/duration inputs,
-  server-authoritative override writes/timestamps, final responsive Price Settings browser
-  acceptance, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+- Phase 5B8 added pure configuration-health and candidate-write validation to Price Settings by
+  reusing canonical pricing-rule normalization plus the existing package-aware collision semantics.
+  Ambiguity checks now respect start-inclusive/end-exclusive effective windows, allow adjacent
+  non-overlapping windows and distinct package durations, and fail closed for malformed or saturated
+  candidate sets.
+- Price Settings now shows human-readable Valid/Warning/Blocking health, per-rule attention badges,
+  missing/inactive Session Type and Studio Room reference feedback, candidate-scoped save blocking,
+  and fail-closed reactivation when a rule is invalid, ambiguous, or cannot verify exact-studio
+  scope. No new Firestore query/write path or pricing calculator was added, and historical snapshots
+  remain untouched. GitHub Actions Quality run `33914931137` passed formatting, zero-warning lint,
+  the full unit/component suite, both Firestore Emulator authorization suites, production build, and
+  Vite development-server smoke.
+- Effective-period controls, discount administration UI, Firestore Booking persistence, Booking
+  add-on quantity/duration inputs, server-authoritative override writes/timestamps, final PRD-17
+  pricing matrix, historical-snapshot integration acceptance, final responsive Price Settings
+  browser acceptance, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -984,3 +996,4 @@ Implementation status:
   - [x] Phase 5B5 — general/exact studio scope selector, bounded room context, package-scope preservation, permission-aware behavior, and automated coverage implemented and quality-gated.
   - [x] Phase 5B6 — strict add-on configuration domain/repository/Security Rules plus fixed/quantity/time Price Settings administration and automated coverage implemented and quality-gated.
   - [x] Phase 5B7 — read-only human-readable pricing preview using canonical calculators, explicit persisted-rule selection, add-on composition, inactive-rule simulation, and automated coverage implemented and quality-gated.
+  - [x] Phase 5B8 — effective-window-aware configuration health, candidate-scoped save/reactivation validation, human-readable rule feedback, and automated coverage implemented and quality-gated.

@@ -16,6 +16,43 @@ function areDistinctDurationPackages(rule, details) {
   );
 }
 
+function getWindowBoundary(value, fallback, label) {
+  if (value === null || value === undefined) return fallback;
+
+  const date = value instanceof Date ? value : new Date(value);
+  const time = date.getTime();
+  if (!Number.isFinite(time)) {
+    throw new TypeError(`${label} must be a valid date or null.`);
+  }
+
+  return time;
+}
+
+export function doPricingRuleEffectiveWindowsOverlap(leftRule, rightRule) {
+  const leftStart = getWindowBoundary(
+    leftRule.effectiveFrom,
+    Number.NEGATIVE_INFINITY,
+    'leftRule.effectiveFrom',
+  );
+  const leftEnd = getWindowBoundary(
+    leftRule.effectiveUntil,
+    Number.POSITIVE_INFINITY,
+    'leftRule.effectiveUntil',
+  );
+  const rightStart = getWindowBoundary(
+    rightRule.effectiveFrom,
+    Number.NEGATIVE_INFINITY,
+    'rightRule.effectiveFrom',
+  );
+  const rightEnd = getWindowBoundary(
+    rightRule.effectiveUntil,
+    Number.POSITIVE_INFINITY,
+    'rightRule.effectiveUntil',
+  );
+
+  return leftStart < rightEnd && rightStart < leftEnd;
+}
+
 export function hasPricingRuleWriteCollision(pricingRules, details, { excludeId = null } = {}) {
   if (!Array.isArray(pricingRules)) {
     throw new TypeError('pricingRules must be an array.');
@@ -24,6 +61,7 @@ export function hasPricingRuleWriteCollision(pricingRules, details, { excludeId 
   return pricingRules.some((rule) => {
     if (rule.id === excludeId || rule.status !== PRICING_RULE_STATUSES.ACTIVE) return false;
     if (!isSameResolutionEnvelope(rule, details)) return false;
+    if (!doPricingRuleEffectiveWindowsOverlap(rule, details)) return false;
 
     return !areDistinctDurationPackages(rule, details);
   });

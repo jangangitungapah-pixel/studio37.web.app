@@ -95,6 +95,77 @@
   padding: var(--space-5);
 }
 
+.pricing-configuration-health {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4);
+}
+
+.pricing-configuration-health__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pricing-configuration-health__header > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pricing-configuration-health__eyebrow {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pricing-configuration-health__header h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 760;
+}
+
+.pricing-configuration-health__summary,
+.pricing-configuration-health__footnote {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.pricing-configuration-health__issues {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-configuration-health__issues li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.pricing-configuration-health__footnote {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+}
+
 .pricing-rule-scope-note {
   display: grid;
   gap: var(--space-1);
@@ -216,6 +287,15 @@
   .pricing-rule-row__meta {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .pricing-configuration-health__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pricing-configuration-health__issues li {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pricing-rule-config-panel {
