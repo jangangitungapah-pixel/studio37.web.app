@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { PRICING_RULE_MODELS, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
-import { hasPricingRuleWriteCollision } from './pricingRuleCollision.js';
+import {
+  doPricingRuleEffectiveWindowsOverlap,
+  hasPricingRuleWriteCollision,
+} from './pricingRuleCollision.js';
 
 function createRule(overrides = {}) {
   return {
     configuration: { amountIdr: 500000 },
+    effectiveFrom: null,
+    effectiveUntil: null,
     id: 'rule-a',
     pricingModel: PRICING_RULE_MODELS.FIXED_SESSION,
     priority: 100,
@@ -31,12 +36,64 @@ function createPackageRule(durationMinutes, overrides = {}) {
   });
 }
 
+describe('doPricingRuleEffectiveWindowsOverlap', () => {
+  it('treats unbounded windows as overlapping', () => {
+    expect(doPricingRuleEffectiveWindowsOverlap(createRule(), createRule())).toBe(true);
+  });
+
+  it('treats touching start/end boundaries as non-overlapping', () => {
+    const first = createRule({
+      effectiveFrom: new Date('2026-09-01T00:00:00.000Z'),
+      effectiveUntil: new Date('2026-10-01T00:00:00.000Z'),
+    });
+    const second = createRule({
+      effectiveFrom: new Date('2026-10-01T00:00:00.000Z'),
+      effectiveUntil: null,
+    });
+
+    expect(doPricingRuleEffectiveWindowsOverlap(first, second)).toBe(false);
+  });
+
+  it('detects a partial effective-window overlap', () => {
+    const first = createRule({
+      effectiveFrom: new Date('2026-09-01T00:00:00.000Z'),
+      effectiveUntil: new Date('2026-10-15T00:00:00.000Z'),
+    });
+    const second = createRule({
+      effectiveFrom: new Date('2026-10-01T00:00:00.000Z'),
+      effectiveUntil: new Date('2026-11-01T00:00:00.000Z'),
+    });
+
+    expect(doPricingRuleEffectiveWindowsOverlap(first, second)).toBe(true);
+  });
+
+  it('fails closed for malformed effective-window values', () => {
+    expect(() =>
+      doPricingRuleEffectiveWindowsOverlap(createRule({ effectiveFrom: 'not-a-date' }), createRule()),
+    ).toThrow(TypeError);
+  });
+});
+
 describe('hasPricingRuleWriteCollision', () => {
-  it('blocks an active non-package rule with the same session, studio scope, and priority', () => {
+  it('blocks an active non-package rule with the same session, studio scope, priority, and overlapping window', () => {
     const existing = createRule();
     const incoming = createRule({ id: undefined, name: 'new rule' });
 
     expect(hasPricingRuleWriteCollision([existing], incoming)).toBe(true);
+  });
+
+  it('allows the same resolution envelope when effective windows do not overlap', () => {
+    const existing = createRule({
+      effectiveFrom: new Date('2026-09-01T00:00:00.000Z'),
+      effectiveUntil: new Date('2026-10-01T00:00:00.000Z'),
+    });
+    const incoming = createRule({
+      effectiveFrom: new Date('2026-10-01T00:00:00.000Z'),
+      effectiveUntil: null,
+      id: undefined,
+    });
+
+    expect(hasPricingRuleWriteCollision([existing], incoming)).toBe(false);
   });
 
   it('allows distinct duration packages in the same resolution envelope', () => {
