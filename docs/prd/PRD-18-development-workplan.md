@@ -361,11 +361,11 @@ Phase 4 progress on 2026-08-22:
 
 ### Phase 5 gate
 
-- [ ] PRD-17 pricing matrix passes.
-- [ ] Existing snapshots remain stable after settings edits.
-- [ ] Invalid/ambiguous rules are blocked.
+- [x] PRD-17 pricing matrix passes.
+- [x] Existing snapshots remain stable after settings edits.
+- [x] Invalid/ambiguous rules are blocked.
 - [ ] Responsive Price Settings QA passes.
-- [ ] Lint/test/build pass.
+- [x] Lint/test/build pass.
 
 Phase 5 progress on 2026-08-24:
 
@@ -570,10 +570,21 @@ Phase 5 progress on 2026-08-24:
   remain untouched. GitHub Actions Quality run `33914931137` passed formatting, zero-warning lint,
   the full unit/component suite, both Firestore Emulator authorization suites, production build, and
   Vite development-server smoke.
+- Phase 5C added a final PRD-17 acceptance matrix that composes the canonical production pricing
+  modules for hourly exact/fractional/minimum cases, 3-hour and 6-hour packages, base-plus-additional,
+  studio-specific precedence, add-ons, fixed/percentage discounts, authorized manual override,
+  ambiguity rejection, inactive-rule exclusion, historical snapshot detachment, and final Settings
+  ambiguity blocking. GitHub Actions Quality run `33931263640` passed formatting, zero-warning lint,
+  the full unit/component suite, both Firestore Emulator authorization suites, production build, and
+  Vite development-server smoke.
+- Source-level responsive audit confirms Price Settings collapses preview, session rows, pricing-rule
+  rows, actions, facts, and configuration-health content through the existing 900/760/640/560px
+  breakpoints. Actual desktop/tablet/narrow-mobile browser acceptance remains required, so the
+  responsive Phase 5 gate stays open and Phase 5 remains in progress.
 - Effective-period controls, discount administration UI, Firestore Booking persistence, Booking
-  add-on quantity/duration inputs, server-authoritative override writes/timestamps, final PRD-17
-  pricing matrix, historical-snapshot integration acceptance, final responsive Price Settings
-  browser acceptance, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
+  add-on quantity/duration inputs, server-authoritative override writes/timestamps, and final
+  responsive Price Settings browser acceptance remain pending. The automated Phase 5 pricing gates
+  are accepted; Phase 5 remains in progress until browser responsive QA is recorded.
 
 ---
 
@@ -997,3 +1008,5 @@ Implementation status:
   - [x] Phase 5B6 — strict add-on configuration domain/repository/Security Rules plus fixed/quantity/time Price Settings administration and automated coverage implemented and quality-gated.
   - [x] Phase 5B7 — read-only human-readable pricing preview using canonical calculators, explicit persisted-rule selection, add-on composition, inactive-rule simulation, and automated coverage implemented and quality-gated.
   - [x] Phase 5B8 — effective-window-aware configuration health, candidate-scoped save/reactivation validation, human-readable rule feedback, and automated coverage implemented and quality-gated.
+  - [x] Phase 5C automated acceptance — PRD-17 pricing matrix, historical snapshot stability, ambiguity blocking, and final automated Quality accepted.
+  - [ ] Final Phase 5 Price Settings desktop/tablet/narrow-mobile browser acceptance pending.
