@@ -10,8 +10,12 @@ import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { PRICING_RULE_LIST_LIMIT, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { DurationPackagesWorkspace } from './DurationPackagesWorkspace.jsx';
+import {
+  PRICING_CONFIGURATION_ISSUE_SEVERITIES,
+  validatePricingConfiguration,
+  validatePricingRuleCandidate,
+} from './pricingConfigurationValidation.js';
 import { PricingRuleEditorDialog } from './PricingRuleEditorDialog.jsx';
-import { hasPricingRuleWriteCollision } from './pricingRuleCollision.js';
 import {
   formatPricingRuleConfigurationSummary,
   getPricingRuleModelLabel,
@@ -58,6 +62,34 @@ function formatEffectiveWindow(rule) {
   return `${formatDate(rule.effectiveFrom)} → ${formatDate(rule.effectiveUntil)}`;
 }
 
+function getConfigurationHealthView(validation) {
+  if (validation.blocking) {
+    return {
+      badge: 'Blocking',
+      title: 'Konfigurasi perlu diperbaiki',
+      tone: 'danger',
+    };
+  }
+
+  if (!validation.complete || validation.warnings.length > 0) {
+    return {
+      badge: validation.complete ? 'Warning' : 'Belum lengkap',
+      title: validation.complete ? 'Konfigurasi perlu perhatian' : 'Validasi belum lengkap',
+      tone: 'warning',
+    };
+  }
+
+  return {
+    badge: 'Valid',
+    title: 'Konfigurasi tervalidasi',
+    tone: 'success',
+  };
+}
+
+function getCandidateBlockingMessage(validation, fallback) {
+  return validation.errors[0]?.message ?? fallback;
+}
+
 export function PricingRulesSection({
   access,
   canEdit,
@@ -85,6 +117,7 @@ export function PricingRulesSection({
   const listLimit = repository.listLimit ?? PRICING_RULE_LIST_LIMIT;
   const limitReached = pricingRules.length >= listLimit;
   const canViewStudioRooms = hasCapability(access, CAPABILITIES.SETTINGS_STUDIO_VIEW);
+  const studioReferencesAvailable = studioLoadState === 'ready';
   const activeSessionTypes = useMemo(
     () => sessionTypes.filter((sessionType) => sessionType.status === SESSION_TYPE_STATUSES.ACTIVE),
     [sessionTypes],
@@ -93,6 +126,27 @@ export function PricingRulesSection({
     () => new Map(sessionTypes.map((sessionType) => [sessionType.id, sessionType])),
     [sessionTypes],
   );
+  const configurationValidation = useMemo(() => {
+    if (loadState !== 'ready') return null;
+
+    return validatePricingConfiguration({
+      limitReached,
+      pricingRules,
+      sessionTypes,
+      studioReferencesAvailable,
+      studioRooms,
+    });
+  }, [
+    limitReached,
+    loadState,
+    pricingRules,
+    sessionTypes,
+    studioReferencesAvailable,
+    studioRooms,
+  ]);
+  const configurationHealth = configurationValidation
+    ? getConfigurationHealthView(configurationValidation)
+    : null;
   const nextStatus =
     statusTarget?.status === PRICING_RULE_STATUSES.ACTIVE
       ? PRICING_RULE_STATUSES.DISABLED
@@ -195,12 +249,26 @@ export function PricingRulesSection({
       return;
     }
 
-    if (
-      (createsActiveRule || editsActiveRule) &&
-      hasPricingRuleWriteCollision(pricingRules, details, { excludeId: editingRule?.id ?? null })
-    ) {
+    const candidateValidation = validatePricingRuleCandidate({
+      candidateDetails: details,
+      candidateId: editingRule?.id,
+      candidateStatus:
+        createsActiveRule || editsActiveRule
+          ? PRICING_RULE_STATUSES.ACTIVE
+          : PRICING_RULE_STATUSES.DISABLED,
+      limitReached,
+      pricingRules,
+      sessionTypes,
+      studioReferencesAvailable,
+      studioRooms,
+    });
+
+    if (candidateValidation.blocking) {
       setDialogError(
-        'Ada pricing rule aktif yang berpotensi ambigu pada session, studio scope, dan priority yang sama. Duration package dengan durasi berbeda diperbolehkan; duplicate durasi tetap diblok.',
+        getCandidateBlockingMessage(
+          candidateValidation,
+          'Pricing rule belum lolos validasi konfigurasi sebelum disimpan.',
+        ),
       );
       return;
     }
@@ -251,18 +319,26 @@ export function PricingRulesSection({
     }
 
     if (nextStatus === PRICING_RULE_STATUSES.ACTIVE) {
-      if (limitReached) {
-        setStatusError(
-          `Aktivasi diblok saat batas ${listLimit} rule tercapai karena candidate set mungkin tidak lengkap.`,
-        );
-        return;
-      }
+      const activationValidation = validatePricingRuleCandidate({
+        candidateDetails: statusTarget,
+        candidateId: statusTarget.id,
+        candidateStatus: PRICING_RULE_STATUSES.ACTIVE,
+        limitReached,
+        pricingRules,
+        sessionTypes,
+        studioReferencesAvailable,
+        studioRooms,
+      });
 
-      if (
-        hasPricingRuleWriteCollision(pricingRules, statusTarget, { excludeId: statusTarget.id })
-      ) {
+      if (activationValidation.blocking || !activationValidation.complete) {
         setStatusError(
-          'Aktivasi diblok karena rule aktif lain membuat envelope ini berpotensi ambigu. Duration package dengan durasi berbeda tetap diperbolehkan.',
+          activationValidation.blocking
+            ? getCandidateBlockingMessage(
+                activationValidation,
+                'Aktivasi diblok karena konfigurasi rule belum valid.',
+              )
+            : activationValidation.warnings[0]?.message ??
+                'Aktivasi diblok sampai seluruh referensi rule dapat diverifikasi.',
         );
         return;
       }
@@ -386,6 +462,56 @@ export function PricingRulesSection({
         </div>
       ) : null}
 
+      {configurationValidation && configurationHealth ? (
+        <div
+          className="pricing-configuration-health"
+          data-tone={configurationHealth.tone}
+          role={configurationValidation.blocking ? 'alert' : 'status'}
+          aria-live="polite"
+        >
+          <div className="pricing-configuration-health__header">
+            <div>
+              <span className="pricing-configuration-health__eyebrow">Configuration health</span>
+              <h3>{configurationHealth.title}</h3>
+            </div>
+            <Badge tone={configurationHealth.tone}>{configurationHealth.badge}</Badge>
+          </div>
+          <p className="pricing-configuration-health__summary">
+            {configurationValidation.blocking
+              ? `${configurationValidation.errors.length} issue memblok save atau aktivasi yang akan memperburuk konfigurasi.`
+              : configurationValidation.issues.length > 0
+                ? `${configurationValidation.warnings.length} catatan perlu perhatian. Rule historis tetap tidak diubah.`
+                : 'Rule aktif lolos validasi shape, reference, package, priority, dan effective window.'}
+          </p>
+          {configurationValidation.issues.length > 0 ? (
+            <ul className="pricing-configuration-health__issues">
+              {configurationValidation.issues.map((issue, index) => (
+                <li key={`${issue.code}-${issue.ruleIds.join('-')}-${index}`}>
+                  <Badge
+                    tone={
+                      issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
+                        ? 'danger'
+                        : 'warning'
+                    }
+                  >
+                    {issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
+                      ? 'Error'
+                      : 'Warning'}
+                  </Badge>
+                  <span>{issue.message}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {!configurationValidation.complete ? (
+            <p className="pricing-configuration-health__footnote">
+              Validasi belum lengkap. Create/edit/reactivate yang membutuhkan candidate set atau
+              exact-studio reference yang belum dapat diverifikasi tetap fail-closed sesuai aksi.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       {loadState === 'ready' && pricingRules.length === 0 ? (
         <div className="pricing-rule-empty">
           <span className="settings-placeholder__dot" aria-hidden="true" />
@@ -404,6 +530,12 @@ export function PricingRulesSection({
           {pricingRules.map((rule) => {
             const isActive = rule.status === PRICING_RULE_STATUSES.ACTIVE;
             const sessionType = sessionTypeById.get(rule.sessionTypeId);
+            const ruleIssues =
+              configurationValidation?.issues.filter((issue) => issue.ruleIds.includes(rule.id)) ??
+              [];
+            const hasBlockingIssue = ruleIssues.some(
+              (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR,
+            );
 
             return (
               <article
@@ -425,6 +557,11 @@ export function PricingRulesSection({
                       {isActive ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                     <Badge tone="brand">{getPricingRuleModelLabel(rule.pricingModel)}</Badge>
+                    {ruleIssues.length > 0 ? (
+                      <Badge tone={hasBlockingIssue ? 'danger' : 'warning'}>
+                        {hasBlockingIssue ? 'Perlu diperbaiki' : 'Perlu perhatian'}
+                      </Badge>
+                    ) : null}
                   </div>
                   <div className="pricing-rule-row__meta">
                     <span>
@@ -480,10 +617,10 @@ export function PricingRulesSection({
       ) : null}
 
       <div className="pricing-rule-scope-note">
-        <strong>Yang belum dibuka setelah 5B5</strong>
+        <strong>Boundary Phase 5B8</strong>
         <span>
-          Effective period editor, add-on configuration, calculation preview, dan full
-          model/package/effective-window ambiguity validation tetap checkpoint berikutnya.
+          Effective period editor, discount administration, Booking integration, final PRD-17
+          pricing matrix, dan responsive browser acceptance tetap checkpoint terpisah.
         </span>
       </div>
 
@@ -506,7 +643,7 @@ export function PricingRulesSection({
         title={`${nextStatusLabel} ${statusTarget?.name ?? 'pricing rule'}?`}
         description={
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Rule akan kembali ikut resolusi harga untuk booking baru setelah package-aware collision guard lolos.'
+            ? 'Rule akan kembali ikut resolusi harga untuk booking baru hanya setelah candidate validation lolos.'
             : 'Rule tidak lagi dipilih untuk pricing baru, tetapi snapshot dan referensi historis tetap dipertahankan.'
         }
         onClose={closeStatusDialog}
@@ -538,7 +675,7 @@ export function PricingRulesSection({
             <span>
               {nextStatus === PRICING_RULE_STATUSES.DISABLED
                 ? 'Tidak ada hard delete. Histori pricing yang sudah tersnapshot tetap utuh.'
-                : 'Aktivasi tidak mengubah session type, studio scope, atau effective window rule.'}
+                : 'Aktivasi memvalidasi kembali session, studio scope, priority, package, dan effective window tanpa mengubah rule.'}
             </span>
           </div>
         )}

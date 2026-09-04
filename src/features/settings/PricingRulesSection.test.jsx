@@ -119,7 +119,7 @@ async function selectStudioScope(interaction, optionName) {
 }
 
 describe('PricingRulesSection', () => {
-  it('loads bounded rules with human-readable session and studio context', async () => {
+  it('loads bounded rules with human-readable session, studio, and validation context', async () => {
     const repository = createRepository([createPricingRule({ studioId: 'studio-a' })]);
     const studioRepository = createStudioRepository([createStudioRoom()]);
     renderSection({ repository, studioRepository });
@@ -128,6 +128,8 @@ describe('PricingRulesSection', () => {
     expect(screen.getByText('Rehearsal · REHEARSAL')).toBeInTheDocument();
     expect(screen.getByText('Studio A · A')).toBeInTheDocument();
     expect(screen.getByText(/500\.000/)).toBeInTheDocument();
+    expect(await screen.findByText('Konfigurasi tervalidasi')).toBeInTheDocument();
+    expect(screen.getByText('Valid')).toBeInTheDocument();
     expect(repository.listPricingRules).toHaveBeenCalledOnce();
     expect(studioRepository.listStudioRooms).toHaveBeenCalledOnce();
   });
@@ -271,7 +273,7 @@ describe('PricingRulesSection', () => {
     });
   });
 
-  it('blocks an obvious equal-priority active collision inside the same studio scope', async () => {
+  it('blocks an overlapping equal-priority active candidate inside the same studio scope', async () => {
     const interaction = userEvent.setup();
     const repository = createRepository([createPricingRule()]);
     renderSection({ repository });
@@ -287,9 +289,22 @@ describe('PricingRulesSection', () => {
     await interaction.click(screen.getByRole('button', { name: 'Simpan pricing rule' }));
 
     expect(
-      await screen.findByText(/session, studio scope, dan priority yang sama/i),
+      await screen.findByText(
+        /overlap pada session, studio scope, priority, dan effective window yang sama/i,
+      ),
     ).toBeInTheDocument();
     expect(repository.createPricingRule).not.toHaveBeenCalled();
+  });
+
+  it('surfaces blocking configuration health for a missing active session reference', async () => {
+    const repository = createRepository([
+      createPricingRule({ sessionTypeId: 'session-missing' }),
+    ]);
+    renderSection({ repository });
+
+    expect(await screen.findByText('Konfigurasi perlu diperbaiki')).toBeInTheDocument();
+    expect(screen.getByText(/mengarah ke session type yang tidak ditemukan/i)).toBeInTheDocument();
+    expect(screen.getByText('Perlu diperbaiki')).toBeInTheDocument();
   });
 
   it('keeps exact-studio selection unavailable without settings.studio.view', async () => {
@@ -329,6 +344,28 @@ describe('PricingRulesSection', () => {
       });
     });
     expect(await screen.findByText('Pricing rule dinonaktifkan')).toBeInTheDocument();
+  });
+
+  it('blocks reactivation before write when the exact studio reference is missing', async () => {
+    const interaction = userEvent.setup();
+    const repository = createRepository([
+      createPricingRule({
+        status: PRICING_RULE_STATUSES.DISABLED,
+        studioId: 'studio-missing',
+      }),
+    ]);
+    renderSection({
+      repository,
+      studioRepository: createStudioRepository([createStudioRoom('studio-a')]),
+    });
+
+    await interaction.click(
+      await screen.findByRole('button', { name: 'Aktifkan pricing rule Rehearsal fixed' }),
+    );
+    await interaction.click(screen.getByRole('button', { name: 'Aktifkan' }));
+
+    expect(await screen.findByText(/mengarah ke studio yang tidak ditemukan/i)).toBeInTheDocument();
+    expect(repository.setPricingRuleStatus).not.toHaveBeenCalled();
   });
 
   it('renders view-only rules without mutation controls', async () => {
