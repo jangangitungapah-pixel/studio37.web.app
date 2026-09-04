@@ -117,9 +117,14 @@ function renderPreview({
 async function expectPreviewTotal(amountIdr) {
   const totalLabel = await screen.findByText('Total preview');
   const totalContainer = totalLabel.closest('.pricing-preview__total');
+  const normalizedExpectedAmount = formatIntegerIdr(amountIdr).replace(/\s/g, '');
 
   expect(totalContainer).not.toBeNull();
-  expect(within(totalContainer).getByText(formatIntegerIdr(amountIdr))).toBeInTheDocument();
+  expect(
+    within(totalContainer).getByText(
+      (content) => content.replace(/\s/g, '') === normalizedExpectedAmount,
+    ),
+  ).toBeInTheDocument();
 }
 
 describe('PricingPreviewSection', () => {
