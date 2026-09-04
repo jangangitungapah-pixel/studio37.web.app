@@ -69,7 +69,10 @@ describe('doPricingRuleEffectiveWindowsOverlap', () => {
 
   it('fails closed for malformed effective-window values', () => {
     expect(() =>
-      doPricingRuleEffectiveWindowsOverlap(createRule({ effectiveFrom: 'not-a-date' }), createRule()),
+      doPricingRuleEffectiveWindowsOverlap(
+        createRule({ effectiveFrom: 'not-a-date' }),
+        createRule(),
+      ),
     ).toThrow(TypeError);
   });
 });

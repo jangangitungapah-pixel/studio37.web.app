@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  PRICING_RULE_MODELS,
-  PRICING_RULE_STATUSES,
-} from '../pricing/pricingRules.js';
+import { PRICING_RULE_MODELS, PRICING_RULE_STATUSES } from '../pricing/pricingRules.js';
 import { SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import {
   PRICING_CONFIGURATION_ISSUE_CODES,
@@ -95,9 +92,7 @@ describe('validatePricingConfiguration', () => {
       studioRooms: [],
     });
 
-    expect(getCodes(result)).toContain(
-      PRICING_CONFIGURATION_ISSUE_CODES.MISSING_SESSION_REFERENCE,
-    );
+    expect(getCodes(result)).toContain(PRICING_CONFIGURATION_ISSUE_CODES.MISSING_SESSION_REFERENCE);
     expect(result.blocking).toBe(true);
   });
 
@@ -125,9 +120,7 @@ describe('validatePricingConfiguration', () => {
       studioRooms: [createStudio()],
     });
 
-    expect(getCodes(result)).toContain(
-      PRICING_CONFIGURATION_ISSUE_CODES.MISSING_STUDIO_REFERENCE,
-    );
+    expect(getCodes(result)).toContain(PRICING_CONFIGURATION_ISSUE_CODES.MISSING_STUDIO_REFERENCE);
     expect(result.blocking).toBe(true);
   });
 
