@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -113,6 +113,14 @@ function renderPreview({
   return { addOnsRepository, pricingRulesRepository, studioRoomsRepository };
 }
 
+async function expectPreviewTotal(amount) {
+  const totalLabel = await screen.findByText('Total preview');
+  const totalContainer = totalLabel.closest('.pricing-preview__total');
+
+  expect(totalContainer).not.toBeNull();
+  expect(within(totalContainer).getByText(amount)).toBeInTheDocument();
+}
+
 describe('PricingPreviewSection', () => {
   it('previews a persisted hourly rule with canonical round-up billing', async () => {
     const interaction = userEvent.setup();
@@ -121,12 +129,12 @@ describe('PricingPreviewSection', () => {
     const ruleSelect = await screen.findByLabelText(/^Pricing rule \/ package/);
     await interaction.selectOptions(ruleSelect, 'rule-hourly');
 
-    expect(await screen.findByText('Rp120.000')).toBeInTheDocument();
+    await expectPreviewTotal('Rp120.000');
     const durationInput = screen.getByLabelText(/^Contoh durasi session/);
     await interaction.clear(durationInput);
     await interaction.type(durationInput, '125');
 
-    expect(await screen.findByText('Rp360.000')).toBeInTheDocument();
+    await expectPreviewTotal('Rp360.000');
     expect(screen.getByText(/125 mnt diminta · 180 mnt ditagih · 3 increment/)).toBeInTheDocument();
   });
 
@@ -140,7 +148,7 @@ describe('PricingPreviewSection', () => {
     );
     await interaction.click(screen.getByLabelText('Pilih add-on Extra microphone'));
 
-    expect(await screen.findByText('Rp170.000')).toBeInTheDocument();
+    await expectPreviewTotal('Rp170.000');
     expect(screen.getByText('Add-on · Extra microphone')).toBeInTheDocument();
     expect(repositories.pricingRulesRepository.listPricingRules).toHaveBeenCalledOnce();
     expect(repositories.addOnsRepository.listAddOns).toHaveBeenCalledOnce();
@@ -157,7 +165,7 @@ describe('PricingPreviewSection', () => {
 
     expect(await screen.findByText('Rule ini nonaktif.')).toBeInTheDocument();
     expect(screen.getByText(/tidak membuat rule tersedia untuk booking baru/i)).toBeInTheDocument();
-    expect(screen.getByText('Rp120.000')).toBeInTheDocument();
+    await expectPreviewTotal('Rp120.000');
   });
 
   it('surfaces canonical exact-increment failure as a human-readable preview state', async () => {
@@ -204,6 +212,6 @@ describe('PricingPreviewSection', () => {
     await waitFor(() => {
       expect(repositories.studioRoomsRepository.listStudioRooms).not.toHaveBeenCalled();
     });
-    expect(screen.getByText('Rp120.000')).toBeInTheDocument();
+    await expectPreviewTotal('Rp120.000');
   });
 });
