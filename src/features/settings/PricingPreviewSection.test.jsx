@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { formatIntegerIdr } from '../../lib/money/idr.js';
 import { CAPABILITIES } from '../auth/capabilities.js';
 import { ADD_ON_PRICING_TYPES } from '../pricing/addOnPricing.js';
 import { PRICING_RULE_MODELS, PRICING_RULE_ROUNDING_MODES } from '../pricing/pricingRules.js';
@@ -113,12 +114,12 @@ function renderPreview({
   return { addOnsRepository, pricingRulesRepository, studioRoomsRepository };
 }
 
-async function expectPreviewTotal(amount) {
+async function expectPreviewTotal(amountIdr) {
   const totalLabel = await screen.findByText('Total preview');
   const totalContainer = totalLabel.closest('.pricing-preview__total');
 
   expect(totalContainer).not.toBeNull();
-  expect(within(totalContainer).getByText(amount)).toBeInTheDocument();
+  expect(within(totalContainer).getByText(formatIntegerIdr(amountIdr))).toBeInTheDocument();
 }
 
 describe('PricingPreviewSection', () => {
@@ -129,12 +130,12 @@ describe('PricingPreviewSection', () => {
     const ruleSelect = await screen.findByLabelText(/^Pricing rule \/ package/);
     await interaction.selectOptions(ruleSelect, 'rule-hourly');
 
-    await expectPreviewTotal('Rp120.000');
+    await expectPreviewTotal(120_000);
     const durationInput = screen.getByLabelText(/^Contoh durasi session/);
     await interaction.clear(durationInput);
     await interaction.type(durationInput, '125');
 
-    await expectPreviewTotal('Rp360.000');
+    await expectPreviewTotal(360_000);
     expect(screen.getByText(/125 mnt diminta · 180 mnt ditagih · 3 increment/)).toBeInTheDocument();
   });
 
@@ -148,7 +149,7 @@ describe('PricingPreviewSection', () => {
     );
     await interaction.click(screen.getByLabelText('Pilih add-on Extra microphone'));
 
-    await expectPreviewTotal('Rp170.000');
+    await expectPreviewTotal(170_000);
     expect(screen.getByText('Add-on · Extra microphone')).toBeInTheDocument();
     expect(repositories.pricingRulesRepository.listPricingRules).toHaveBeenCalledOnce();
     expect(repositories.addOnsRepository.listAddOns).toHaveBeenCalledOnce();
@@ -165,7 +166,7 @@ describe('PricingPreviewSection', () => {
 
     expect(await screen.findByText('Rule ini nonaktif.')).toBeInTheDocument();
     expect(screen.getByText(/tidak membuat rule tersedia untuk booking baru/i)).toBeInTheDocument();
-    await expectPreviewTotal('Rp120.000');
+    await expectPreviewTotal(120_000);
   });
 
   it('surfaces canonical exact-increment failure as a human-readable preview state', async () => {
@@ -212,6 +213,6 @@ describe('PricingPreviewSection', () => {
     await waitFor(() => {
       expect(repositories.studioRoomsRepository.listStudioRooms).not.toHaveBeenCalled();
     });
-    await expectPreviewTotal('Rp120.000');
+    await expectPreviewTotal(120_000);
   });
 });
