@@ -356,7 +356,7 @@ Phase 4 progress on 2026-08-22:
 - [x] Duration/minimum/increment configuration.
 - [x] Studio scope selector.
 - [x] Add-on configuration.
-- [ ] Human-readable pricing preview.
+- [x] Human-readable pricing preview.
 - [ ] Configuration validation/errors.
 
 ### Phase 5 gate
@@ -547,11 +547,21 @@ Phase 5 progress on 2026-08-24:
   emulator coverage runs alongside the existing authorization suite. GitHub Actions Quality run
   `33446112774` passed formatting, zero-warning lint, all unit/component tests, both Firestore
   Emulator authorization suites, production build, and Vite development-server smoke.
-- Effective-period controls, human-readable composed pricing preview, full
-  model/package/effective-window configuration validation, discount administration UI, Firestore
-  Booking persistence, Booking add-on quantity/duration inputs, server-authoritative override
-  writes/timestamps, final responsive Price Settings browser acceptance, and all final Phase 5 gates
-  remain pending; Phase 5 remains in progress.
+- Phase 5B7 added a read-only, non-persisted human-readable pricing simulator to Price Settings.
+  Owners and pricing viewers explicitly select one persisted rule/package, provide example duration
+  and applicable add-on transaction inputs, and receive canonical integer-IDR base/add-on/total
+  breakdowns without creating bookings, snapshots, overrides, or configuration writes.
+- The preview delegates every pricing calculation to the existing production calculators, permits
+  clearly warned simulation of inactive rules before activation, preserves bounded repository reads,
+  and deliberately avoids incomplete package auto-resolution. Focused domain/component coverage
+  includes canonical package overtime errors, duplicate add-on rejection, inactive-rule preview,
+  add-on composition, exact-increment failures, and pricing-viewer boundaries. GitHub Actions
+  Quality run `33911674929` passed formatting, zero-warning lint, the full unit/component suite,
+  both Firestore Emulator authorization suites, production build, and Vite development-server smoke.
+- Effective-period controls, full model/package/effective-window configuration validation, discount
+  administration UI, Firestore Booking persistence, Booking add-on quantity/duration inputs,
+  server-authoritative override writes/timestamps, final responsive Price Settings browser
+  acceptance, and all final Phase 5 gates remain pending; Phase 5 remains in progress.
 
 ---
 
@@ -973,3 +983,4 @@ Implementation status:
   - [x] Phase 5B4 — shared duration/minimum/increment controls with canonical-minute presets, human-readable behavior summaries, and automated coverage implemented and quality-gated.
   - [x] Phase 5B5 — general/exact studio scope selector, bounded room context, package-scope preservation, permission-aware behavior, and automated coverage implemented and quality-gated.
   - [x] Phase 5B6 — strict add-on configuration domain/repository/Security Rules plus fixed/quantity/time Price Settings administration and automated coverage implemented and quality-gated.
+  - [x] Phase 5B7 — read-only human-readable pricing preview using canonical calculators, explicit persisted-rule selection, add-on composition, inactive-rule simulation, and automated coverage implemented and quality-gated.
