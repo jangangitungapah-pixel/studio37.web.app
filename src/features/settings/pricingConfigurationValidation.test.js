@@ -263,10 +263,7 @@ describe('validatePricingRuleCandidate', () => {
         name: 'Podcast fixed',
         sessionTypeId: 'session-podcast',
       }),
-      pricingRules: [
-        createRule(),
-        createRule({ id: 'rule-b', name: 'Existing duplicate' }),
-      ],
+      pricingRules: [createRule(), createRule({ id: 'rule-b', name: 'Existing duplicate' })],
       sessionTypes: [
         createSessionType(),
         createSessionType({ id: 'session-podcast', name: 'Podcast' }),

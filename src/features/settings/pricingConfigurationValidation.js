@@ -46,9 +46,7 @@ function createIssue({ code, message, ruleIds = [], severity }) {
 function createValidationResult(issues, { complete }) {
   const frozenIssues = Object.freeze([...issues]);
   const errors = Object.freeze(
-    frozenIssues.filter(
-      (issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR,
-    ),
+    frozenIssues.filter((issue) => issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR),
   );
   const warnings = Object.freeze(
     frozenIssues.filter(
@@ -247,7 +245,11 @@ export function validatePricingRuleCandidate({
   requireArray(sessionTypes, 'sessionTypes');
   requireArray(studioRooms, 'studioRooms');
 
-  if (!candidateDetails || typeof candidateDetails !== 'object' || Array.isArray(candidateDetails)) {
+  if (
+    !candidateDetails ||
+    typeof candidateDetails !== 'object' ||
+    Array.isArray(candidateDetails)
+  ) {
     throw new TypeError('candidateDetails must be an object.');
   }
 

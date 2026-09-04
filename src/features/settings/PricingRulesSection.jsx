@@ -136,14 +136,7 @@ export function PricingRulesSection({
       studioReferencesAvailable,
       studioRooms,
     });
-  }, [
-    limitReached,
-    loadState,
-    pricingRules,
-    sessionTypes,
-    studioReferencesAvailable,
-    studioRooms,
-  ]);
+  }, [limitReached, loadState, pricingRules, sessionTypes, studioReferencesAvailable, studioRooms]);
   const configurationHealth = configurationValidation
     ? getConfigurationHealthView(configurationValidation)
     : null;
@@ -337,8 +330,8 @@ export function PricingRulesSection({
                 activationValidation,
                 'Aktivasi diblok karena konfigurasi rule belum valid.',
               )
-            : activationValidation.warnings[0]?.message ??
-                'Aktivasi diblok sampai seluruh referensi rule dapat diverifikasi.',
+            : (activationValidation.warnings[0]?.message ??
+                'Aktivasi diblok sampai seluruh referensi rule dapat diverifikasi.'),
         );
         return;
       }

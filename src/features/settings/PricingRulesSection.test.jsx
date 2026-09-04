@@ -297,9 +297,7 @@ describe('PricingRulesSection', () => {
   });
 
   it('surfaces blocking configuration health for a missing active session reference', async () => {
-    const repository = createRepository([
-      createPricingRule({ sessionTypeId: 'session-missing' }),
-    ]);
+    const repository = createRepository([createPricingRule({ sessionTypeId: 'session-missing' })]);
     renderSection({ repository });
 
     expect(await screen.findByText('Konfigurasi perlu diperbaiki')).toBeInTheDocument();
