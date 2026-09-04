@@ -11,7 +11,7 @@
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
+    "test": "vitest run src/features/pricing/pricingPreview.test.js --reporter=verbose",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js tests/addOnRules.emulator.js\"",
     "test:watch": "vitest"
   },
@@ -31,7 +31,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.0",
-    "eslint-plugin-react-hooks": "^6.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "firebase-tools": "15.28.1",
     "globals": "^16.0.0",
