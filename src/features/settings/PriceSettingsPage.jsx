@@ -9,6 +9,7 @@ import { CAPABILITIES, hasCapability } from '../auth/capabilities.js';
 import { useAuth } from '../auth/useAuth.js';
 import { SESSION_TYPE_LIST_LIMIT, SESSION_TYPE_STATUSES } from '../pricing/sessionTypes.js';
 import { AddOnsSection } from './AddOnsSection.jsx';
+import { PricingPreviewSection } from './PricingPreviewSection.jsx';
 import { PricingRulesSection } from './PricingRulesSection.jsx';
 import { SessionTypeEditorDialog } from './SessionTypeEditorDialog.jsx';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
@@ -367,6 +368,14 @@ export function PriceSettingsPage({
         canEdit={canEdit}
         repository={addOnsRepository}
         sessionTypes={loadState === 'ready' ? sessionTypes : []}
+      />
+
+      <PricingPreviewSection
+        access={access}
+        addOnsRepository={addOnsRepository}
+        pricingRulesRepository={pricingRulesRepository}
+        sessionTypes={loadState === 'ready' ? sessionTypes : []}
+        studioRoomsRepository={studioRoomsRepository}
       />
 
       <SessionTypeEditorDialog
