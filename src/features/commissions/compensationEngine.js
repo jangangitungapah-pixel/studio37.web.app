@@ -74,7 +74,10 @@ function normalizePercentageBaseAmounts(value = {}) {
 export function normalizeCompensationCalculationContext(value) {
   const context = requireRecord(value, 'context');
 
-  if (typeof context.operatorType !== 'string' || !supportedOperatorTypes.has(context.operatorType)) {
+  if (
+    typeof context.operatorType !== 'string' ||
+    !supportedOperatorTypes.has(context.operatorType)
+  ) {
     throw new RangeError('context.operatorType is not supported.');
   }
 
@@ -162,9 +165,7 @@ export function resolveCompensationRule(rules, contextValue) {
   const winners = mostSpecific.filter((candidate) => candidate.priority === highestPriority);
 
   if (winners.length > 1) {
-    throw new CompensationRuleAmbiguityError(
-      winners.map((candidate) => candidate.rule.id).sort(),
-    );
+    throw new CompensationRuleAmbiguityError(winners.map((candidate) => candidate.rule.id).sort());
   }
 
   return winners[0].rule;
@@ -237,9 +238,7 @@ export function calculateCompensationAmount(rule, contextValue) {
 
       const baseAmount = context.percentageBaseAmounts[configuration.base];
       if (baseAmount === undefined) {
-        throw new RangeError(
-          `Missing percentage base amount for ${configuration.base}.`,
-        );
+        throw new RangeError(`Missing percentage base amount for ${configuration.base}.`);
       }
 
       return roundNonNegativeProductRatio(
