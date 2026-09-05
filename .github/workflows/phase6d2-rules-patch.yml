@@ -1,3 +1,4 @@
+# One-time helper; remove after the rules patch commit lands.
 name: Phase 6D2 Rules Patch
 
 on:
