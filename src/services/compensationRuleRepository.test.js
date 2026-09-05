@@ -174,9 +174,7 @@ describe('compensationRuleRepository', () => {
     expect(adapter.updateDoc).not.toHaveBeenCalled();
 
     const malformed = createHarness({
-      documents: [
-        { data: () => createStoredRule({ unexpectedField: true }), id: 'rehearsal' },
-      ],
+      documents: [{ data: () => createStoredRule({ unexpectedField: true }), id: 'rehearsal' }],
     });
     await expect(malformed.repository.listCompensationRules()).rejects.toThrow(
       /unsupported document shape/,
