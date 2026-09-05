@@ -79,8 +79,7 @@ function createHarness({ booking = { bookingNumber: 'ST37-2026-0001' }, entries 
     doc: (collectionReference, id) => ({ id, path: `${collectionReference.path}/${id}` }),
     runTransaction: async (_db, callback) => {
       const transaction = {
-        get: async (reference) =>
-          createSnapshot(reference.id, documents.get(reference.path)),
+        get: async (reference) => createSnapshot(reference.id, documents.get(reference.path)),
         set: (reference, value) => {
           writes.push({ operation: 'set', path: reference.path, value });
           documents.set(reference.path, structuredClone(value));
