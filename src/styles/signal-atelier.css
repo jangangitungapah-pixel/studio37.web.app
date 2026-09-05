@@ -225,7 +225,9 @@ input:-webkit-autofill:focus {
   height: 4px;
   border-radius: 50%;
   background: var(--color-brand-contrast);
-  box-shadow: -7px 0 0 rgb(17 21 11 / 0.45), -14px 0 0 rgb(17 21 11 / 0.2);
+  box-shadow:
+    -7px 0 0 rgb(17 21 11 / 0.45),
+    -14px 0 0 rgb(17 21 11 / 0.2);
 }
 
 .app-brand__name {
@@ -320,8 +322,7 @@ input:-webkit-autofill:focus {
 
 .app-nav__link[aria-current='page'] {
   border-color: rgb(201 242 107 / 0.12);
-  background:
-    linear-gradient(90deg, rgb(201 242 107 / 0.115), rgb(201 242 107 / 0.03));
+  background: linear-gradient(90deg, rgb(201 242 107 / 0.115), rgb(201 242 107 / 0.03));
   color: var(--color-text);
 }
 
@@ -356,7 +357,9 @@ input:-webkit-autofill:focus {
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--color-success);
-  box-shadow: 0 0 0 4px rgb(140 221 121 / 0.08), 0 0 14px rgb(140 221 121 / 0.22);
+  box-shadow:
+    0 0 0 4px rgb(140 221 121 / 0.08),
+    0 0 14px rgb(140 221 121 / 0.22);
 }
 
 .app-shell__environment p {
@@ -512,7 +515,9 @@ input:-webkit-autofill:focus {
   border-color: rgb(201 242 107 / 0.58);
   background: linear-gradient(180deg, var(--color-brand-hover), var(--color-brand));
   color: var(--color-brand-contrast);
-  box-shadow: 0 8px 24px rgb(201 242 107 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.25);
+  box-shadow:
+    0 8px 24px rgb(201 242 107 / 0.11),
+    inset 0 1px 0 rgb(255 255 255 / 0.25);
 }
 
 .ui-button--secondary {
@@ -581,8 +586,7 @@ input:-webkit-autofill:focus {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent),
-    var(--color-surface-raised);
+    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent), var(--color-surface-raised);
   color: var(--color-text);
   padding: 0.62rem 0.72rem;
   font-size: 0.78rem;
@@ -772,8 +776,7 @@ input:-webkit-autofill:focus {
 .foundation-panel {
   border-color: var(--color-border);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 6rem),
-    var(--color-surface);
+    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 6rem), var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -781,8 +784,7 @@ input:-webkit-autofill:focus {
 .ui-dialog-backdrop {
   padding: clamp(1rem, 4vw, 3rem);
   background:
-    radial-gradient(circle at 50% 0%, rgb(99 216 255 / 0.06), transparent 34rem),
-    rgb(3 5 7 / 0.78);
+    radial-gradient(circle at 50% 0%, rgb(99 216 255 / 0.06), transparent 34rem), rgb(3 5 7 / 0.78);
   backdrop-filter: blur(8px) saturate(120%);
   animation: atelier-backdrop-in var(--duration-base) ease;
 }
@@ -1032,8 +1034,7 @@ input:-webkit-autofill:focus {
 .pricing-preview__addon {
   border-color: var(--color-border);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 7rem),
-    var(--color-surface);
+    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 7rem), var(--color-surface);
   box-shadow: var(--shadow-xs);
 }
 
@@ -1189,7 +1190,13 @@ input:-webkit-autofill:focus {
 .duration-package-empty {
   border-color: var(--color-border-strong);
   background:
-    repeating-linear-gradient(135deg, transparent, transparent 8px, rgb(255 255 255 / 0.012) 8px, rgb(255 255 255 / 0.012) 16px),
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 8px,
+      rgb(255 255 255 / 0.012) 8px,
+      rgb(255 255 255 / 0.012) 16px
+    ),
     var(--color-surface-subtle);
 }
 
