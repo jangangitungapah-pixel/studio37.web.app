@@ -25,30 +25,30 @@ import './pricing-rule-settings.css';
 
 function getSafeFirebaseMessage(error, action) {
   if (error?.code === 'permission-denied') {
-    return `Akun ini tidak memiliki izin untuk ${action} pricing rule.`;
+    return `Akun ini tidak memiliki izin untuk ${action} harga.`;
   }
 
   if (error?.code === 'unavailable') {
-    return `Firestore sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
+    return `Data harga sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
   }
 
-  return `Pricing rule belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
+  return `Harga belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
 }
 
 function getSafeStudioMessage(error) {
   if (error?.code === 'permission-denied') {
-    return 'Daftar studio tidak dapat dibaca oleh akun ini. Scope exact dikunci, tetapi rule general tetap dapat dikelola.';
+    return 'Daftar studio tidak dapat dibaca oleh akun ini. Harga untuk semua studio tetap dapat dikelola.';
   }
 
   if (error?.code === 'unavailable') {
-    return 'Daftar studio belum tersedia karena koneksi Firestore. Scope exact dikunci sampai daftar berhasil dimuat.';
+    return 'Daftar studio belum tersedia. Harga khusus studio akan tersedia lagi setelah koneksi pulih.';
   }
 
-  return 'Daftar studio belum bisa dimuat. Scope exact dikunci agar referensi studio tidak berubah tanpa konteks room.';
+  return 'Daftar studio belum bisa dimuat. Harga untuk studio tertentu sementara dikunci agar tidak salah pilih.';
 }
 
 function formatEffectiveWindow(rule) {
-  if (rule.effectiveFrom === null && rule.effectiveUntil === null) return 'Tanpa batas waktu';
+  if (rule.effectiveFrom === null && rule.effectiveUntil === null) return 'Selalu berlaku';
 
   const formatDate = (value) =>
     value
@@ -57,31 +57,31 @@ function formatEffectiveWindow(rule) {
           month: 'short',
           year: 'numeric',
         }).format(value)
-      : '∞';
+      : 'tanpa batas';
 
-  return `${formatDate(rule.effectiveFrom)} → ${formatDate(rule.effectiveUntil)}`;
+  return `${formatDate(rule.effectiveFrom)} sampai ${formatDate(rule.effectiveUntil)}`;
 }
 
 function getConfigurationHealthView(validation) {
   if (validation.blocking) {
     return {
-      badge: 'Blocking',
-      title: 'Konfigurasi perlu diperbaiki',
+      badge: 'Perlu diperbaiki',
+      title: 'Ada pengaturan harga yang bentrok',
       tone: 'danger',
     };
   }
 
   if (!validation.complete || validation.warnings.length > 0) {
     return {
-      badge: validation.complete ? 'Warning' : 'Belum lengkap',
-      title: validation.complete ? 'Konfigurasi perlu perhatian' : 'Validasi belum lengkap',
+      badge: validation.complete ? 'Perlu perhatian' : 'Belum lengkap',
+      title: validation.complete ? 'Ada catatan pada pengaturan harga' : 'Pemeriksaan belum lengkap',
       tone: 'warning',
     };
   }
 
   return {
-    badge: 'Valid',
-    title: 'Konfigurasi tervalidasi',
+    badge: 'Siap digunakan',
+    title: 'Semua pengaturan harga siap digunakan',
     tone: 'success',
   };
 }
@@ -231,14 +231,12 @@ export function PricingRulesSection({
     const editsActiveRule = editingRule?.status === PRICING_RULE_STATUSES.ACTIVE;
 
     if (!canEdit || !actorUid) {
-      setDialogError('Sesi ini tidak diizinkan menyimpan pricing rule.');
+      setDialogError('Sesi ini tidak diizinkan menyimpan harga.');
       return;
     }
 
     if (limitReached) {
-      setDialogError(
-        `Batas ${listLimit} pricing rule tercapai. Edit diblok karena candidate set mungkin tidak lengkap.`,
-      );
+      setDialogError(`Batas ${listLimit} pengaturan harga sudah tercapai.`);
       return;
     }
 
@@ -260,7 +258,7 @@ export function PricingRulesSection({
       setDialogError(
         getCandidateBlockingMessage(
           candidateValidation,
-          'Pricing rule belum lolos validasi konfigurasi sebelum disimpan.',
+          'Harga ini bentrok dengan pengaturan lain. Periksa pilihan layanan, studio, atau paket.',
         ),
       );
       return;
@@ -277,9 +275,9 @@ export function PricingRulesSection({
       }
 
       pushToast({
-        message: `${details.name} sudah ${editingRule ? 'diperbarui' : 'ditambahkan'}. Snapshot booking historis tidak dihitung ulang.`,
+        message: `${details.name} sudah ${editingRule ? 'diperbarui' : 'ditambahkan'}. Booking lama tetap memakai harga tersimpan sebelumnya.`,
         tone: 'success',
-        title: editingRule ? 'Pricing rule diperbarui' : 'Pricing rule ditambahkan',
+        title: editingRule ? 'Harga diperbarui' : 'Harga ditambahkan',
       });
       setEditorOpen(false);
       setEditingRule(null);
@@ -307,7 +305,7 @@ export function PricingRulesSection({
     const actorUid = access.user?.uid;
 
     if (!statusTarget || !canEdit || !actorUid) {
-      setStatusError('Sesi ini tidak diizinkan mengubah status pricing rule.');
+      setStatusError('Sesi ini tidak diizinkan mengubah status harga.');
       return;
     }
 
@@ -328,10 +326,10 @@ export function PricingRulesSection({
           activationValidation.blocking
             ? getCandidateBlockingMessage(
                 activationValidation,
-                'Aktivasi diblok karena konfigurasi rule belum valid.',
+                'Harga belum dapat diaktifkan karena masih bentrok dengan pengaturan lain.',
               )
             : (activationValidation.warnings[0]?.message ??
-                'Aktivasi diblok sampai seluruh referensi rule dapat diverifikasi.'),
+                'Harga belum dapat diaktifkan sampai seluruh referensi dapat diperiksa.'),
         );
         return;
       }
@@ -345,13 +343,10 @@ export function PricingRulesSection({
       pushToast({
         message:
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? `${statusTarget.name} kembali aktif untuk resolusi harga booking baru.`
-            : `${statusTarget.name} tidak lagi dipilih untuk pricing baru; snapshot historis tetap aman.`,
+            ? `${statusTarget.name} kembali digunakan untuk booking baru.`
+            : `${statusTarget.name} tidak lagi digunakan untuk booking baru.`,
         tone: 'success',
-        title:
-          nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Pricing rule diaktifkan'
-            : 'Pricing rule dinonaktifkan',
+        title: nextStatus === PRICING_RULE_STATUSES.ACTIVE ? 'Harga diaktifkan' : 'Harga dinonaktifkan',
       });
       setStatusTarget(null);
       setReloadKey((value) => value + 1);
@@ -368,11 +363,11 @@ export function PricingRulesSection({
     <section className="settings-card" aria-labelledby="price-rules-heading">
       <header className="settings-card__header settings-card__header--with-action">
         <div>
-          <p className="settings-card__eyebrow">Aturan harga</p>
-          <h2 id="price-rules-heading">Pricing rules</h2>
+          <p className="settings-card__eyebrow">Harga</p>
+          <h2 id="price-rules-heading">Harga layanan</h2>
           <p className="settings-card__subtitle">
-            Kelola rule per session type dengan scope general atau studio tertentu. Exact studio
-            diprioritaskan sebelum fallback ke rule general.
+            Tentukan harga setiap layanan. Pilih apakah dihitung per jam, harga tetap, paket durasi,
+            atau harga dasar dengan waktu tambahan.
           </p>
         </div>
         {canEdit ? (
@@ -381,7 +376,7 @@ export function PricingRulesSection({
             disabled={loadState !== 'ready' || limitReached || activeSessionTypes.length === 0}
             onClick={openCreateDialog}
           >
-            Tambah pricing rule
+            Atur harga
           </Button>
         ) : null}
       </header>
@@ -394,10 +389,8 @@ export function PricingRulesSection({
         >
           <span className="settings-state__spinner" aria-hidden="true" />
           <div>
-            <p className="settings-state__title">Memuat pricing rules</p>
-            <p className="settings-state__description">
-              Satu query priority-desc dibatasi maksimal {listLimit} dokumen.
-            </p>
+            <p className="settings-state__title">Memuat harga layanan</p>
+            <p className="settings-state__description">Menyiapkan harga yang sudah tersimpan.</p>
           </div>
         </div>
       ) : null}
@@ -405,103 +398,56 @@ export function PricingRulesSection({
       {loadState === 'error' ? (
         <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
           <div>
-            <p className="settings-state__title">Pricing rules gagal dimuat</p>
+            <p className="settings-state__title">Harga layanan gagal dimuat</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
-            Coba lagi pricing rules
+            Coba lagi
           </Button>
         </div>
       ) : null}
 
       {canEdit && studioLoadState === 'error' ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Studio scope exact sementara dikunci.</strong>
+          <strong>Harga khusus studio sementara tidak tersedia.</strong>
           <span>{studioLoadError}</span>
           <Button
             size="sm"
             variant="secondary"
             onClick={() => setStudioReloadKey((value) => value + 1)}
           >
-            Coba lagi studio
+            Coba lagi
           </Button>
         </div>
       ) : null}
 
       {canEdit && studioLoadState === 'unavailable' ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Studio scope exact tidak tersedia untuk akun ini.</strong>
-          <span>
-            Pemilihan room tertentu memerlukan capability settings.studio.view. Rule general tetap
-            dapat dibuat dan existing exact scope dipertahankan tanpa perubahan.
-          </span>
+          <strong>Harga khusus studio tidak tersedia untuk akun ini.</strong>
+          <span>Harga yang berlaku untuk semua studio tetap dapat dikelola.</span>
         </div>
       ) : null}
 
       {loadState === 'ready' && activeSessionTypes.length === 0 ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Belum ada session type aktif.</strong>
-          <span>Aktifkan atau buat session type sebelum menambahkan pricing rule baru.</span>
+          <strong>Belum ada layanan aktif.</strong>
+          <span>Tambahkan atau aktifkan layanan sebelum mengatur harga.</span>
         </div>
       ) : null}
 
       {loadState === 'ready' && limitReached ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Batas {listLimit} pricing rule tercapai.</strong>
-          <span>
-            Create/edit/reactivate diblok agar UI tidak mengambil keputusan dari candidate set yang
-            mungkin terpotong. Deaktivasi tetap tersedia karena mengurangi match aktif.
-          </span>
+          <strong>Batas pengaturan harga sudah tercapai.</strong>
+          <span>Edit atau nonaktifkan harga yang ada sebelum menambah pengaturan baru.</span>
         </div>
       ) : null}
 
-      {configurationValidation && configurationHealth ? (
-        <div
-          className="pricing-configuration-health"
-          data-tone={configurationHealth.tone}
-          role={configurationValidation.blocking ? 'alert' : 'status'}
-          aria-live="polite"
-        >
-          <div className="pricing-configuration-health__header">
-            <div>
-              <span className="pricing-configuration-health__eyebrow">Configuration health</span>
-              <h3>{configurationHealth.title}</h3>
-            </div>
-            <Badge tone={configurationHealth.tone}>{configurationHealth.badge}</Badge>
-          </div>
-          <p className="pricing-configuration-health__summary">
-            {configurationValidation.blocking
-              ? `${configurationValidation.errors.length} issue memblok save atau aktivasi yang akan memperburuk konfigurasi.`
-              : configurationValidation.issues.length > 0
-                ? `${configurationValidation.warnings.length} catatan perlu perhatian. Rule historis tetap tidak diubah.`
-                : 'Rule aktif lolos validasi shape, reference, package, priority, dan effective window.'}
-          </p>
-          {configurationValidation.issues.length > 0 ? (
-            <ul className="pricing-configuration-health__issues">
-              {configurationValidation.issues.map((issue, index) => (
-                <li key={`${issue.code}-${issue.ruleIds.join('-')}-${index}`}>
-                  <Badge
-                    tone={
-                      issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
-                        ? 'danger'
-                        : 'warning'
-                    }
-                  >
-                    {issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
-                      ? 'Error'
-                      : 'Warning'}
-                  </Badge>
-                  <span>{issue.message}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {!configurationValidation.complete ? (
-            <p className="pricing-configuration-health__footnote">
-              Validasi belum lengkap. Create/edit/reactivate yang membutuhkan candidate set atau
-              exact-studio reference yang belum dapat diverifikasi tetap fail-closed sesuai aksi.
-            </p>
-          ) : null}
+      {configurationValidation?.blocking ? (
+        <div className="settings-notice" data-tone="danger" role="alert">
+          <strong>Ada harga yang perlu diperbaiki.</strong>
+          <span>
+            Beberapa pengaturan saling bentrok. Detail tersedia di Pengaturan lanjutan di bawah.
+          </span>
         </div>
       ) : null}
 
@@ -509,17 +455,16 @@ export function PricingRulesSection({
         <div className="pricing-rule-empty">
           <span className="settings-placeholder__dot" aria-hidden="true" />
           <div>
-            <p className="settings-placeholder__title">Belum ada pricing rule</p>
+            <p className="settings-placeholder__title">Belum ada harga</p>
             <p className="settings-placeholder__description">
-              Tambahkan rule pertama setelah session type siap. Pilih scope general atau studio
-              tertentu sesuai konfigurasi harga yang dibutuhkan.
+              Pilih layanan lalu tentukan cara menghitung harganya.
             </p>
           </div>
         </div>
       ) : null}
 
       {loadState === 'ready' && pricingRules.length > 0 ? (
-        <div className="pricing-rule-list" aria-label="Daftar pricing rule">
+        <div className="pricing-rule-list" aria-label="Daftar harga layanan">
           {pricingRules.map((rule) => {
             const isActive = rule.status === PRICING_RULE_STATUSES.ACTIVE;
             const sessionType = sessionTypeById.get(rule.sessionTypeId);
@@ -532,20 +477,13 @@ export function PricingRulesSection({
 
             return (
               <article
-                className="pricing-rule-row"
+                className="pricing-rule-row pricing-rule-row--simple"
                 data-disabled={!isActive || undefined}
                 key={rule.id}
               >
-                <div
-                  className="pricing-rule-row__priority"
-                  aria-label={`Priority ${rule.priority}`}
-                >
-                  <span>Priority</span>
-                  <strong>{rule.priority}</strong>
-                </div>
                 <div className="pricing-rule-row__content">
                   <div className="pricing-rule-row__heading">
-                    <h3>{rule.name}</h3>
+                    <h3>{sessionType?.name ?? rule.name}</h3>
                     <Badge tone={isActive ? 'success' : 'neutral'}>
                       {isActive ? 'Aktif' : 'Nonaktif'}
                     </Badge>
@@ -557,13 +495,7 @@ export function PricingRulesSection({
                     ) : null}
                   </div>
                   <div className="pricing-rule-row__meta">
-                    <span>
-                      {sessionType
-                        ? `${sessionType.name} · ${sessionType.code}`
-                        : `Session ${rule.sessionTypeId}`}
-                    </span>
                     <span>{formatStudioScopeLabel(rule.studioId, studioRooms)}</span>
-                    <span>{formatEffectiveWindow(rule)}</span>
                   </div>
                   <p>{formatPricingRuleConfigurationSummary(rule)}</p>
                 </div>
@@ -573,15 +505,15 @@ export function PricingRulesSection({
                       size="sm"
                       variant="ghost"
                       disabled={limitReached}
-                      aria-label={`Edit pricing rule ${rule.name}`}
+                      aria-label={`Edit harga ${rule.name}`}
                       onClick={() => openEditDialog(rule)}
                     >
-                      Edit
+                      Edit harga
                     </Button>
                     <Button
                       size="sm"
                       variant={isActive ? 'ghost' : 'secondary'}
-                      aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} pricing rule ${rule.name}`}
+                      aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} harga ${rule.name}`}
                       onClick={() => openStatusDialog(rule)}
                     >
                       {isActive ? 'Nonaktifkan' : 'Aktifkan'}
@@ -609,13 +541,71 @@ export function PricingRulesSection({
         />
       ) : null}
 
-      <div className="pricing-rule-scope-note">
-        <strong>Boundary Phase 5B8</strong>
-        <span>
-          Effective period editor, discount administration, Booking integration, final PRD-17
-          pricing matrix, dan responsive browser acceptance tetap checkpoint terpisah.
-        </span>
-      </div>
+      {configurationValidation && configurationHealth ? (
+        <details className="pricing-advanced">
+          <summary>Pengaturan lanjutan</summary>
+          <div className="pricing-advanced__content">
+            <div
+              className="pricing-configuration-health"
+              data-tone={configurationHealth.tone}
+              role={configurationValidation.blocking ? 'alert' : 'status'}
+              aria-live="polite"
+            >
+              <div className="pricing-configuration-health__header">
+                <div>
+                  <span className="pricing-configuration-health__eyebrow">Pemeriksaan sistem</span>
+                  <h3>{configurationHealth.title}</h3>
+                </div>
+                <Badge tone={configurationHealth.tone}>{configurationHealth.badge}</Badge>
+              </div>
+              <p className="pricing-configuration-health__summary">
+                {configurationValidation.blocking
+                  ? `${configurationValidation.errors.length} pengaturan perlu diperbaiki sebelum dapat dipakai dengan aman.`
+                  : configurationValidation.issues.length > 0
+                    ? `${configurationValidation.warnings.length} catatan perlu perhatian.`
+                    : 'Tidak ada benturan pada harga aktif.'}
+              </p>
+              {configurationValidation.issues.length > 0 ? (
+                <ul className="pricing-configuration-health__issues">
+                  {configurationValidation.issues.map((issue, index) => (
+                    <li key={`${issue.code}-${issue.ruleIds.join('-')}-${index}`}>
+                      <Badge
+                        tone={
+                          issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
+                            ? 'danger'
+                            : 'warning'
+                        }
+                      >
+                        {issue.severity === PRICING_CONFIGURATION_ISSUE_SEVERITIES.ERROR
+                          ? 'Perbaiki'
+                          : 'Periksa'}
+                      </Badge>
+                      <span>{issue.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {!configurationValidation.complete ? (
+                <p className="pricing-configuration-health__footnote">
+                  Pemeriksaan belum lengkap karena sebagian referensi belum dapat dibaca.
+                </p>
+              ) : null}
+            </div>
+
+            {pricingRules.length > 0 ? (
+              <div className="pricing-advanced__rules" aria-label="Detail teknis harga">
+                {pricingRules.map((rule) => (
+                  <div className="pricing-advanced__rule" key={rule.id}>
+                    <strong>{rule.name}</strong>
+                    <span>Prioritas {rule.priority}</span>
+                    <span>{formatEffectiveWindow(rule)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
 
       <PricingRuleEditorDialog
         dialogError={dialogError}
@@ -633,11 +623,11 @@ export function PricingRulesSection({
       <Dialog
         open={Boolean(statusTarget)}
         size="sm"
-        title={`${nextStatusLabel} ${statusTarget?.name ?? 'pricing rule'}?`}
+        title={`${nextStatusLabel} ${statusTarget?.name ?? 'harga'}?`}
         description={
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Rule akan kembali ikut resolusi harga untuk booking baru hanya setelah candidate validation lolos.'
-            : 'Rule tidak lagi dipilih untuk pricing baru, tetapi snapshot dan referensi historis tetap dipertahankan.'
+            ? 'Harga akan kembali digunakan untuk booking baru setelah pemeriksaan selesai.'
+            : 'Harga tidak lagi digunakan untuk booking baru. Booking lama tetap memakai harga tersimpan sebelumnya.'
         }
         onClose={closeStatusDialog}
         footer={
@@ -662,13 +652,11 @@ export function PricingRulesSection({
           </div>
         ) : (
           <div className="pricing-rule-status-summary">
-            <strong>
-              {statusTarget ? getPricingRuleModelLabel(statusTarget.pricingModel) : ''}
-            </strong>
+            <strong>{statusTarget ? getPricingRuleModelLabel(statusTarget.pricingModel) : ''}</strong>
             <span>
               {nextStatus === PRICING_RULE_STATUSES.DISABLED
-                ? 'Tidak ada hard delete. Histori pricing yang sudah tersnapshot tetap utuh.'
-                : 'Aktivasi memvalidasi kembali session, studio scope, priority, package, dan effective window tanpa mengubah rule.'}
+                ? 'Harga bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.'
+                : 'Sistem akan memastikan harga tidak bentrok dengan pengaturan lain sebelum diaktifkan.'}
             </span>
           </div>
         )}
