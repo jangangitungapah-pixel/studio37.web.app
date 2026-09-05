@@ -84,7 +84,8 @@
   gap: 0;
 }
 
-.settings-card :is(
+.settings-card
+  :is(
     .price-session-row,
     .pricing-rule-row,
     .settings-room-row,
@@ -118,7 +119,8 @@
   border-top: 1px solid rgb(255 255 255 / 0.07);
 }
 
-.settings-card :is(
+.settings-card
+  :is(
     .price-session-row,
     .pricing-rule-row,
     .settings-room-row,
@@ -133,7 +135,8 @@
   box-shadow: none;
 }
 
-.settings-card :is(
+.settings-card
+  :is(
     .price-session-row,
     .pricing-rule-row,
     .settings-room-row,
@@ -195,7 +198,8 @@
 }
 
 /* Empty/loading/error states inside a section are flat content bands. */
-.settings-card :is(
+.settings-card
+  :is(
     .price-session-empty,
     .pricing-rule-empty,
     .duration-package-empty,
@@ -324,7 +328,8 @@
 }
 
 /* Editor dialogs use separators for conceptual groups while interactive choices stay tactile. */
-.ui-dialog :is(
+.ui-dialog
+  :is(
     .price-session-duration-panel,
     .pricing-rule-config-panel,
     .pricing-rule-model-empty,
