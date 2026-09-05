@@ -1,0 +1,36 @@
+name: Phase 6A2 Firestore Patch
+
+on:
+  push:
+    branches:
+      - phase/6a2-compensation-firestore-boundary
+    paths:
+      - .github/workflows/phase6a2-firestore-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: phase/6a2-compensation-firestore-boundary
+
+      - name: Patch Firestore rules
+        run: node scripts/phase6a2PatchFirestoreRules.mjs
+
+      - name: Commit generated rules change
+        shell: bash
+        run: |
+          if git diff --quiet -- firestore.rules; then
+            echo "firestore.rules already contains the compensation boundary"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add firestore.rules
+          git commit -m "feat: activate compensation Firestore boundary"
+          git push origin HEAD:phase/6a2-compensation-firestore-boundary
