@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { OPERATOR_TYPES } from '../settings/operators.js';
-import {
-  COMPENSATION_RULE_MODELS,
-  COMPENSATION_RULE_STATUSES,
-} from './compensationRules.js';
+import { COMPENSATION_RULE_MODELS, COMPENSATION_RULE_STATUSES } from './compensationRules.js';
 import {
   COMPENSATION_RULE_MANAGEMENT_ALL,
   createCompensationRuleManagementSnapshot,
