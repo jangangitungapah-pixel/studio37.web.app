@@ -3,9 +3,27 @@
     "indexes": "firestore.indexes.json",
     "rules": "firestore.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        ".git",
+        ".runtimeconfig.json",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "node_modules",
+        "bookingCompensationRuntime.test.js"
+      ],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run prepare:runtime"]
+    }
+  ],
   "emulators": {
     "auth": {
       "port": 9099
+    },
+    "functions": {
+      "port": 5001
     },
     "firestore": {
       "port": 8080
