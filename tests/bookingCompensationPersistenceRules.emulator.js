@@ -160,7 +160,10 @@ async function seedDocuments(entries) {
   });
 }
 
-async function initializeBookingCompensation(db, { entry = createCommissionEntry(), snapshot } = {}) {
+async function initializeBookingCompensation(
+  db,
+  { entry = createCommissionEntry(), snapshot } = {},
+) {
   const resolvedSnapshot = snapshot ?? createCompensationSnapshot();
   const batch = writeBatch(db);
   batch.update(doc(db, `bookings/${BOOKING_ID}`), {
@@ -241,7 +244,8 @@ describe('booking compensation persistence Firestore boundary', () => {
 
     const booking = await getDoc(doc(ownerDb, `bookings/${BOOKING_ID}`));
     const entry = await getDoc(doc(ownerDb, `commissionEntries/${ENTRY_ID}`));
-    if (!booking.exists() || !entry.exists()) throw new Error('Expected persisted compensation records.');
+    if (!booking.exists() || !entry.exists())
+      throw new Error('Expected persisted compensation records.');
   });
 
   test('denies delegated operators from initializing booking compensation or creating commission entries', async () => {
@@ -252,9 +256,7 @@ describe('booking compensation persistence Firestore boundary', () => {
     });
 
     await assertFails(initializeBookingCompensation(operatorDb, { entry: operatorEntry }));
-    await assertFails(
-      setDoc(doc(operatorDb, 'commissionEntries/operator-forged'), operatorEntry),
-    );
+    await assertFails(setDoc(doc(operatorDb, 'commissionEntries/operator-forged'), operatorEntry));
   });
 
   test('fails closed for unresolved booking snapshot diagnostics', async () => {
@@ -327,13 +329,9 @@ describe('booking compensation persistence Firestore boundary', () => {
 
     await assertSucceeds(getDoc(doc(ownerDb, `commissionEntries/${ENTRY_ID}`)));
     await assertFails(getDoc(doc(operatorDb, `commissionEntries/${ENTRY_ID}`)));
-    await assertSucceeds(
-      getDocs(query(collection(ownerDb, 'commissionEntries'), limit(200))),
-    );
+    await assertSucceeds(getDocs(query(collection(ownerDb, 'commissionEntries'), limit(200))));
     await assertFails(getDocs(collection(ownerDb, 'commissionEntries')));
-    await assertFails(
-      getDocs(query(collection(ownerDb, 'commissionEntries'), limit(201))),
-    );
+    await assertFails(getDocs(query(collection(ownerDb, 'commissionEntries'), limit(201))));
     await assertFails(
       updateDoc(doc(ownerDb, `commissionEntries/${ENTRY_ID}`), {
         state: 'earned',
