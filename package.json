@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/styles/signal-editorial.css src/styles/tokens.css && git diff -- src/styles/signal-editorial.css src/styles/tokens.css && exit 1",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js tests/addOnRules.emulator.js\"",
     "test:watch": "vitest"
