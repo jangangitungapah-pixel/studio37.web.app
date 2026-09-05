@@ -51,7 +51,9 @@ function normalizeAuthoritativeBookingContext(value, bookingId) {
     );
   }
   if (!Array.isArray(context.assignments)) {
-    throw new TrustedBookingCompensationContextError('Booking assignments must be authoritative data.');
+    throw new TrustedBookingCompensationContextError(
+      'Booking assignments must be authoritative data.',
+    );
   }
   if (!context.effectiveAt) {
     throw new TrustedBookingCompensationContextError(
@@ -73,7 +75,10 @@ function normalizeAuthoritativeBookingContext(value, bookingId) {
 
 function normalizePersistenceResult(value, bookingId) {
   const result = requireRecord(value, 'booking compensation persistence result');
-  const persistedBookingId = requireSingleSegmentId(result.bookingId, 'persistenceResult.bookingId');
+  const persistedBookingId = requireSingleSegmentId(
+    result.bookingId,
+    'persistenceResult.bookingId',
+  );
 
   if (persistedBookingId !== bookingId) {
     throw new TrustedBookingCompensationPersistenceError(
