@@ -68,7 +68,7 @@ function createSnapshot(id, value) {
 
 function createHarness({ booking = { bookingNumber: 'ST37-2026-0001' }, entries = {} } = {}) {
   const documents = new Map();
-  if (booking !== undefined) documents.set('bookings/booking-1', structuredClone(booking));
+  if (booking !== null) documents.set('bookings/booking-1', structuredClone(booking));
   for (const [id, value] of Object.entries(entries)) {
     documents.set(`commissionEntries/${id}`, structuredClone(value));
   }
@@ -206,7 +206,7 @@ describe('booking compensation persistence repository', () => {
   });
 
   it('fails closed when the source booking does not exist', async () => {
-    const harness = createHarness({ booking: undefined });
+    const harness = createHarness({ booking: null });
     const repository = createRepository(harness);
 
     await expect(
