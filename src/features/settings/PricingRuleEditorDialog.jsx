@@ -18,34 +18,42 @@ import {
 } from './durationSettings.js';
 import {
   DEFAULT_PRICING_RULE_FORM_VALUES,
-  PRICING_RULE_MODEL_OPTIONS,
   PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS,
   PRICING_RULE_ROUNDING_OPTIONS,
   toPricingRuleFormValues,
   validatePricingRuleForm,
 } from './pricingRuleSettings.js';
 
+const SIMPLE_PRICING_MODEL_OPTIONS = Object.freeze([
+  Object.freeze({ label: 'Per jam', value: PRICING_RULE_MODELS.HOURLY }),
+  Object.freeze({ label: 'Harga tetap', value: PRICING_RULE_MODELS.FIXED_SESSION }),
+  Object.freeze({ label: 'Paket durasi', value: PRICING_RULE_MODELS.DURATION_PACKAGE }),
+  Object.freeze({
+    label: 'Harga dasar + tambahan',
+    value: PRICING_RULE_MODELS.BASE_PLUS_ADDITIONAL,
+  }),
+]);
+
 function getUserFacingErrors(errors) {
   const translated = {};
 
-  if (errors.name) translated.name = 'Nama rule wajib diisi dan maksimal 100 karakter.';
-  if (errors.sessionTypeId) translated.sessionTypeId = 'Pilih session type yang valid.';
-  if (errors.studioId) translated.studioId = 'Pilih studio scope yang valid.';
-  if (errors.pricingModel) translated.pricingModel = 'Pilih model harga.';
-  if (errors.priority) translated.priority = 'Priority harus berupa angka bulat 1–999.';
-  if (errors.amountIdr) translated.amountIdr = 'Harga harus berupa integer IDR 0 atau lebih.';
+  if (errors.name) translated.name = 'Nama pengaturan wajib diisi dan maksimal 100 karakter.';
+  if (errors.sessionTypeId) translated.sessionTypeId = 'Pilih layanan yang valid.';
+  if (errors.studioId) translated.studioId = 'Pilih studio yang valid.';
+  if (errors.pricingModel) translated.pricingModel = 'Pilih cara menghitung harga.';
+  if (errors.priority) translated.priority = 'Prioritas harus berupa angka bulat 1–999.';
+  if (errors.amountIdr) translated.amountIdr = 'Harga harus berupa angka rupiah 0 atau lebih.';
   if (errors.amountPerIncrementIdr) {
-    translated.amountPerIncrementIdr = 'Harga per increment harus berupa integer IDR 0 atau lebih.';
+    translated.amountPerIncrementIdr = 'Harga harus berupa angka rupiah 0 atau lebih.';
   }
   if (errors.baseAmountIdr) {
-    translated.baseAmountIdr = 'Harga dasar harus berupa integer IDR 0 atau lebih.';
+    translated.baseAmountIdr = 'Harga dasar harus berupa angka rupiah 0 atau lebih.';
   }
   if (errors.additionalAmountPerIncrementIdr) {
-    translated.additionalAmountPerIncrementIdr =
-      'Harga waktu tambahan harus berupa integer IDR 0 atau lebih.';
+    translated.additionalAmountPerIncrementIdr = 'Harga tambahan harus berupa angka rupiah 0 atau lebih.';
   }
   if (errors.incrementMinutes) {
-    translated.incrementMinutes = 'Increment harus kelipatan 15 menit antara 15–1440.';
+    translated.incrementMinutes = 'Interval harga harus kelipatan 15 menit antara 15–1440.';
   }
   if (errors.minimumDurationMinutes) {
     translated.minimumDurationMinutes = 'Durasi minimum harus kelipatan 15 menit antara 15–1440.';
@@ -57,11 +65,10 @@ function getUserFacingErrors(errors) {
     translated.baseDurationMinutes = 'Durasi dasar harus kelipatan 15 menit antara 15–1440.';
   }
   if (errors.additionalIncrementMinutes) {
-    translated.additionalIncrementMinutes =
-      'Increment tambahan harus kelipatan 15 menit antara 15–1440.';
+    translated.additionalIncrementMinutes = 'Interval tambahan harus kelipatan 15 menit antara 15–1440.';
   }
   if (errors.form) {
-    translated.form = 'Konfigurasi belum memenuhi kontrak pricing rule. Periksa semua field.';
+    translated.form = 'Masih ada pengaturan yang belum valid. Periksa field yang ditandai.';
   }
 
   return translated;
@@ -76,7 +83,7 @@ function buildSessionOptions(sessionTypes, editingRule) {
     )
     .map((sessionType) => ({
       disabled: sessionType.status !== SESSION_TYPE_STATUSES.ACTIVE,
-      label: `${sessionType.name} · ${sessionType.code}${
+      label: `${sessionType.name}${
         sessionType.status === SESSION_TYPE_STATUSES.ACTIVE ? '' : ' · nonaktif'
       }`,
       value: sessionType.id,
@@ -88,9 +95,18 @@ function DurationBehaviorSummary({ children }) {
 
   return (
     <div className="duration-behavior-summary" role="status">
-      <strong>Perilaku durasi</strong>
+      <strong>Ringkasan</strong>
       <span>{children}</span>
     </div>
+  );
+}
+
+function AdvancedPricingFields({ children }) {
+  return (
+    <details className="pricing-advanced pricing-rule-editor-advanced">
+      <summary>Pengaturan lanjutan</summary>
+      <div className="pricing-advanced__content">{children}</div>
+    </details>
   );
 }
 
@@ -98,8 +114,8 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
   if (!formValues.pricingModel) {
     return (
       <div className="pricing-rule-model-empty">
-        <strong>Pilih model harga dulu.</strong>
-        <span>Field konfigurasi akan mengikuti model yang dipilih, bukan raw JSON.</span>
+        <strong>Pilih cara menghitung harga.</strong>
+        <span>Field yang dibutuhkan akan muncul otomatis.</span>
       </div>
     );
   }
@@ -108,12 +124,12 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
-          <strong>Harga tetap per session</strong>
-          <span>Nominal tidak berubah karena durasi booking.</span>
+          <strong>Harga tetap</strong>
+          <span>Nominal tetap sama berapa pun durasi booking.</span>
         </div>
         <Input
           type="number"
-          label="Harga session (IDR)"
+          label="Harga (IDR)"
           value={formValues.amountIdr}
           error={fieldErrors.amountIdr}
           min={0}
@@ -132,17 +148,21 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
       minimumDurationMinutes: formValues.minimumDurationMinutes,
       roundingMode: formValues.roundingMode,
     });
+    const unitLabel =
+      formValues.incrementMinutes === '60'
+        ? 'Harga per jam (IDR)'
+        : `Harga per ${formValues.incrementMinutes || 'interval'} menit (IDR)`;
 
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
-          <strong>Per jam / increment</strong>
-          <span>Harga dihitung per increment dengan minimum dan rounding eksplisit.</span>
+          <strong>Harga per jam</strong>
+          <span>Masukkan harga utama dan minimum durasi booking.</span>
         </div>
         <div className="settings-form__grid">
           <Input
             type="number"
-            label="Harga per increment (IDR)"
+            label={unitLabel}
             value={formValues.amountPerIncrementIdr}
             error={fieldErrors.amountPerIncrementIdr}
             min={0}
@@ -152,35 +172,37 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
             onChange={onChange('amountPerIncrementIdr')}
           />
           <DurationMinutesField
-            label="Increment harga"
-            value={formValues.incrementMinutes}
-            error={fieldErrors.incrementMinutes}
-            required
-            disabled={saving}
-            description="Unit waktu yang dipakai untuk satu langkah penagihan."
-            onValueChange={onDurationChange('incrementMinutes')}
-          />
-        </div>
-        <div className="settings-form__grid">
-          <DurationMinutesField
-            label="Durasi minimum"
+            label="Minimum booking"
             value={formValues.minimumDurationMinutes}
             error={fieldErrors.minimumDurationMinutes}
             required
             disabled={saving}
-            description="Booking di bawah durasi ini ditolak pricing engine."
+            description="Durasi minimum yang boleh dipilih customer."
             onValueChange={onDurationChange('minimumDurationMinutes')}
-          />
-          <Select
-            label="Rounding"
-            value={formValues.roundingMode}
-            options={PRICING_RULE_ROUNDING_OPTIONS}
-            required
-            disabled={saving}
-            onChange={onChange('roundingMode')}
           />
         </div>
         <DurationBehaviorSummary>{durationBehavior?.text}</DurationBehaviorSummary>
+        <AdvancedPricingFields>
+          <div className="settings-form__grid">
+            <DurationMinutesField
+              label="Interval perhitungan"
+              value={formValues.incrementMinutes}
+              error={fieldErrors.incrementMinutes}
+              required
+              disabled={saving}
+              description="Default 60 menit untuk harga per jam."
+              onValueChange={onDurationChange('incrementMinutes')}
+            />
+            <Select
+              label="Pembulatan durasi"
+              value={formValues.roundingMode}
+              options={PRICING_RULE_ROUNDING_OPTIONS}
+              required
+              disabled={saving}
+              onChange={onChange('roundingMode')}
+            />
+          </div>
+        </AdvancedPricingFields>
       </div>
     );
   }
@@ -196,11 +218,8 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
-          <strong>Satu paket durasi</strong>
-          <span>
-            Satu pricing rule mewakili satu paket. Dedicated Package Workspace mengelola beberapa
-            durasi sebagai satu set.
-          </span>
+          <strong>Paket durasi</strong>
+          <span>Contoh: 3 jam Rp400.000.</span>
         </div>
         <div className="settings-form__grid">
           <DurationMinutesField
@@ -223,46 +242,48 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
             onChange={onChange('amountIdr')}
           />
         </div>
-        <Select
-          label="Jika melewati durasi paket"
-          value={formValues.extraTimePolicy}
-          options={PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS}
-          required
-          disabled={saving}
-          onChange={onChange('extraTimePolicy')}
-        />
-        {usesAdditional ? (
-          <div className="settings-form__grid">
-            <Input
-              type="number"
-              label="Harga tambahan / increment (IDR)"
-              value={formValues.additionalAmountPerIncrementIdr}
-              error={fieldErrors.additionalAmountPerIncrementIdr}
-              min={0}
-              step={1}
-              required
-              disabled={saving}
-              onChange={onChange('additionalAmountPerIncrementIdr')}
-            />
-            <DurationMinutesField
-              label="Increment tambahan"
-              value={formValues.additionalIncrementMinutes}
-              error={fieldErrors.additionalIncrementMinutes}
-              required
-              disabled={saving}
-              onValueChange={onDurationChange('additionalIncrementMinutes')}
-            />
-            <Select
-              label="Rounding tambahan"
-              value={formValues.roundingMode}
-              options={PRICING_RULE_ROUNDING_OPTIONS}
-              required
-              disabled={saving}
-              onChange={onChange('roundingMode')}
-            />
-          </div>
-        ) : null}
         <DurationBehaviorSummary>{durationBehavior}</DurationBehaviorSummary>
+        <AdvancedPricingFields>
+          <Select
+            label="Jika durasi melebihi paket"
+            value={formValues.extraTimePolicy}
+            options={PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS}
+            required
+            disabled={saving}
+            onChange={onChange('extraTimePolicy')}
+          />
+          {usesAdditional ? (
+            <div className="settings-form__grid">
+              <Input
+                type="number"
+                label="Harga tambahan (IDR)"
+                value={formValues.additionalAmountPerIncrementIdr}
+                error={fieldErrors.additionalAmountPerIncrementIdr}
+                min={0}
+                step={1}
+                required
+                disabled={saving}
+                onChange={onChange('additionalAmountPerIncrementIdr')}
+              />
+              <DurationMinutesField
+                label="Interval tambahan"
+                value={formValues.additionalIncrementMinutes}
+                error={fieldErrors.additionalIncrementMinutes}
+                required
+                disabled={saving}
+                onValueChange={onDurationChange('additionalIncrementMinutes')}
+              />
+              <Select
+                label="Pembulatan tambahan"
+                value={formValues.roundingMode}
+                options={PRICING_RULE_ROUNDING_OPTIONS}
+                required
+                disabled={saving}
+                onChange={onChange('roundingMode')}
+              />
+            </div>
+          ) : null}
+        </AdvancedPricingFields>
       </div>
     );
   }
@@ -275,17 +296,16 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
   return (
     <div className="pricing-rule-config-panel">
       <div className="pricing-rule-config-panel__intro">
-        <strong>Harga dasar + waktu tambahan</strong>
-        <span>Harga dasar menutup window awal; kelebihannya dihitung per increment tambahan.</span>
+        <strong>Harga dasar + tambahan</strong>
+        <span>Contoh: Rp200.000 termasuk 1 jam, lalu Rp100.000 per jam berikutnya.</span>
       </div>
       <div className="settings-form__grid">
         <DurationMinutesField
-          label="Durasi dasar"
+          label="Durasi yang sudah termasuk"
           value={formValues.baseDurationMinutes}
           error={fieldErrors.baseDurationMinutes}
           required
           disabled={saving}
-          description="Window waktu yang sudah tercakup oleh harga dasar."
           onValueChange={onDurationChange('baseDurationMinutes')}
         />
         <Input
@@ -302,17 +322,16 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
       </div>
       <div className="settings-form__grid">
         <DurationMinutesField
-          label="Increment tambahan"
+          label="Interval waktu tambahan"
           value={formValues.additionalIncrementMinutes}
           error={fieldErrors.additionalIncrementMinutes}
           required
           disabled={saving}
-          description="Unit waktu untuk setiap tagihan setelah window dasar lewat."
           onValueChange={onDurationChange('additionalIncrementMinutes')}
         />
         <Input
           type="number"
-          label="Harga tambahan / increment (IDR)"
+          label="Harga waktu tambahan (IDR)"
           value={formValues.additionalAmountPerIncrementIdr}
           error={fieldErrors.additionalAmountPerIncrementIdr}
           min={0}
@@ -322,15 +341,17 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
           onChange={onChange('additionalAmountPerIncrementIdr')}
         />
       </div>
-      <Select
-        label="Rounding tambahan"
-        value={formValues.roundingMode}
-        options={PRICING_RULE_ROUNDING_OPTIONS}
-        required
-        disabled={saving}
-        onChange={onChange('roundingMode')}
-      />
       <DurationBehaviorSummary>{durationBehavior}</DurationBehaviorSummary>
+      <AdvancedPricingFields>
+        <Select
+          label="Pembulatan waktu tambahan"
+          value={formValues.roundingMode}
+          options={PRICING_RULE_ROUNDING_OPTIONS}
+          required
+          disabled={saving}
+          onChange={onChange('roundingMode')}
+        />
+      </AdvancedPricingFields>
     </div>
   );
 }
@@ -400,8 +421,8 @@ export function PricingRuleEditorDialog({
     <Dialog
       open={open}
       size="lg"
-      title={editingRule ? 'Edit pricing rule' : 'Tambah pricing rule'}
-      description="Kelola rule lewat field bisnis yang terbaca manusia; JSON internal tidak perlu disentuh."
+      title={editingRule ? 'Edit harga' : 'Atur harga'}
+      description="Pilih layanan, cara menghitung harga, lalu isi nominal yang dibutuhkan."
       onClose={onClose}
       footer={
         <>
@@ -409,34 +430,15 @@ export function PricingRuleEditorDialog({
             Batal
           </Button>
           <Button type="submit" form="pricing-rule-editor-form" loading={saving}>
-            Simpan pricing rule
+            Simpan harga
           </Button>
         </>
       }
     >
       {dialogError || fieldErrors.form ? (
         <div className="settings-notice" data-tone="danger" role="alert">
-          <strong>Pricing rule belum tersimpan.</strong>
+          <strong>Harga belum tersimpan.</strong>
           <span>{dialogError || fieldErrors.form}</span>
-        </div>
-      ) : null}
-
-      <div className="settings-notice" role="status">
-        <strong>Studio scope 5B5 aktif.</strong>
-        <span>
-          Scope general berlaku ke semua studio. Scope studio tertentu menang atas general setelah
-          session dan effective-time eligibility cocok; priority baru dibandingkan di dalam scope
-          yang terpilih.
-        </span>
-      </div>
-
-      {preservesEffectiveMetadata ? (
-        <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Effective window dipertahankan.</strong>
-          <span>
-            Rule ini sudah memiliki effective window. 5B5 tidak mengubah tanggal tersebut; workflow
-            effective-period tetap checkpoint terpisah.
-          </span>
         </div>
       ) : null}
 
@@ -447,49 +449,22 @@ export function PricingRuleEditorDialog({
         noValidate
       >
         <div className="settings-form__grid">
-          <Input
-            label="Nama pricing rule"
-            value={formValues.name}
-            error={fieldErrors.name}
-            maxLength={100}
-            required
-            disabled={saving}
-            data-autofocus="true"
-            placeholder="Rehearsal reguler"
-            onChange={changeField('name')}
-          />
-          <Input
-            type="number"
-            label="Priority"
-            value={formValues.priority}
-            error={fieldErrors.priority}
-            min={1}
-            max={999}
-            step={1}
-            required
-            disabled={saving}
-            description="Angka lebih besar menang setelah studio scope cocok."
-            onChange={changeField('priority')}
-          />
-        </div>
-
-        <div className="settings-form__grid">
           <Select
-            label="Session type"
+            label="Layanan"
             value={formValues.sessionTypeId}
             error={fieldErrors.sessionTypeId}
             options={sessionOptions}
-            placeholder="Pilih session type"
+            placeholder="Pilih layanan"
             required
             disabled={saving}
             onChange={changeField('sessionTypeId')}
           />
           <Select
-            label="Model harga"
+            label="Cara menghitung harga"
             value={formValues.pricingModel}
             error={fieldErrors.pricingModel}
-            options={PRICING_RULE_MODEL_OPTIONS}
-            placeholder="Pilih model harga"
+            options={SIMPLE_PRICING_MODEL_OPTIONS}
+            placeholder="Pilih cara menghitung"
             required
             disabled={saving}
             onChange={changeField('pricingModel')}
@@ -512,6 +487,46 @@ export function PricingRuleEditorDialog({
           onDurationChange={changeDurationField}
           saving={saving}
         />
+
+        <details className="pricing-advanced pricing-rule-editor-advanced">
+          <summary>Detail pengaturan</summary>
+          <div className="pricing-advanced__content">
+            <div className="settings-form__grid">
+              <Input
+                label="Nama pengaturan"
+                value={formValues.name}
+                error={fieldErrors.name}
+                maxLength={100}
+                required
+                disabled={saving}
+                data-autofocus="true"
+                placeholder="Contoh: Latihan reguler"
+                description="Hanya untuk memudahkan identifikasi di halaman pengaturan."
+                onChange={changeField('name')}
+              />
+              <Input
+                type="number"
+                label="Prioritas"
+                value={formValues.priority}
+                error={fieldErrors.priority}
+                min={1}
+                max={999}
+                step={1}
+                required
+                disabled={saving}
+                description="Biarkan 100 kecuali memang ada beberapa harga yang saling tumpang tindih."
+                onChange={changeField('priority')}
+              />
+            </div>
+
+            {preservesEffectiveMetadata ? (
+              <div className="settings-notice" data-tone="warning" role="status">
+                <strong>Periode harga khusus tetap dipertahankan.</strong>
+                <span>Editor sederhana ini tidak mengubah tanggal mulai atau berakhir yang sudah ada.</span>
+              </div>
+            ) : null}
+          </div>
+        </details>
       </form>
     </Dialog>
   );
