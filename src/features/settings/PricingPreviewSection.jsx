@@ -48,56 +48,40 @@ function getDefaultDurationMinutes(rule) {
 
 function getSafeLoadMessage(error) {
   if (error?.code === 'permission-denied') {
-    return 'Akun ini tidak memiliki izin membaca salah satu sumber preview harga.';
+    return 'Akun ini tidak memiliki izin membaca data yang dibutuhkan untuk simulasi harga.';
   }
   if (error?.code === 'unavailable') {
-    return 'Firestore sedang tidak tersedia. Coba muat ulang preview setelah koneksi pulih.';
+    return 'Data harga sedang tidak tersedia. Coba lagi setelah koneksi pulih.';
   }
-  return 'Sumber pricing preview belum bisa dimuat. Coba lagi tanpa mengubah konfigurasi.';
+  return 'Simulasi harga belum bisa dimuat. Coba lagi tanpa mengubah pengaturan yang sudah ada.';
 }
 
 function getPreviewErrorMessage(error) {
   const message = String(error?.message ?? '');
 
   if (message.includes('minimum duration')) {
-    return 'Durasi simulasi masih di bawah minimum yang dikonfigurasi rule.';
+    return 'Durasi masih di bawah minimum booking untuk harga ini.';
   }
   if (message.includes('must align') || message.includes('align with')) {
-    return 'Durasi simulasi harus pas dengan increment karena rule memakai mode exact.';
+    return 'Durasi belum sesuai dengan interval waktu yang dipakai harga ini.';
   }
   if (message.includes('extra time is blocked')) {
-    return 'Durasi melebihi paket, sementara konfigurasi paket memblokir waktu tambahan.';
+    return 'Durasi melebihi batas paket ini.';
   }
   if (message.includes('requires another package')) {
-    return 'Durasi tambahan membutuhkan paket lain dan tidak boleh dihitung oleh satu rule paket.';
+    return 'Durasi ini membutuhkan paket lain.';
   }
   if (message.includes('not available for the selected pricing-rule session')) {
-    return 'Add-on tersebut tidak tersedia untuk session type rule yang sedang dipreview.';
+    return 'Layanan tambahan tersebut tidak tersedia untuk layanan yang dipilih.';
   }
   if (message.includes('quantity')) {
-    return 'Jumlah add-on harus berupa angka bulat lebih dari nol.';
+    return 'Jumlah layanan tambahan harus lebih dari nol.';
   }
   if (message.includes('durationMinutes')) {
-    return 'Durasi simulasi belum valid untuk konfigurasi harga yang dipilih.';
+    return 'Durasi yang dipilih belum valid untuk harga ini.';
   }
 
-  return 'Input simulasi belum sesuai dengan kontrak calculator rule yang dipilih.';
-}
-
-function formatEffectiveWindow(rule) {
-  if (rule.effectiveFrom === null && rule.effectiveUntil === null) {
-    return 'Tanpa batas waktu';
-  }
-
-  const formatter = new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  const from = rule.effectiveFrom ? formatter.format(rule.effectiveFrom) : '∞';
-  const until = rule.effectiveUntil ? formatter.format(rule.effectiveUntil) : '∞';
-  return `${from} → ${until}`;
+  return 'Input simulasi belum sesuai dengan pengaturan harga yang dipilih.';
 }
 
 function getBaseBreakdown(preview) {
@@ -108,10 +92,9 @@ function getBaseBreakdown(preview) {
       {
         amountIdr: calculation.totalAmountIdr,
         detail:
-          `${calculation.inputDurationMinutes} mnt diminta · ` +
-          `${calculation.billableDurationMinutes} mnt ditagih · ` +
-          `${calculation.billedIncrementCount} increment`,
-        label: 'Harga sesi',
+          `${calculation.inputDurationMinutes} mnt dipilih · ` +
+          `${calculation.billableDurationMinutes} mnt dihitung`,
+        label: 'Harga layanan',
       },
     ];
   }
@@ -120,8 +103,8 @@ function getBaseBreakdown(preview) {
     return [
       {
         amountIdr: calculation.totalAmountIdr,
-        detail: 'Harga tetap per session; durasi tidak mengubah nominal.',
-        label: 'Harga tetap',
+        detail: 'Harga tetap untuk satu booking.',
+        label: 'Harga layanan',
       },
     ];
   }
@@ -130,7 +113,7 @@ function getBaseBreakdown(preview) {
     const lines = [
       {
         amountIdr: calculation.packageAmountIdr,
-        detail: `${calculation.packageDurationMinutes} menit paket`,
+        detail: `${calculation.packageDurationMinutes} menit`,
         label: 'Harga paket',
       },
     ];
@@ -138,9 +121,7 @@ function getBaseBreakdown(preview) {
     if (calculation.additionalAmountIdr > 0) {
       lines.push({
         amountIdr: calculation.additionalAmountIdr,
-        detail:
-          `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ` +
-          `${calculation.billedAdditionalIncrementCount} increment`,
+        detail: `${calculation.billedAdditionalDurationMinutes} menit tambahan`,
         label: 'Waktu tambahan',
       });
     }
@@ -159,9 +140,7 @@ function getBaseBreakdown(preview) {
   if (calculation.additionalAmountIdr > 0) {
     lines.push({
       amountIdr: calculation.additionalAmountIdr,
-      detail:
-        `${calculation.billedAdditionalDurationMinutes} mnt ditagih · ` +
-        `${calculation.billedAdditionalIncrementCount} increment`,
+      detail: `${calculation.billedAdditionalDurationMinutes} menit tambahan`,
       label: 'Waktu tambahan',
     });
   }
@@ -176,11 +155,7 @@ function getAddOnDetail(item) {
   if (item.pricingType === ADD_ON_PRICING_TYPES.QUANTITY) {
     return `${item.quantity} × ${formatIntegerIdr(item.unitAmountIdr)}`;
   }
-  return (
-    `${item.inputDurationMinutes} mnt diminta · ` +
-    `${item.billedDurationMinutes} mnt ditagih · ` +
-    `${item.billedIncrementCount} increment`
-  );
+  return `${item.billedDurationMinutes} menit`;
 }
 
 function PricingPreviewRuleCard({ rule, sessionType, studioLoadState, studioRooms }) {
@@ -191,7 +166,7 @@ function PricingPreviewRuleCard({ rule, sessionType, studioLoadState, studioRoom
       <div className="pricing-preview__rule-card">
         <div className="pricing-preview__rule-heading">
           <div>
-            <strong>{rule.name}</strong>
+            <strong>{sessionType?.name ?? rule.name}</strong>
             <span>{formatPricingRuleConfigurationSummary(rule)}</span>
           </div>
           <Badge tone={active ? 'success' : 'neutral'}>{active ? 'Aktif' : 'Nonaktif'}</Badge>
@@ -199,39 +174,24 @@ function PricingPreviewRuleCard({ rule, sessionType, studioLoadState, studioRoom
 
         <dl className="pricing-preview__facts">
           <div>
-            <dt>Session</dt>
-            <dd>
-              {sessionType ? `${sessionType.name} · ${sessionType.code}` : rule.sessionTypeId}
-            </dd>
+            <dt>Layanan</dt>
+            <dd>{sessionType?.name ?? 'Layanan'}</dd>
           </div>
           <div>
-            <dt>Studio scope</dt>
+            <dt>Berlaku untuk</dt>
             <dd>{formatStudioScopeLabel(rule.studioId, studioRooms)}</dd>
-          </div>
-          <div>
-            <dt>Priority</dt>
-            <dd>{rule.priority}</dd>
-          </div>
-          <div>
-            <dt>Effective</dt>
-            <dd>{formatEffectiveWindow(rule)}</dd>
           </div>
         </dl>
 
         {rule.studioId !== null && studioLoadState !== 'ready' ? (
-          <small>
-            Nama room tidak tersedia pada akun/koneksi ini; simulator tetap memakai exact studio ID
-            yang tersimpan pada rule.
-          </small>
+          <small>Nama studio belum tersedia, tetapi simulasi tetap memakai studio yang tersimpan.</small>
         ) : null}
       </div>
 
       {!active ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Rule ini nonaktif.</strong>
-          <span>
-            Angka di bawah hanya simulasi dan tidak membuat rule tersedia untuk booking baru.
-          </span>
+          <strong>Harga ini sedang nonaktif.</strong>
+          <span>Simulasi tetap boleh dipakai untuk mengecek hasil sebelum harga diaktifkan.</span>
         </div>
       ) : null}
     </>
@@ -248,7 +208,7 @@ function PricingPreviewAddOn({ addOn, input, onFieldChange, onToggle }) {
         <input
           type="checkbox"
           checked={selected}
-          aria-label={`Pilih add-on ${addOn.name}`}
+          aria-label={`Pilih tambahan ${addOn.name}`}
           onChange={onToggle}
         />
         <span>
@@ -277,7 +237,7 @@ function PricingPreviewAddOn({ addOn, input, onFieldChange, onToggle }) {
           label={`Durasi ${addOn.name}`}
           value={input?.durationMinutes ?? ''}
           required
-          description="Durasi add-on merupakan transaction input terpisah dari konfigurasi Settings."
+          description="Masukkan durasi layanan tambahan untuk simulasi ini."
           onValueChange={(value) => onFieldChange('durationMinutes', value)}
         />
       ) : null}
@@ -289,7 +249,7 @@ function PricingPreviewResult({ addOnById, error, preview }) {
   if (error) {
     return (
       <div className="settings-notice" data-tone="warning" role="status">
-        <strong>Preview belum dapat dihitung.</strong>
+        <strong>Harga belum dapat dihitung.</strong>
         <span>{error}</span>
       </div>
     );
@@ -298,8 +258,8 @@ function PricingPreviewResult({ addOnById, error, preview }) {
   if (!preview) {
     return (
       <div className="pricing-preview__placeholder">
-        <strong>Pilih rule untuk mulai simulasi.</strong>
-        <span>Breakdown akan muncul tanpa menyimpan atau mengubah konfigurasi.</span>
+        <strong>Pilih harga untuk mulai simulasi.</strong>
+        <span>Perkiraan total akan muncul di sini.</span>
       </div>
     );
   }
@@ -307,11 +267,11 @@ function PricingPreviewResult({ addOnById, error, preview }) {
   return (
     <>
       <div className="pricing-preview__total">
-        <span>Total preview</span>
+        <span>Perkiraan total</span>
         <strong>{formatIntegerIdr(preview.totalAmountIdr)}</strong>
       </div>
 
-      <div className="pricing-preview__breakdown" aria-label="Breakdown pricing preview">
+      <div className="pricing-preview__breakdown" aria-label="Rincian harga">
         {getBaseBreakdown(preview).map((line) => (
           <div className="pricing-preview__line" key={`${line.label}-${line.amountIdr}`}>
             <div>
@@ -327,7 +287,7 @@ function PricingPreviewResult({ addOnById, error, preview }) {
           return (
             <div className="pricing-preview__line" key={item.addOnId}>
               <div>
-                <strong>Add-on · {addOn?.name ?? item.addOnId}</strong>
+                <strong>Tambahan · {addOn?.name ?? item.addOnId}</strong>
                 <span>{getAddOnDetail(item)}</span>
               </div>
               <b>{formatIntegerIdr(item.totalAmountIdr)}</b>
@@ -337,11 +297,8 @@ function PricingPreviewResult({ addOnById, error, preview }) {
       </div>
 
       <div className="pricing-preview__footnote">
-        <strong>Belum termasuk discount atau manual override.</strong>
-        <span>
-          Dua concern itu tetap memakai calculator/authorization contract terpisah dan tidak
-          diimprovisasi oleh simulator ini.
-        </span>
+        <strong>Hasil simulasi saja.</strong>
+        <span>Simulasi ini tidak membuat booking dan tidak mengubah pengaturan harga.</span>
       </div>
     </>
   );
@@ -443,13 +400,16 @@ export function PricingPreviewSection({
   );
   const ruleOptions = useMemo(
     () =>
-      pricingRules.map((rule) => ({
-        label:
-          `${rule.name} · ${getPricingRuleModelLabel(rule.pricingModel)} · ` +
-          `${rule.status === PRICING_RULE_STATUSES.ACTIVE ? 'aktif' : 'nonaktif'}`,
-        value: rule.id,
-      })),
-    [pricingRules],
+      pricingRules.map((rule) => {
+        const sessionType = sessionTypeById.get(rule.sessionTypeId);
+        return {
+          label:
+            `${sessionType?.name ?? rule.name} · ${getPricingRuleModelLabel(rule.pricingModel)} · ` +
+            `${rule.status === PRICING_RULE_STATUSES.ACTIVE ? 'aktif' : 'nonaktif'}`,
+          value: rule.id,
+        };
+      }),
+    [pricingRules, sessionTypeById],
   );
 
   useEffect(() => {
@@ -536,22 +496,14 @@ export function PricingPreviewSection({
       <header className="settings-card__header settings-card__header--with-action">
         <div>
           <p className="settings-card__eyebrow">Simulasi</p>
-          <h2 id="pricing-preview-heading">Pricing preview</h2>
+          <h2 id="pricing-preview-heading">Coba hitung harga</h2>
           <p className="settings-card__subtitle">
-            Uji satu rule atau package tersimpan dengan calculator production. Simulator tidak
-            menyimpan booking, tidak mengubah status rule, dan tidak melakukan manual override.
+            Pilih harga, ubah durasi, tambahkan layanan ekstra, lalu lihat perkiraan total sebelum
+            dipakai pada booking.
           </p>
         </div>
-        <Badge tone="brand">Non-persisted</Badge>
+        <Badge tone="brand">Simulasi</Badge>
       </header>
-
-      <div className="settings-notice" role="status">
-        <strong>Rule dipilih secara eksplisit.</strong>
-        <span>
-          Preview ini tidak menebak auto-resolution package. Pilih rule/package yang ingin diuji;
-          priority dan effective window tetap ditampilkan sebagai konteks konfigurasi.
-        </span>
-      </div>
 
       {loadState === 'loading' ? (
         <div
@@ -561,10 +513,8 @@ export function PricingPreviewSection({
         >
           <span className="settings-state__spinner" aria-hidden="true" />
           <div>
-            <p className="settings-state__title">Menyiapkan pricing preview</p>
-            <p className="settings-state__description">
-              Memuat bounded pricing rules dan add-ons dari repository yang sama dengan editor.
-            </p>
+            <p className="settings-state__title">Menyiapkan simulasi harga</p>
+            <p className="settings-state__description">Memuat harga dan layanan tambahan.</p>
           </div>
         </div>
       ) : null}
@@ -572,11 +522,11 @@ export function PricingPreviewSection({
       {loadState === 'error' ? (
         <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
           <div>
-            <p className="settings-state__title">Pricing preview belum tersedia</p>
+            <p className="settings-state__title">Simulasi harga belum tersedia</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
-            Coba lagi preview
+            Coba lagi
           </Button>
         </div>
       ) : null}
@@ -585,9 +535,9 @@ export function PricingPreviewSection({
         <div className="price-session-empty">
           <span className="settings-placeholder__dot" aria-hidden="true" />
           <div>
-            <p className="settings-placeholder__title">Belum ada rule untuk dipreview</p>
+            <p className="settings-placeholder__title">Belum ada harga untuk dicoba</p>
             <p className="settings-placeholder__description">
-              Buat pricing rule atau package terlebih dahulu. Simulator tidak membuat rule baru.
+              Atur harga layanan terlebih dahulu, lalu kembali ke simulasi ini.
             </p>
           </div>
         </div>
@@ -597,11 +547,11 @@ export function PricingPreviewSection({
         <div className="pricing-preview__workspace">
           <div className="pricing-preview__controls">
             <Select
-              label="Pricing rule / package"
+              label="Harga yang ingin dicoba"
               value={selectedRuleId}
               options={ruleOptions}
-              placeholder="Pilih rule yang ingin diuji"
-              description="Rule nonaktif tetap dapat dipilih untuk simulasi sebelum aktivasi."
+              placeholder="Pilih harga"
+              description="Harga nonaktif tetap dapat dicoba sebelum diaktifkan."
               onChange={(event) => setSelectedRuleId(event.target.value)}
             />
 
@@ -616,10 +566,10 @@ export function PricingPreviewSection({
 
             {selectedRule && selectedRule.pricingModel !== PRICING_RULE_MODELS.FIXED_SESSION ? (
               <DurationMinutesField
-                label="Contoh durasi session"
+                label="Contoh durasi booking"
                 value={durationMinutes}
                 required
-                description="Input simulasi saja. Calculator tetap menerapkan minimum, increment, package policy, dan rounding canonical."
+                description="Ubah durasi untuk melihat perkiraan total."
                 onValueChange={setDurationMinutes}
               />
             ) : null}
@@ -627,16 +577,13 @@ export function PricingPreviewSection({
             {selectedRule ? (
               <div className="pricing-preview__addons">
                 <div className="pricing-preview__subheading">
-                  <strong>Add-ons</strong>
-                  <span>
-                    Hanya add-on general atau yang scoped ke session{' '}
-                    {sessionType?.name ?? selectedRule.sessionTypeId}.
-                  </span>
+                  <strong>Layanan tambahan</strong>
+                  <span>Pilih tambahan yang ingin dimasukkan ke simulasi.</span>
                 </div>
 
                 {applicableAddOns.length === 0 ? (
                   <p className="pricing-preview__muted">
-                    Tidak ada add-on yang applicable untuk session ini.
+                    Tidak ada layanan tambahan untuk layanan ini.
                   </p>
                 ) : (
                   applicableAddOns.map((addOn) => (
