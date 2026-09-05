@@ -8,6 +8,7 @@
     "node": "22"
   },
   "scripts": {
+    "prepare:runtime": "node ../scripts/prepare-functions.mjs",
     "test": "node --test bookingCompensationRuntime.test.js",
     "smoke": "node -e \"import('./index.js').then(() => console.log('Functions import smoke passed.'))\""
   },
