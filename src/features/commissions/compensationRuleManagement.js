@@ -3,7 +3,6 @@ import {
   compareCompensationRules,
   COMPENSATION_RULE_MODELS,
   COMPENSATION_RULE_STATUSES,
-  normalizeCompensationRuleId,
 } from './compensationRules.js';
 
 export const COMPENSATION_RULE_MANAGEMENT_ALL = 'all';
@@ -41,7 +40,22 @@ function normalizeOptionalIdFilter(value, label) {
   if (value === undefined || value === null || value === COMPENSATION_RULE_MANAGEMENT_ALL) {
     return COMPENSATION_RULE_MANAGEMENT_ALL;
   }
-  return normalizeCompensationRuleId(value, label);
+  if (typeof value !== 'string') {
+    throw new TypeError(`${label} must be a string.`);
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new TypeError(`${label} must be a non-empty string.`);
+  }
+  if (normalized.length > 128) {
+    throw new RangeError(`${label} must be at most 128 characters.`);
+  }
+  if (normalized.includes('/')) {
+    throw new TypeError(`${label} must be a Firestore document id.`);
+  }
+
+  return normalized;
 }
 
 function matchesOptionalReference(ruleValue, filterValue) {
@@ -116,7 +130,9 @@ export function filterCompensationRulesForManagement(rules, filters = {}) {
 
 export function summarizeCompensationRulesForManagement(rules) {
   const resolvedRules = requireArray(rules, 'rules');
-  const byModel = Object.fromEntries(Object.values(COMPENSATION_RULE_MODELS).map((model) => [model, 0]));
+  const byModel = Object.fromEntries(
+    Object.values(COMPENSATION_RULE_MODELS).map((model) => [model, 0]),
+  );
   const byOperatorType = Object.fromEntries(
     Object.values(OPERATOR_TYPES).map((operatorType) => [operatorType, 0]),
   );
