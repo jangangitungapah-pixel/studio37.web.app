@@ -212,7 +212,7 @@ export function DurationPackagesWorkspace({
   };
 
   const openDeleteDialog = (rule) => {
-    if (!canDelete) return;
+    if (!canDelete || rule.status !== PRICING_RULE_STATUSES.DISABLED) return;
     setDeleteTarget(rule);
     setDeleteError('');
   };
@@ -224,7 +224,7 @@ export function DurationPackagesWorkspace({
   }, [deleteSaving]);
 
   const deletePackage = async () => {
-    if (!canDelete || !deleteTarget) return;
+    if (!canDelete || !deleteTarget || deleteTarget.status !== PRICING_RULE_STATUSES.DISABLED) return;
 
     setDeleteSaving(true);
     setDeleteError('');
@@ -359,7 +359,7 @@ export function DurationPackagesWorkspace({
                             >
                               {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                             </Button>
-                            {canDelete ? (
+                            {canDelete && !isActive ? (
                               <Button
                                 size="sm"
                                 variant="ghost"
