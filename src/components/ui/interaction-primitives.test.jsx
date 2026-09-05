@@ -95,7 +95,10 @@ describe('Phase 1C interaction primitives', () => {
     await user.click(trigger);
 
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('option', { name: 'Pending' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'Pending' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
 
     await user.keyboard('{ArrowDown}{Enter}');
 
