@@ -13,6 +13,15 @@ function createHourlyConfiguration(overrides = {}) {
   };
 }
 
+function createRecurringDiscount(overrides = {}) {
+  return {
+    amountPerBlockIdr: 40_000,
+    blockDurationMinutes: 180,
+    enabled: true,
+    ...overrides,
+  };
+}
+
 function createCalculationInput(overrides = {}) {
   return {
     configuration: createHourlyConfiguration(),
@@ -40,6 +49,99 @@ describe('hourly pricing calculation', () => {
     });
     expect(Object.isFrozen(result)).toBe(true);
     expect(input).toEqual(createCalculationInput());
+  });
+
+  it.each([
+    [60, 120_000, 0, 0],
+    [120, 240_000, 0, 0],
+    [180, 320_000, 1, 40_000],
+    [240, 440_000, 1, 40_000],
+    [300, 560_000, 1, 40_000],
+    [360, 640_000, 2, 80_000],
+    [540, 960_000, 3, 120_000],
+  ])(
+    'applies the recurring 3-hour discount for %i booked minutes',
+    (durationMinutes, totalAmountIdr, blockCount, discountAmountIdr) => {
+      const result = calculateHourlyPrice(
+        createCalculationInput({
+          configuration: createHourlyConfiguration({
+            minimumDurationMinutes: 60,
+            recurringDurationDiscount: createRecurringDiscount(),
+          }),
+          durationMinutes,
+        }),
+      );
+
+      expect(result).toMatchObject({
+        baseAmountIdr: (durationMinutes / 60) * 120_000,
+        discountAmountIdr,
+        recurringDiscountAmountPerBlockIdr: 40_000,
+        recurringDiscountBlockCount: blockCount,
+        recurringDiscountBlockDurationMinutes: 180,
+        recurringDiscountEnabled: true,
+        totalAmountIdr,
+      });
+    },
+  );
+
+  it('uses an edited 4-hour / Rp20k recurring rule without code-specific behavior', () => {
+    const configuration = createHourlyConfiguration({
+      minimumDurationMinutes: 60,
+      recurringDurationDiscount: createRecurringDiscount({
+        amountPerBlockIdr: 20_000,
+        blockDurationMinutes: 240,
+      }),
+    });
+
+    expect(
+      calculateHourlyPrice(createCalculationInput({ configuration, durationMinutes: 240 })),
+    ).toMatchObject({
+      baseAmountIdr: 480_000,
+      discountAmountIdr: 20_000,
+      recurringDiscountBlockCount: 1,
+      totalAmountIdr: 460_000,
+    });
+    expect(
+      calculateHourlyPrice(createCalculationInput({ configuration, durationMinutes: 480 })),
+    ).toMatchObject({
+      baseAmountIdr: 960_000,
+      discountAmountIdr: 40_000,
+      recurringDiscountBlockCount: 2,
+      totalAmountIdr: 920_000,
+    });
+  });
+
+  it('keeps a configured recurring discount dormant when it is disabled', () => {
+    const result = calculateHourlyPrice(
+      createCalculationInput({
+        configuration: createHourlyConfiguration({
+          recurringDurationDiscount: createRecurringDiscount({ enabled: false }),
+        }),
+        durationMinutes: 360,
+      }),
+    );
+
+    expect(result).toMatchObject({
+      baseAmountIdr: 720_000,
+      discountAmountIdr: 0,
+      recurringDiscountBlockCount: 0,
+      recurringDiscountEnabled: false,
+      totalAmountIdr: 720_000,
+    });
+  });
+
+  it('rejects a recurring discount that would make the calculated price negative', () => {
+    expect(() =>
+      calculateHourlyPrice(
+        createCalculationInput({
+          configuration: createHourlyConfiguration({
+            minimumDurationMinutes: 60,
+            recurringDurationDiscount: createRecurringDiscount({ amountPerBlockIdr: 500_000 }),
+          }),
+          durationMinutes: 180,
+        }),
+      ),
+    ).toThrow(/discount exceeds the calculated base amount/);
   });
 
   it('rejects a partial increment in exact mode', () => {
@@ -176,6 +278,15 @@ describe('hourly pricing calculation', () => {
         }),
       ),
     ).toThrow(/unsupported document shape/);
+    expect(() =>
+      calculateHourlyPrice(
+        createCalculationInput({
+          configuration: createHourlyConfiguration({
+            recurringDurationDiscount: createRecurringDiscount({ blockDurationMinutes: 90 }),
+          }),
+        }),
+      ),
+    ).toThrow(/must align with incrementMinutes/);
   });
 
   it('rejects unsafe derived durations and unsafe integer-IDR multiplication', () => {
