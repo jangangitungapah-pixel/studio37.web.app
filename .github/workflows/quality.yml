@@ -36,15 +36,70 @@ jobs:
       - name: Install Functions dependencies
         run: npm --prefix functions install --no-audit --no-fund
 
-      - name: Diagnose Phase 6E formatting
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test Phase 6A2 repository boundary
+        run: npx vitest run src/services/compensationRuleRepository.test.js
+
+      - name: Test Phase 6B management core
+        run: >-
+          npx vitest run
+          src/features/commissions/compensationRuleManagement.test.js
+          src/services/compensationRuleManagementService.test.js
+
+      - name: Test Phase 6C compensation engine
+        run: npx vitest run src/features/commissions/compensationEngine.test.js
+
+      - name: Test Phase 6D booking compensation foundation
+        run: npx vitest run src/features/commissions/bookingCompensation.test.js
+
+      - name: Test Phase 6D2 persistence repository
+        run: npx vitest run src/services/bookingCompensationPersistenceRepository.test.js
+
+      - name: Test Phase 6E trusted execution boundary
+        run: >-
+          npx vitest run
+          functions/src/trustedBookingCompensationCore.test.js
+          functions/src/trustedBookingCompensationFirestoreGateway.test.js
+
+      - name: Build Phase 6E Cloud Functions bundle
+        run: npm --prefix functions run build
+
+      - name: Test Phase 6D2 Firestore persistence boundary
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules:booking-compensation
+
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
+
+      - name: Build
+        run: npm run build
+
+      - name: Dev server smoke
         shell: bash
         run: |
-          npx prettier --write \
-            docs/architecture/TRUSTED-BOOKING-COMPENSATION-EXECUTION-CONTRACT.md \
-            functions/src/trustedBookingCompensationCore.test.js \
-            functions/src/trustedBookingCompensationFirestoreGateway.test.js
-          git diff -- \
-            docs/architecture/TRUSTED-BOOKING-COMPENSATION-EXECUTION-CONTRACT.md \
-            functions/src/trustedBookingCompensationCore.test.js \
-            functions/src/trustedBookingCompensationFirestoreGateway.test.js
+          npm run dev -- --host 127.0.0.1 > /tmp/studio37-vite.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/studio37-vite.log
           exit 1
+
+      - name: Test full unit suite
+        run: npm test
