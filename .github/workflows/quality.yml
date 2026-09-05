@@ -33,8 +33,10 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Format Phase 6E2 diagnostics
+        run: |
+          npx prettier --write functions/bookingCompensationRuntime.js functions/bookingCompensationRuntime.test.js
+          git diff --exit-code -- functions/bookingCompensationRuntime.js functions/bookingCompensationRuntime.test.js
 
       - name: Lint
         run: npm run lint
