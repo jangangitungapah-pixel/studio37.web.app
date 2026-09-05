@@ -38,6 +38,11 @@ export const PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS = Object.freeze([
   }),
 ]);
 
+export const PRICING_RULE_RECURRING_DISCOUNT_OPTIONS = Object.freeze([
+  Object.freeze({ label: 'Tidak aktif', value: 'disabled' }),
+  Object.freeze({ label: 'Aktif', value: 'enabled' }),
+]);
+
 export const DEFAULT_PRICING_RULE_FORM_VALUES = Object.freeze({
   additionalAmountPerIncrementIdr: '',
   additionalIncrementMinutes: '60',
@@ -52,6 +57,9 @@ export const DEFAULT_PRICING_RULE_FORM_VALUES = Object.freeze({
   name: '',
   pricingModel: '',
   priority: '100',
+  recurringDiscountAmountPerBlockIdr: '40000',
+  recurringDiscountBlockDurationMinutes: '180',
+  recurringDiscountState: 'disabled',
   roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
   sessionTypeId: '',
   studioId: '',
@@ -100,23 +108,52 @@ function parseDuration(value, label, errors) {
   return parsed;
 }
 
+function buildHourlyConfiguration(formValues, errors) {
+  const incrementMinutes = parseDuration(formValues.incrementMinutes, 'incrementMinutes', errors);
+  const recurringDiscountBlockDurationMinutes = parseDuration(
+    formValues.recurringDiscountBlockDurationMinutes,
+    'recurringDiscountBlockDurationMinutes',
+    errors,
+  );
+  const recurringDiscountAmountPerBlockIdr = parseSafeInteger(
+    formValues.recurringDiscountAmountPerBlockIdr,
+    'recurringDiscountAmountPerBlockIdr',
+    errors,
+  );
+
+  if (
+    incrementMinutes !== null &&
+    recurringDiscountBlockDurationMinutes !== null &&
+    recurringDiscountBlockDurationMinutes % incrementMinutes !== 0
+  ) {
+    errors.recurringDiscountBlockDurationMinutes = true;
+  }
+
+  return {
+    amountPerIncrementIdr: parseSafeInteger(
+      formValues.amountPerIncrementIdr,
+      'amountPerIncrementIdr',
+      errors,
+    ),
+    incrementMinutes,
+    minimumDurationMinutes: parseDuration(
+      formValues.minimumDurationMinutes,
+      'minimumDurationMinutes',
+      errors,
+    ),
+    recurringDurationDiscount: {
+      amountPerBlockIdr: recurringDiscountAmountPerBlockIdr,
+      blockDurationMinutes: recurringDiscountBlockDurationMinutes,
+      enabled: formValues.recurringDiscountState === 'enabled',
+    },
+    roundingMode: formValues.roundingMode,
+  };
+}
+
 function buildConfiguration(formValues, errors) {
   switch (formValues.pricingModel) {
     case PRICING_RULE_MODELS.HOURLY:
-      return {
-        amountPerIncrementIdr: parseSafeInteger(
-          formValues.amountPerIncrementIdr,
-          'amountPerIncrementIdr',
-          errors,
-        ),
-        incrementMinutes: parseDuration(formValues.incrementMinutes, 'incrementMinutes', errors),
-        minimumDurationMinutes: parseDuration(
-          formValues.minimumDurationMinutes,
-          'minimumDurationMinutes',
-          errors,
-        ),
-        roundingMode: formValues.roundingMode,
-      };
+      return buildHourlyConfiguration(formValues, errors);
 
     case PRICING_RULE_MODELS.FIXED_SESSION:
       return {
@@ -188,14 +225,23 @@ export function toPricingRuleFormValues(pricingRule) {
   const configuration = pricingRule.configuration;
 
   switch (pricingRule.pricingModel) {
-    case PRICING_RULE_MODELS.HOURLY:
+    case PRICING_RULE_MODELS.HOURLY: {
+      const recurringDiscount = configuration.recurringDurationDiscount;
       return {
         ...values,
         amountPerIncrementIdr: String(configuration.amountPerIncrementIdr),
         incrementMinutes: String(configuration.incrementMinutes),
         minimumDurationMinutes: String(configuration.minimumDurationMinutes),
+        recurringDiscountAmountPerBlockIdr: recurringDiscount
+          ? String(recurringDiscount.amountPerBlockIdr)
+          : DEFAULT_PRICING_RULE_FORM_VALUES.recurringDiscountAmountPerBlockIdr,
+        recurringDiscountBlockDurationMinutes: recurringDiscount
+          ? String(recurringDiscount.blockDurationMinutes)
+          : DEFAULT_PRICING_RULE_FORM_VALUES.recurringDiscountBlockDurationMinutes,
+        recurringDiscountState: recurringDiscount?.enabled ? 'enabled' : 'disabled',
         roundingMode: configuration.roundingMode,
       };
+    }
 
     case PRICING_RULE_MODELS.FIXED_SESSION:
       return { ...values, amountIdr: String(configuration.amountIdr) };
@@ -282,8 +328,13 @@ export function formatPricingRuleConfigurationSummary(pricingRule) {
   const configuration = pricingRule.configuration;
 
   switch (pricingRule.pricingModel) {
-    case PRICING_RULE_MODELS.HOURLY:
-      return `${formatIntegerIdr(configuration.amountPerIncrementIdr)} / ${configuration.incrementMinutes} mnt · min ${configuration.minimumDurationMinutes} mnt · ${getRoundingLabel(configuration.roundingMode)}`;
+    case PRICING_RULE_MODELS.HOURLY: {
+      const recurringDiscount = configuration.recurringDurationDiscount;
+      const recurringSummary = recurringDiscount?.enabled
+        ? ` · diskon ${formatIntegerIdr(recurringDiscount.amountPerBlockIdr)} tiap ${recurringDiscount.blockDurationMinutes} mnt`
+        : '';
+      return `${formatIntegerIdr(configuration.amountPerIncrementIdr)} / ${configuration.incrementMinutes} mnt · min ${configuration.minimumDurationMinutes} mnt · ${getRoundingLabel(configuration.roundingMode)}${recurringSummary}`;
+    }
 
     case PRICING_RULE_MODELS.FIXED_SESSION:
       return `${formatIntegerIdr(configuration.amountIdr)} / session`;
