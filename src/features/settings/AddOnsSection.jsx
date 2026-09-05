@@ -11,12 +11,12 @@ import { formatAddOnPricingSummary, getAddOnPricingTypeLabel } from './addOnSett
 
 function getSafeFirebaseMessage(error, action) {
   if (error?.code === 'permission-denied') {
-    return `Akun ini tidak memiliki izin untuk ${action} add-on.`;
+    return `Akun ini tidak memiliki izin untuk ${action} layanan tambahan.`;
   }
   if (error?.code === 'unavailable') {
-    return `Firestore sedang tidak tersedia. Coba ${action} add-on lagi setelah koneksi pulih.`;
+    return `Layanan tambahan sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
   }
-  return `Add-on belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
+  return `Layanan tambahan belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
 }
 
 function getNextDisplayOrder(addOns) {
@@ -98,11 +98,11 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
   const saveAddOn = async (details) => {
     const actorUid = access.user?.uid;
     if (!canEdit || !actorUid) {
-      setDialogError('Sesi ini tidak diizinkan menyimpan add-on.');
+      setDialogError('Sesi ini tidak diizinkan menyimpan layanan tambahan.');
       return;
     }
     if (limitReached) {
-      setDialogError(`Batas ${listLimit} add-on tercapai. Edit konfigurasi yang sudah ada.`);
+      setDialogError(`Batas ${listLimit} layanan tambahan sudah tercapai.`);
       return;
     }
 
@@ -115,9 +115,9 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
         await repository.createAddOn(details, { actorUid });
       }
       pushToast({
-        message: `${details.name} sudah ${editingAddOn ? 'diperbarui' : 'ditambahkan'}. Snapshot booking historis tidak dihitung ulang.`,
+        message: `${details.name} sudah ${editingAddOn ? 'diperbarui' : 'ditambahkan'}. Booking lama tetap memakai data sebelumnya.`,
         tone: 'success',
-        title: editingAddOn ? 'Add-on diperbarui' : 'Add-on ditambahkan',
+        title: editingAddOn ? 'Layanan tambahan diperbarui' : 'Layanan tambahan ditambahkan',
       });
       setEditorOpen(false);
       setEditingAddOn(null);
@@ -144,7 +144,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
   const changeStatus = async () => {
     const actorUid = access.user?.uid;
     if (!statusTarget || !canEdit || !actorUid) {
-      setStatusError('Sesi ini tidak diizinkan mengubah status add-on.');
+      setStatusError('Sesi ini tidak diizinkan mengubah status layanan tambahan.');
       return;
     }
 
@@ -156,9 +156,12 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
         message:
           nextStatus === ADD_ON_STATUSES.ACTIVE
             ? `${statusTarget.name} kembali tersedia untuk booking baru.`
-            : `${statusTarget.name} tidak lagi tersedia untuk booking baru; snapshot historis tetap utuh.`,
+            : `${statusTarget.name} tidak lagi ditawarkan untuk booking baru.`,
         tone: 'success',
-        title: nextStatus === ADD_ON_STATUSES.ACTIVE ? 'Add-on diaktifkan' : 'Add-on dinonaktifkan',
+        title:
+          nextStatus === ADD_ON_STATUSES.ACTIVE
+            ? 'Layanan tambahan diaktifkan'
+            : 'Layanan tambahan dinonaktifkan',
       });
       setStatusTarget(null);
       setReloadKey((value) => value + 1);
@@ -173,11 +176,11 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
     <section className="settings-card" aria-labelledby="price-add-ons-heading">
       <header className="settings-card__header settings-card__header--with-action">
         <div>
-          <p className="settings-card__eyebrow">Layanan tambahan</p>
-          <h2 id="price-add-ons-heading">Add-ons</h2>
+          <p className="settings-card__eyebrow">Tambahan</p>
+          <h2 id="price-add-ons-heading">Layanan tambahan</h2>
           <p className="settings-card__subtitle">
-            Kelola layanan tambahan fixed, quantity, atau time-based. Availability dapat berlaku
-            umum atau dibatasi ke satu session type.
+            Tambahkan item seperti extra microphone, sewa instrumen, engineer, atau layanan ekstra
+            lain yang bisa dipilih saat booking.
           </p>
         </div>
         {canEdit ? (
@@ -186,7 +189,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
             disabled={loadState !== 'ready' || limitReached}
             onClick={openCreateDialog}
           >
-            Tambah add-on
+            Tambah layanan tambahan
           </Button>
         ) : null}
       </header>
@@ -199,10 +202,8 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
         >
           <span className="settings-state__spinner" aria-hidden="true" />
           <div>
-            <p className="settings-state__title">Memuat add-ons</p>
-            <p className="settings-state__description">
-              Satu query display-order dibatasi maksimal {listLimit} dokumen.
-            </p>
+            <p className="settings-state__title">Memuat layanan tambahan</p>
+            <p className="settings-state__description">Menyiapkan daftar layanan tambahan.</p>
           </div>
         </div>
       ) : null}
@@ -210,19 +211,19 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
       {loadState === 'error' ? (
         <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
           <div>
-            <p className="settings-state__title">Add-ons gagal dimuat</p>
+            <p className="settings-state__title">Layanan tambahan gagal dimuat</p>
             <p className="settings-state__description">{loadError}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => setReloadKey((value) => value + 1)}>
-            Coba lagi add-ons
+            Coba lagi
           </Button>
         </div>
       ) : null}
 
       {loadState === 'ready' && limitReached ? (
         <div className="settings-notice" data-tone="warning" role="status">
-          <strong>Batas {listLimit} add-on tercapai.</strong>
-          <span>Edit atau aktifkan kembali konfigurasi yang ada; hard delete tidak tersedia.</span>
+          <strong>Batas layanan tambahan sudah tercapai.</strong>
+          <span>Edit atau aktifkan kembali item yang sudah ada.</span>
         </div>
       ) : null}
 
@@ -230,16 +231,17 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
         <div className="price-session-empty">
           <span className="settings-placeholder__dot" aria-hidden="true" />
           <div>
-            <p className="settings-placeholder__title">Belum ada add-on</p>
+            <p className="settings-placeholder__title">Belum ada layanan tambahan</p>
             <p className="settings-placeholder__description">
-              Tambahkan layanan ekstra seperti microphone, instrument rental, atau engineer service.
+              Tambahkan layanan ekstra jika studio memang menjualnya. Bagian ini boleh dibiarkan
+              kosong.
             </p>
           </div>
         </div>
       ) : null}
 
       {loadState === 'ready' && addOns.length > 0 ? (
-        <div className="price-session-list" aria-label="Daftar add-on">
+        <div className="price-session-list" aria-label="Daftar layanan tambahan">
           {addOns.map((addOn) => {
             const isActive = addOn.status === ADD_ON_STATUSES.ACTIVE;
             const sessionType = addOn.sessionTypeId
@@ -247,9 +249,9 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
               : null;
             const sessionLabel = addOn.sessionTypeId
               ? sessionType
-                ? `${sessionType.name} · ${sessionType.code}`
-                : `Session ${addOn.sessionTypeId}`
-              : 'Semua session type';
+                ? sessionType.name
+                : 'Layanan tertentu'
+              : 'Semua layanan';
 
             return (
               <article
@@ -269,13 +271,12 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
                     <Badge tone={isActive ? 'success' : 'neutral'}>
                       {isActive ? 'Aktif' : 'Nonaktif'}
                     </Badge>
-                    <Badge tone="brand">{getAddOnPricingTypeLabel(addOn.pricingType)}</Badge>
                   </div>
                   <div className="price-session-row__meta">
                     <span>{sessionLabel}</span>
                     <span>{formatAddOnPricingSummary(addOn)}</span>
                   </div>
-                  <p>{addOn.description || 'Belum ada deskripsi add-on.'}</p>
+                  <p>{addOn.description || 'Belum ada deskripsi layanan tambahan.'}</p>
                 </div>
                 {canEdit ? (
                   <div className="price-session-row__actions">
@@ -283,7 +284,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
                       size="sm"
                       variant="ghost"
                       disabled={limitReached}
-                      aria-label={`Edit add-on ${addOn.name}`}
+                      aria-label={`Edit ${addOn.name}`}
                       onClick={() => openEditDialog(addOn)}
                     >
                       Edit
@@ -291,7 +292,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
                     <Button
                       size="sm"
                       variant={isActive ? 'ghost' : 'secondary'}
-                      aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} add-on ${addOn.name}`}
+                      aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} ${addOn.name}`}
                       onClick={() => openStatusDialog(addOn)}
                     >
                       {isActive ? 'Nonaktifkan' : 'Aktifkan'}
@@ -318,11 +319,11 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
       <Dialog
         open={Boolean(statusTarget)}
         size="sm"
-        title={`${nextStatusLabel} ${statusTarget?.name ?? 'add-on'}?`}
+        title={`${nextStatusLabel} ${statusTarget?.name ?? 'layanan tambahan'}?`}
         description={
           nextStatus === ADD_ON_STATUSES.ACTIVE
-            ? 'Add-on akan kembali tersedia untuk booking baru.'
-            : 'Add-on tidak lagi tersedia untuk booking baru, tetapi snapshot historis tetap dipertahankan.'
+            ? 'Layanan tambahan akan kembali tersedia untuk booking baru.'
+            : 'Layanan tambahan tidak lagi ditawarkan untuk booking baru. Booking lama tetap aman.'
         }
         onClose={closeStatusDialog}
         footer={
@@ -342,7 +343,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
       >
         {statusError ? (
           <div className="settings-notice" data-tone="danger" role="alert">
-            <strong>Status add-on belum berubah.</strong>
+            <strong>Status belum berubah.</strong>
             <span>{statusError}</span>
           </div>
         ) : (
@@ -351,8 +352,7 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
               {statusTarget ? getAddOnPricingTypeLabel(statusTarget.pricingType) : ''}
             </strong>
             <span>
-              Tidak ada hard delete. Konfigurasi lama tetap dapat direkonstruksi dari snapshot
-              booking.
+              Layanan tambahan bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.
             </span>
           </div>
         )}

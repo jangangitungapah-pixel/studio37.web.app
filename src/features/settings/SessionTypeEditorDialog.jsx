@@ -152,6 +152,7 @@ export function SessionTypeEditorDialog({
   return (
     <Dialog
       open={open}
+      size="lg"
       title={title}
       description="Session type menjadi pintu masuk pemilihan layanan dan aturan harga berikutnya."
       onClose={onClose}
@@ -187,7 +188,7 @@ export function SessionTypeEditorDialog({
         onSubmit={submit}
         noValidate
       >
-        <div className="settings-form__grid">
+        <div className="price-session-identity-grid">
           <Input
             label="Nama session type"
             value={formValues.name}
@@ -220,20 +221,25 @@ export function SessionTypeEditorDialog({
           onChange={changeTextField('description')}
         />
 
-        <div className="settings-form__grid">
-          <Input
-            type="number"
-            label="Urutan tampil"
-            value={formValues.displayOrder}
-            error={fieldErrors.displayOrder}
-            min={1}
-            max={999}
-            required
-            disabled={saving}
-            description="Angka kecil tampil lebih dulu pada pilihan layanan."
-            onChange={changeTextField('displayOrder')}
-          />
-          <div className="price-session-switches" aria-label="Perilaku session type">
+        <div className="price-session-behavior-grid">
+          <div className="price-session-display-order">
+            <Input
+              type="number"
+              label="Urutan tampil"
+              value={formValues.displayOrder}
+              error={fieldErrors.displayOrder}
+              min={1}
+              max={999}
+              required
+              disabled={saving}
+              description="Angka kecil tampil lebih dulu pada pilihan layanan."
+              onChange={changeTextField('displayOrder')}
+            />
+          </div>
+          <div
+            className="price-session-switches price-session-switches--horizontal"
+            aria-label="Perilaku session type"
+          >
             <label className="price-session-switch">
               <input
                 type="checkbox"
@@ -265,14 +271,14 @@ export function SessionTypeEditorDialog({
 
         {durationConfigurationEnabled ? (
           <div className="price-session-duration-panel">
-            <div>
+            <div className="price-session-duration-heading">
               <strong>Durasi layanan</strong>
               <span>
                 Preset hanya mempercepat input. Nilai canonical tetap menit pada grid 15 menit dan
                 minimum tidak boleh melebihi default.
               </span>
             </div>
-            <div className="settings-form__grid">
+            <div className="price-session-duration-grid">
               <DurationMinutesField
                 label="Durasi default"
                 value={formValues.defaultDurationMinutes}

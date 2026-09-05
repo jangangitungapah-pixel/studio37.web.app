@@ -30,6 +30,16 @@ function createSessionType(overrides = {}) {
 function createRepository(sessionTypes = []) {
   return {
     createSessionType: vi.fn(async () => 'session-created'),
+    deleteSessionType: vi.fn(async (sessionTypeId) => ({
+      addOnsDeleted: 1,
+      pricingRulesDeleted: 2,
+      sessionTypeId,
+    })),
+    getSessionTypeDeleteImpact: vi.fn(async (sessionTypeId) => ({
+      addOnCount: 1,
+      pricingRuleCount: 2,
+      sessionTypeId,
+    })),
     listLimit: 100,
     listSessionTypes: vi.fn(async () => sessionTypes),
     setSessionTypeStatus: vi.fn(async (sessionTypeId) => sessionTypeId),
@@ -40,6 +50,7 @@ function createRepository(sessionTypes = []) {
 function createPricingRulesRepository(pricingRules = []) {
   return {
     createPricingRule: vi.fn(async () => 'pricing-rule-created'),
+    deletePricingRule: vi.fn(async (pricingRuleId) => pricingRuleId),
     listLimit: 200,
     listPricingRules: vi.fn(async () => pricingRules),
     setPricingRuleStatus: vi.fn(async (pricingRuleId) => pricingRuleId),
@@ -108,9 +119,8 @@ describe('PriceSettingsPage session type workflow', () => {
     renderPage({ repository });
 
     expect(await screen.findByRole('heading', { name: 'Rehearsal' })).toBeInTheDocument();
-    expect(screen.getByText('Reservasi studio')).toBeInTheDocument();
+    expect(screen.getByText('Memesan slot studio')).toBeInTheDocument();
     expect(screen.getByText('Default 120 mnt · Min 60 mnt')).toBeInTheDocument();
-    expect(screen.getByText('REHEARSAL')).toBeInTheDocument();
     expect(repository.listSessionTypes).toHaveBeenCalledOnce();
   });
 
@@ -119,8 +129,8 @@ describe('PriceSettingsPage session type workflow', () => {
     const repository = createRepository([]);
     renderPage({ repository });
 
-    await screen.findByText('Belum ada session type');
-    await interaction.click(screen.getByRole('button', { name: 'Tambah session type' }));
+    await screen.findByText('Belum ada layanan');
+    await interaction.click(screen.getByRole('button', { name: 'Tambah layanan' }));
     await interaction.type(screen.getByLabelText(/^Nama session type/), 'Rehearsal');
     await interaction.type(screen.getByLabelText(/^Kode/), 'rehearsal');
     await interaction.type(screen.getByLabelText('Deskripsi'), 'Latihan reguler');
@@ -142,7 +152,7 @@ describe('PriceSettingsPage session type workflow', () => {
         { actorUid: 'owner-1' },
       );
     });
-    expect(await screen.findByText('Session type ditambahkan')).toBeInTheDocument();
+    expect(await screen.findByText('Layanan ditambahkan')).toBeInTheDocument();
   });
 
   it('edits an existing session type while preserving its document identity', async () => {
@@ -171,7 +181,7 @@ describe('PriceSettingsPage session type workflow', () => {
     const repository = createRepository([createSessionType()]);
     renderPage({ repository });
 
-    await interaction.click(await screen.findByRole('button', { name: 'Tambah session type' }));
+    await interaction.click(await screen.findByRole('button', { name: 'Tambah layanan' }));
     await interaction.type(screen.getByLabelText(/^Nama session type/), 'Another Service');
     await interaction.type(screen.getByLabelText(/^Kode/), 'REHEARSAL');
     await interaction.click(screen.getByRole('button', { name: 'Simpan session type' }));
@@ -182,13 +192,13 @@ describe('PriceSettingsPage session type workflow', () => {
     expect(repository.createSessionType).not.toHaveBeenCalled();
   });
 
-  it('soft-deactivates a session type and explains historical preservation', async () => {
+  it('soft-deactivates a session type and preserves history', async () => {
     const interaction = userEvent.setup();
     const repository = createRepository([createSessionType()]);
     renderPage({ repository });
 
     await interaction.click(await screen.findByRole('button', { name: 'Nonaktifkan Rehearsal' }));
-    expect(screen.getByText(/snapshot historis tetap dipertahankan/i)).toBeInTheDocument();
+    expect(screen.getByText(/data booking lama tetap aman/i)).toBeInTheDocument();
     await interaction.click(screen.getByRole('button', { name: 'Nonaktifkan' }));
 
     await waitFor(() => {
@@ -198,7 +208,32 @@ describe('PriceSettingsPage session type workflow', () => {
         { actorUid: 'owner-1' },
       );
     });
-    expect(await screen.findByText('Session type dinonaktifkan')).toBeInTheDocument();
+    expect(await screen.findByText('Layanan dinonaktifkan')).toBeInTheDocument();
+  });
+
+  it('lets an Owner hard-delete a disabled session type after showing cascade impact', async () => {
+    const interaction = userEvent.setup();
+    const repository = createRepository([createSessionType({ status: 'disabled' })]);
+    renderPage({ repository });
+
+    await interaction.click(await screen.findByRole('button', { name: 'Hapus Rehearsal' }));
+
+    expect(await screen.findByText(/2 harga\/paket dan 1 layanan tambahan/i)).toBeInTheDocument();
+    expect(repository.getSessionTypeDeleteImpact).toHaveBeenCalledWith('session-rehearsal');
+
+    await interaction.click(screen.getByRole('button', { name: 'Hapus permanen' }));
+
+    await waitFor(() => {
+      expect(repository.deleteSessionType).toHaveBeenCalledWith('session-rehearsal');
+    });
+    expect(await screen.findByText('Layanan dihapus')).toBeInTheDocument();
+  });
+
+  it('does not expose hard delete for an active session type', async () => {
+    renderPage({ repository: createRepository([createSessionType()]) });
+
+    expect(await screen.findByRole('heading', { name: 'Rehearsal' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hapus Rehearsal' })).not.toBeInTheDocument();
   });
 
   it('renders a pricing-view-only Studio Operator without mutation controls', async () => {
@@ -215,14 +250,16 @@ describe('PriceSettingsPage session type workflow', () => {
     });
 
     expect(await screen.findByText('Mode lihat saja.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tambah session type' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah layanan' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit Rehearsal' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nonaktifkan Rehearsal' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tambah pricing rule' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tambah add-on' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hapus Rehearsal' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Atur harga' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah layanan tambahan' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Harga' })).toBeInTheDocument();
     expect(repository.createSessionType).not.toHaveBeenCalled();
     expect(repository.updateSessionType).not.toHaveBeenCalled();
+    expect(repository.deleteSessionType).not.toHaveBeenCalled();
     expect(studioRoomsRepository.listStudioRooms).not.toHaveBeenCalled();
   });
 
@@ -234,7 +271,7 @@ describe('PriceSettingsPage session type workflow', () => {
       .mockResolvedValueOnce([createSessionType()]);
     renderPage({ repository });
 
-    expect(await screen.findByText('Session types gagal dimuat')).toBeInTheDocument();
+    expect(await screen.findByText('Layanan gagal dimuat')).toBeInTheDocument();
     await interaction.click(screen.getByRole('button', { name: 'Coba lagi' }));
 
     expect(await screen.findByRole('heading', { name: 'Rehearsal' })).toBeInTheDocument();

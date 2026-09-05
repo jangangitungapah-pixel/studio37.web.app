@@ -21,7 +21,7 @@ export function buildStudioScopeOptions(
   const normalizedCurrentStudioId = normalizeCurrentStudioId(currentStudioId);
   const options = [
     Object.freeze({
-      label: 'Semua studio (general)',
+      label: 'Semua studio',
       value: GENERAL_STUDIO_SCOPE_VALUE,
     }),
   ];
@@ -37,7 +37,7 @@ export function buildStudioScopeOptions(
     options.push(
       Object.freeze({
         disabled: !active,
-        label: `${room.name} · ${room.code}${active ? '' : ' · nonaktif'}`,
+        label: `${room.name}${active ? '' : ' · nonaktif'}`,
         value: room.id,
       }),
     );
@@ -47,7 +47,7 @@ export function buildStudioScopeOptions(
     options.push(
       Object.freeze({
         disabled: true,
-        label: `Studio ${normalizedCurrentStudioId} · tidak tersedia`,
+        label: `Studio tidak tersedia · ${normalizedCurrentStudioId}`,
         value: normalizedCurrentStudioId,
       }),
     );
@@ -63,27 +63,25 @@ export function formatStudioScopeLabel(studioId, studioRooms) {
   const room = studioRooms.find((candidate) => candidate?.id === studioId);
   if (!room) return `Studio ${studioId}`;
 
-  return `${room.name} · ${room.code}${
-    room.status === STUDIO_ROOM_STATUSES.ACTIVE ? '' : ' · nonaktif'
-  }`;
+  return `${room.name}${room.status === STUDIO_ROOM_STATUSES.ACTIVE ? '' : ' · nonaktif'}`;
 }
 
 export function getStudioScopeFieldDescription({ currentStudioId = null, state = 'ready' } = {}) {
   if (state === 'loading') {
-    return 'Daftar studio sedang dimuat. Scope general tetap dipertahankan sampai daftar siap.';
+    return 'Daftar studio sedang dimuat.';
   }
 
   if (state === 'error') {
     return currentStudioId
-      ? 'Daftar studio gagal dimuat. Scope exact yang sudah ada dikunci agar tidak berubah tanpa konteks room.'
-      : 'Daftar studio gagal dimuat. Rule baru tetap memakai scope semua studio sampai daftar berhasil dimuat.';
+      ? 'Daftar studio gagal dimuat. Pilihan studio yang tersimpan tetap dipertahankan.'
+      : 'Daftar studio gagal dimuat. Sementara harga berlaku untuk semua studio.';
   }
 
   if (state === 'unavailable') {
     return currentStudioId
-      ? 'Akun tidak memiliki akses daftar studio. Scope exact yang sudah ada dikunci dan dipertahankan.'
-      : 'Pemilihan studio tertentu memerlukan akses settings.studio.view. Scope general tetap tersedia.';
+      ? 'Akun ini tidak dapat membaca daftar studio. Pilihan yang tersimpan tetap dipertahankan.'
+      : 'Akun ini hanya dapat membuat harga yang berlaku untuk semua studio.';
   }
 
-  return 'General berlaku untuk semua studio. Scope studio tertentu menang atas general saat session dan kondisi lain sama-sama cocok.';
+  return 'Pilih Semua studio, atau batasi harga ini ke satu studio tertentu.';
 }

@@ -18,18 +18,18 @@ import './price-settings.css';
 
 function getSafeFirebaseMessage(error, action) {
   if (error?.code === 'permission-denied') {
-    return `Akun ini tidak memiliki izin untuk ${action} session type.`;
+    return `Akun ini tidak memiliki izin untuk ${action} layanan.`;
   }
 
   if (error?.code === 'unavailable') {
-    return `Firestore sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
+    return `Data layanan sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
   }
 
-  return `Session type belum bisa ${action}. Coba lagi tanpa menghapus data form.`;
+  return `Layanan belum bisa ${action}. Coba lagi tanpa menghapus data form.`;
 }
 
 function formatDurationSummary(sessionType) {
-  if (sessionType.defaultDurationMinutes === null) return 'Tanpa default durasi';
+  if (sessionType.defaultDurationMinutes === null) return 'Durasi fleksibel';
 
   if (sessionType.defaultDurationMinutes === sessionType.minimumDurationMinutes) {
     return `${sessionType.defaultDurationMinutes} menit`;
@@ -47,6 +47,13 @@ export function PriceSettingsPage({
   const access = useAuth();
   const { pushToast } = useToast();
   const canEdit = hasCapability(access, CAPABILITIES.SETTINGS_PRICING_EDIT);
+  const canDelete = canEdit && access.profile?.role === 'owner';
+  const [configurationRevision, setConfigurationRevision] = useState(0);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteImpact, setDeleteImpact] = useState(null);
+  const [deleteLoadState, setDeleteLoadState] = useState('idle');
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [dialogError, setDialogError] = useState('');
   const [editingSessionType, setEditingSessionType] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -120,7 +127,7 @@ export function PriceSettingsPage({
     const actorUid = access.user?.uid;
 
     if (!canEdit || !actorUid) {
-      setDialogError('Sesi ini tidak diizinkan menyimpan session type.');
+      setDialogError('Sesi ini tidak diizinkan menyimpan layanan.');
       return;
     }
 
@@ -135,9 +142,9 @@ export function PriceSettingsPage({
       }
 
       pushToast({
-        message: `${details.name} sudah ${editingSessionType ? 'diperbarui' : 'ditambahkan'}. Perubahan hanya memengaruhi booking baru atau repricing eksplisit.`,
+        message: `${details.name} sudah ${editingSessionType ? 'diperbarui' : 'ditambahkan'}. Perubahan berlaku untuk booking baru.`,
         tone: 'success',
-        title: editingSessionType ? 'Session type diperbarui' : 'Session type ditambahkan',
+        title: editingSessionType ? 'Layanan diperbarui' : 'Layanan ditambahkan',
       });
       setEditorOpen(false);
       setEditingSessionType(null);
@@ -165,7 +172,7 @@ export function PriceSettingsPage({
     const actorUid = access.user?.uid;
 
     if (!statusTarget || !canEdit || !actorUid) {
-      setStatusError('Sesi ini tidak diizinkan mengubah status session type.');
+      setStatusError('Sesi ini tidak diizinkan mengubah status layanan.');
       return;
     }
 
@@ -177,13 +184,13 @@ export function PriceSettingsPage({
       pushToast({
         message:
           nextStatus === SESSION_TYPE_STATUSES.ACTIVE
-            ? `${statusTarget.name} kembali tersedia untuk konfigurasi booking baru.`
-            : `${statusTarget.name} tidak lagi tersedia untuk booking baru; snapshot dan referensi historis tetap aman.`,
+            ? `${statusTarget.name} kembali tersedia untuk booking baru.`
+            : `${statusTarget.name} disembunyikan dari booking baru. Data booking lama tetap aman.`,
         tone: 'success',
         title:
           nextStatus === SESSION_TYPE_STATUSES.ACTIVE
-            ? 'Session type diaktifkan'
-            : 'Session type dinonaktifkan',
+            ? 'Layanan diaktifkan'
+            : 'Layanan dinonaktifkan',
       });
       setStatusTarget(null);
       setReloadKey((value) => value + 1);
@@ -194,10 +201,69 @@ export function PriceSettingsPage({
     }
   };
 
+  const openDeleteDialog = async (sessionType) => {
+    if (!canDelete || sessionType.status !== SESSION_TYPE_STATUSES.DISABLED) return;
+
+    setDeleteTarget(sessionType);
+    setDeleteImpact(null);
+    setDeleteError('');
+    setDeleteLoadState('loading');
+
+    try {
+      const impact = await repository.getSessionTypeDeleteImpact(sessionType.id);
+      setDeleteImpact(impact);
+      setDeleteLoadState('ready');
+    } catch (error) {
+      setDeleteError(getSafeFirebaseMessage(error, 'memeriksa sebelum menghapus'));
+      setDeleteLoadState('error');
+    }
+  };
+
+  const closeDeleteDialog = useCallback(() => {
+    if (deleteSaving) return;
+    setDeleteTarget(null);
+    setDeleteImpact(null);
+    setDeleteError('');
+    setDeleteLoadState('idle');
+  }, [deleteSaving]);
+
+  const deleteSessionType = async () => {
+    if (
+      !canDelete ||
+      !deleteTarget ||
+      deleteTarget.status !== SESSION_TYPE_STATUSES.DISABLED ||
+      deleteLoadState !== 'ready'
+    ) {
+      return;
+    }
+
+    setDeleteSaving(true);
+    setDeleteError('');
+
+    try {
+      const result = await repository.deleteSessionType(deleteTarget.id);
+      pushToast({
+        message: `${deleteTarget.name} dihapus permanen bersama ${result.pricingRulesDeleted} harga/paket dan ${result.addOnsDeleted} layanan tambahan terkait.`,
+        tone: 'success',
+        title: 'Layanan dihapus',
+      });
+      setDeleteTarget(null);
+      setDeleteImpact(null);
+      setDeleteLoadState('idle');
+      setReloadKey((value) => value + 1);
+      setConfigurationRevision((value) => value + 1);
+    } catch (error) {
+      setDeleteError(getSafeFirebaseMessage(error, 'menghapus'));
+      setDeleteLoadState('error');
+    } finally {
+      setDeleteSaving(false);
+    }
+  };
+
   return (
     <SettingsWorkspace
-      title="Price Settings"
-      description="Kelola jenis layanan dan pricing rule tanpa menyentuh source code atau raw JSON."
+      title="Harga"
+      description="Atur layanan, harga, paket, dan tambahan yang akan dipakai saat membuat booking."
       actions={
         <span className="settings-access-badge" data-editable={canEdit || undefined}>
           {canEdit ? 'Dapat mengedit' : 'Lihat saja'}
@@ -205,17 +271,17 @@ export function PriceSettingsPage({
       }
     >
       <div className="settings-notice" role="status">
-        <strong>Snapshot historis tetap beku.</strong>
+        <strong>Harga booking lama tetap aman.</strong>
         <span>
-          Perubahan di halaman ini berlaku untuk booking baru atau repricing eksplisit. Booking
-          terkonfirmasi yang sudah menyimpan snapshot tidak dihitung ulang otomatis.
+          Perubahan di halaman ini hanya berlaku untuk booking baru atau booking yang sengaja
+          dihitung ulang.
         </span>
       </div>
 
       {!canEdit ? (
         <div className="settings-notice" role="status">
           <strong>Mode lihat saja.</strong>
-          <span>Perubahan memerlukan capability settings.pricing.edit.</span>
+          <span>Akun ini dapat melihat pengaturan harga, tetapi tidak dapat mengubahnya.</span>
         </div>
       ) : null}
 
@@ -223,10 +289,9 @@ export function PriceSettingsPage({
         <header className="settings-card__header settings-card__header--with-action">
           <div>
             <p className="settings-card__eyebrow">Layanan</p>
-            <h2 id="price-session-types-heading">Session types</h2>
+            <h2 id="price-session-types-heading">Layanan studio</h2>
             <p className="settings-card__subtitle">
-              Tentukan layanan, perilaku reservasi studio, default/minimum durasi, dan urutan
-              tampil.
+              Buat layanan seperti latihan studio, recording, mixing, atau layanan lain yang dijual.
             </p>
           </div>
           {canEdit ? (
@@ -235,7 +300,7 @@ export function PriceSettingsPage({
               disabled={loadState !== 'ready' || limitReached}
               onClick={openCreateDialog}
             >
-              Tambah session type
+              Tambah layanan
             </Button>
           ) : null}
         </header>
@@ -248,10 +313,8 @@ export function PriceSettingsPage({
           >
             <span className="settings-state__spinner" aria-hidden="true" />
             <div>
-              <p className="settings-state__title">Memuat session types</p>
-              <p className="settings-state__description">
-                Satu query terurut dibatasi maksimal {listLimit} dokumen.
-              </p>
+              <p className="settings-state__title">Memuat layanan</p>
+              <p className="settings-state__description">Menyiapkan daftar layanan studio.</p>
             </div>
           </div>
         ) : null}
@@ -259,7 +322,7 @@ export function PriceSettingsPage({
         {loadState === 'error' ? (
           <div className="settings-state settings-state--embedded" data-tone="danger" role="alert">
             <div>
-              <p className="settings-state__title">Session types gagal dimuat</p>
+              <p className="settings-state__title">Layanan gagal dimuat</p>
               <p className="settings-state__description">{loadError}</p>
             </div>
             <Button
@@ -274,10 +337,8 @@ export function PriceSettingsPage({
 
         {loadState === 'ready' && limitReached ? (
           <div className="settings-notice" data-tone="warning" role="status">
-            <strong>Batas {listLimit} session type tercapai.</strong>
-            <span>
-              Edit atau aktifkan kembali konfigurasi yang ada; hard delete tidak tersedia.
-            </span>
+            <strong>Batas layanan sudah tercapai.</strong>
+            <span>Edit atau aktifkan kembali layanan yang sudah ada.</span>
           </div>
         ) : null}
 
@@ -285,16 +346,16 @@ export function PriceSettingsPage({
           <div className="price-session-empty">
             <span className="settings-placeholder__dot" aria-hidden="true" />
             <div>
-              <p className="settings-placeholder__title">Belum ada session type</p>
+              <p className="settings-placeholder__title">Belum ada layanan</p>
               <p className="settings-placeholder__description">
-                Tambahkan layanan pertama sebelum membuat pricing rule.
+                Tambahkan layanan pertama, lalu atur harganya di bagian berikutnya.
               </p>
             </div>
           </div>
         ) : null}
 
         {loadState === 'ready' && sessionTypes.length > 0 ? (
-          <div className="price-session-list" aria-label="Daftar session type">
+          <div className="price-session-list" aria-label="Daftar layanan">
             {sessionTypes.map((sessionType) => {
               const isActive = sessionType.status === SESSION_TYPE_STATUSES.ACTIVE;
 
@@ -316,13 +377,12 @@ export function PriceSettingsPage({
                       <Badge tone={isActive ? 'success' : 'neutral'}>
                         {isActive ? 'Aktif' : 'Nonaktif'}
                       </Badge>
-                      <Badge tone="brand">{sessionType.code}</Badge>
                     </div>
                     <div className="price-session-row__meta">
                       <span>
                         {sessionType.requiresStudioReservation
-                          ? 'Reservasi studio'
-                          : 'Tanpa reservasi studio'}
+                          ? 'Memesan slot studio'
+                          : 'Tanpa slot studio'}
                       </span>
                       <span>{formatDurationSummary(sessionType)}</span>
                     </div>
@@ -346,6 +406,16 @@ export function PriceSettingsPage({
                       >
                         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                       </Button>
+                      {canDelete && !isActive ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Hapus ${sessionType.name}`}
+                          onClick={() => openDeleteDialog(sessionType)}
+                        >
+                          Hapus
+                        </Button>
+                      ) : null}
                     </div>
                   ) : null}
                 </article>
@@ -356,6 +426,7 @@ export function PriceSettingsPage({
       </section>
 
       <PricingRulesSection
+        key={`pricing-rules-${configurationRevision}`}
         access={access}
         canEdit={canEdit}
         repository={pricingRulesRepository}
@@ -364,6 +435,7 @@ export function PriceSettingsPage({
       />
 
       <AddOnsSection
+        key={`add-ons-${configurationRevision}`}
         access={access}
         canEdit={canEdit}
         repository={addOnsRepository}
@@ -371,6 +443,7 @@ export function PriceSettingsPage({
       />
 
       <PricingPreviewSection
+        key={`pricing-preview-${configurationRevision}`}
         access={access}
         addOnsRepository={addOnsRepository}
         pricingRulesRepository={pricingRulesRepository}
@@ -392,11 +465,11 @@ export function PriceSettingsPage({
       <Dialog
         open={Boolean(statusTarget)}
         size="sm"
-        title={`${nextStatusLabel} ${statusTarget?.name ?? 'session type'}?`}
+        title={`${nextStatusLabel} ${statusTarget?.name ?? 'layanan'}?`}
         description={
           nextStatus === SESSION_TYPE_STATUSES.ACTIVE
-            ? 'Layanan akan kembali tersedia untuk konfigurasi booking baru.'
-            : 'Layanan tidak dipilih untuk booking baru, tetapi referensi dan snapshot historis tetap dipertahankan.'
+            ? 'Layanan akan kembali tersedia untuk booking baru.'
+            : 'Layanan tidak akan ditawarkan untuk booking baru. Data booking lama tetap aman.'
         }
         onClose={closeStatusDialog}
         footer={
@@ -421,14 +494,70 @@ export function PriceSettingsPage({
           </div>
         ) : (
           <div className="price-session-status-summary">
-            <strong>{statusTarget?.code}</strong>
+            <strong>{statusTarget?.name}</strong>
             <span>
               {nextStatus === SESSION_TYPE_STATUSES.DISABLED
-                ? 'Tidak ada hard delete. Histori dan referensi pricing tetap dipertahankan.'
-                : 'Aktivasi tidak membuat pricing rule baru secara otomatis.'}
+                ? 'Layanan bisa diaktifkan kembali kapan saja tanpa menghapus histori.'
+                : 'Setelah aktif, layanan dapat kembali dipakai untuk pengaturan harga dan booking baru.'}
             </span>
           </div>
         )}
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        size="sm"
+        title={`Hapus ${deleteTarget?.name ?? 'layanan'} permanen?`}
+        description="Layanan dan seluruh harga, paket, serta layanan tambahan yang terikat akan dihapus permanen."
+        onClose={closeDeleteDialog}
+        footer={
+          <>
+            <Button variant="ghost" disabled={deleteSaving} onClick={closeDeleteDialog}>
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteSaving}
+              disabled={deleteLoadState !== 'ready'}
+              onClick={deleteSessionType}
+            >
+              Hapus permanen
+            </Button>
+          </>
+        }
+      >
+        {deleteLoadState === 'loading' ? (
+          <div className="settings-state settings-state--embedded" aria-busy="true">
+            <span className="settings-state__spinner" aria-hidden="true" />
+            <div>
+              <p className="settings-state__title">Memeriksa data terkait</p>
+              <p className="settings-state__description">
+                Menghitung harga, paket, dan layanan tambahan yang ikut dihapus.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {deleteError ? (
+          <div className="settings-notice" data-tone="danger" role="alert">
+            <strong>Layanan belum bisa dihapus.</strong>
+            <span>{deleteError}</span>
+          </div>
+        ) : null}
+
+        {deleteLoadState === 'ready' && deleteImpact ? (
+          <div className="price-session-status-summary">
+            <strong>Aksi ini tidak bisa dibatalkan.</strong>
+            <span>
+              {deleteImpact.pricingRuleCount} harga/paket dan {deleteImpact.addOnCount} layanan
+              tambahan yang terikat akan ikut dihapus.
+            </span>
+            <span>
+              Jika layanan ini sudah pernah dipakai pada booking historis, gunakan Nonaktifkan
+              sebagai gantinya agar referensi histori tetap tersedia.
+            </span>
+          </div>
+        ) : null}
       </Dialog>
     </SettingsWorkspace>
   );

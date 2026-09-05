@@ -1,8 +1,16 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Icon } from '../ui/Icon.jsx';
 import { ToastContext } from './toast-context.js';
 import './toast.css';
+
+const toneIcons = Object.freeze({
+  danger: 'warning',
+  info: 'info',
+  success: 'success',
+  warning: 'warning',
+});
 
 function ToastItem({ toast, onDismiss }) {
   useEffect(() => {
@@ -21,6 +29,9 @@ function ToastItem({ toast, onDismiss }) {
       role={isAssertive ? 'alert' : 'status'}
       aria-live={isAssertive ? 'assertive' : 'polite'}
     >
+      <span className="ui-toast__icon" aria-hidden="true">
+        <Icon name={toneIcons[toast.tone] ?? 'info'} size={16} />
+      </span>
       <div className="ui-toast__content">
         <strong>{toast.title}</strong>
         {toast.message ? <p>{toast.message}</p> : null}
@@ -43,7 +54,7 @@ function ToastItem({ toast, onDismiss }) {
         aria-label="Tutup notifikasi"
         onClick={() => onDismiss(toast.id)}
       >
-        ×
+        <Icon name="close" size={15} />
       </button>
     </article>
   );

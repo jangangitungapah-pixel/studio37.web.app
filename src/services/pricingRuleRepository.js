@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -25,6 +26,7 @@ import { firestoreDb } from '../lib/firebase/client.js';
 
 const defaultFirestoreAdapter = Object.freeze({
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -130,6 +132,12 @@ export function createPricingRuleRepository({
         updatedByUid: resolvedActorUid,
       });
 
+      return resolvedPricingRuleId;
+    },
+
+    async deletePricingRule(pricingRuleId) {
+      const resolvedPricingRuleId = normalizePricingRuleId(pricingRuleId);
+      await adapter.deleteDoc(getDocumentReference(resolvedPricingRuleId));
       return resolvedPricingRuleId;
     },
   });

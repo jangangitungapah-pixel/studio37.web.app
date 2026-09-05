@@ -19,12 +19,12 @@ export function StudioScopeField({
 
   return (
     <Combobox
-      label="Studio scope"
+      label="Berlaku untuk"
       value={value}
       error={error}
       options={options}
       disabled={disabled || scopeLocked}
-      placeholder="Pilih scope studio"
+      placeholder="Pilih studio"
       description={getStudioScopeFieldDescription({ currentStudioId, state })}
       onChange={(nextValue) => onValueChange(nextValue)}
     />

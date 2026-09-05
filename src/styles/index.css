@@ -1,5 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 @import './tokens.css';
+@import './signal-atelier.css';
+@import './signal-components.css';
+@import './signal-editorial.css';
+@import './signal-modals.css';
 
 :root {
   font-family: var(--font-sans);
@@ -26,6 +31,9 @@ body {
   min-height: 100vh;
   background: var(--color-canvas);
   color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.55;
 }
 
 button,
@@ -53,13 +61,13 @@ a {
 }
 
 ::selection {
-  background: var(--color-brand-soft);
+  background: rgb(201 242 107 / 0.26);
   color: var(--color-text);
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-brand) 38%, transparent);
-  outline-offset: 3px;
+  outline: 0;
+  box-shadow: var(--shadow-focus);
 }
 
 h1,
@@ -72,8 +80,11 @@ p {
 h1,
 h2,
 h3 {
+  font-family: var(--font-display);
   color: var(--color-text);
-  letter-spacing: -0.025em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 .sr-only {

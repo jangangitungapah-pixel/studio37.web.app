@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { Icon } from '../../components/ui/Icon.jsx';
 import { canAccessPolicy } from '../../features/auth/capabilities.js';
 import { ROUTE_POLICIES } from '../../features/auth/routePolicies.js';
 import { UserMenu } from '../../features/auth/UserMenu.jsx';
@@ -8,15 +9,21 @@ import { useAuth } from '../../features/auth/useAuth.js';
 import './app-shell.css';
 
 const navigationItems = [
-  { to: '/dashboard', label: 'Dashboard', policy: ROUTE_POLICIES.DASHBOARD },
-  { to: '/calendar', label: 'Booking Calendar', policy: ROUTE_POLICIES.CALENDAR },
+  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', policy: ROUTE_POLICIES.DASHBOARD },
+  {
+    to: '/calendar',
+    label: 'Booking Calendar',
+    icon: 'calendar',
+    policy: ROUTE_POLICIES.CALENDAR,
+  },
   {
     to: '/fees-commissions',
     label: 'Fee & Commission',
+    icon: 'coins',
     policy: ROUTE_POLICIES.FEES_COMMISSIONS,
   },
-  { to: '/bookkeeping', label: 'Pembukuan', policy: ROUTE_POLICIES.BOOKKEEPING },
-  { to: '/settings/account', label: 'Settings', policy: ROUTE_POLICIES.ACCOUNT },
+  { to: '/bookkeeping', label: 'Pembukuan', icon: 'book', policy: ROUTE_POLICIES.BOOKKEEPING },
+  { to: '/settings/account', label: 'Settings', icon: 'settings', policy: ROUTE_POLICIES.ACCOUNT },
 ];
 
 const pageLabels = [
@@ -36,11 +43,12 @@ function Brand() {
   return (
     <div className="app-brand">
       <div className="app-brand__mark" aria-hidden="true">
-        37
+        <span>37</span>
+        <i />
       </div>
-      <div className="min-w-0">
+      <div className="app-brand__copy min-w-0">
         <p className="app-brand__name">Studio37 OS</p>
-        <p className="app-brand__meta">Studio Management</p>
+        <p className="app-brand__meta">Production workspace</p>
       </div>
     </div>
   );
@@ -55,36 +63,14 @@ function Navigation({ ariaLabel, onNavigate }) {
         .filter((item) => canAccessPolicy(access, item.policy))
         .map((item) => (
           <NavLink key={item.to} to={item.to} className="app-nav__link" onClick={onNavigate}>
-            {item.label}
+            <span className="app-nav__icon" aria-hidden="true">
+              <Icon name={item.icon} size={17} />
+            </span>
+            <span className="app-nav__label">{item.label}</span>
+            <span className="app-nav__active-rail" aria-hidden="true" />
           </NavLink>
         ))}
     </nav>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="m6.5 6.5 11 11m0-11-11 11"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }
 
@@ -94,7 +80,7 @@ export function AppShell() {
   const pageLabel = getPageLabel(location.pathname);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-route={location.pathname}>
       <a className="app-shell__skip-link" href="#main-content">
         Lewati ke konten utama
       </a>
@@ -109,7 +95,13 @@ export function AppShell() {
           </div>
 
           <div className="app-shell__sidebar-footer">
-            <p className="app-shell__role">Studio37 Management</p>
+            <div className="app-shell__environment">
+              <span className="app-shell__environment-dot" aria-hidden="true" />
+              <div>
+                <p>Studio workspace</p>
+                <span>Operational console</span>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
@@ -136,7 +128,7 @@ export function AppShell() {
                   aria-label="Tutup menu"
                   onClick={() => setMobileNavigationOpen(false)}
                 >
-                  <CloseIcon />
+                  <Icon name="close" size={18} />
                 </button>
               </div>
 
@@ -146,6 +138,11 @@ export function AppShell() {
                   ariaLabel="Navigasi utama mobile"
                   onNavigate={() => setMobileNavigationOpen(false)}
                 />
+              </div>
+
+              <div className="app-shell__mobile-drawer-footer">
+                <span className="app-shell__environment-dot" aria-hidden="true" />
+                Studio37 operational console
               </div>
             </div>
           </aside>
@@ -163,11 +160,11 @@ export function AppShell() {
                 aria-expanded={mobileNavigationOpen}
                 onClick={() => setMobileNavigationOpen(true)}
               >
-                <MenuIcon />
+                <Icon name="menu" size={18} />
               </button>
 
               <div className="app-shell__page-label">
-                <p className="app-shell__page-kicker">Studio37</p>
+                <p className="app-shell__page-kicker">Studio37 / Workspace</p>
                 <p className="app-shell__page-title">{pageLabel}</p>
               </div>
             </div>

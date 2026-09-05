@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import { Icon } from '../ui/Icon.jsx';
 import { FieldFrame } from './Field.jsx';
 import './select.css';
 
@@ -13,6 +14,7 @@ function normalizeOption(option) {
 
 export function Select({
   description,
+  disabled = false,
   error,
   id: providedId,
   label,
@@ -25,21 +27,138 @@ export function Select({
 }) {
   const generatedId = useId();
   const id = providedId || `select-${generatedId.replaceAll(':', '')}`;
-  const normalizedOptions = options.map(normalizeOption);
+  const nativeId = `${id}-native`;
+  const listboxId = `${id}-listbox`;
+  const normalizedOptions = useMemo(() => options.map(normalizeOption), [options]);
+  const selectedOption = normalizedOptions.find((option) => option.value === value);
+  const nativeRef = useRef(null);
+  const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(() => {
+    const selectedIndex = normalizedOptions.findIndex((option) => option.value === value);
+    return Math.max(0, selectedIndex);
+  });
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    const selectedIndex = normalizedOptions.findIndex((option) => option.value === value);
+    if (selectedIndex >= 0) setActiveIndex(selectedIndex);
+  }, [normalizedOptions, value]);
+
+  const enabledIndexes = normalizedOptions.reduce((indexes, option, index) => {
+    if (!option.disabled) indexes.push(index);
+    return indexes;
+  }, []);
+
+  const moveActive = (direction) => {
+    if (!enabledIndexes.length) return;
+
+    const currentEnabledPosition = enabledIndexes.indexOf(activeIndex);
+    const fallbackPosition = direction > 0 ? -1 : enabledIndexes.length;
+    const startPosition = currentEnabledPosition >= 0 ? currentEnabledPosition : fallbackPosition;
+    const nextPosition = Math.min(
+      enabledIndexes.length - 1,
+      Math.max(0, startPosition + direction),
+    );
+    setActiveIndex(enabledIndexes[nextPosition]);
+  };
+
+  const selectOption = (option) => {
+    if (!option || option.disabled || disabled) return;
+
+    const nativeSelect = nativeRef.current;
+    if (nativeSelect) {
+      const nativeValueSetter = Object.getOwnPropertyDescriptor(
+        HTMLSelectElement.prototype,
+        'value',
+      )?.set;
+      nativeValueSetter?.call(nativeSelect, option.value);
+      nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  const handleTriggerKeyDown = (event) => {
+    if (disabled) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setOpen(true);
+      moveActive(1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setOpen(true);
+      moveActive(-1);
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setOpen(true);
+      if (enabledIndexes.length) setActiveIndex(enabledIndexes[0]);
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      setOpen(true);
+      if (enabledIndexes.length) setActiveIndex(enabledIndexes.at(-1));
+      return;
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ') && open) {
+      event.preventDefault();
+      selectOption(normalizedOptions[activeIndex]);
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setOpen(true);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(false);
+    }
+  };
 
   return (
     <FieldFrame description={description} error={error} id={id} label={label} required={required}>
       {({ describedBy }) => (
-        <div className="ui-select-wrap">
+        <div className="ui-select-custom" ref={rootRef} data-open={open || undefined}>
           <select
             {...props}
-            id={id}
+            ref={nativeRef}
+            id={nativeId}
             value={value}
             onChange={onChange}
             required={required}
-            aria-invalid={Boolean(error) || undefined}
-            aria-describedby={describedBy}
-            className="ui-field__control ui-select"
+            disabled={disabled}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only ui-select__native-contract"
+            data-select-native-contract="true"
+            onFocus={() => triggerRef.current?.focus()}
           >
             {placeholder ? (
               <option value="" disabled={required}>
@@ -52,9 +171,71 @@ export function Select({
               </option>
             ))}
           </select>
-          <span className="ui-select__chevron" aria-hidden="true">
-            ▾
-          </span>
+
+          <button
+            ref={triggerRef}
+            id={id}
+            type="button"
+            className="ui-field__control ui-select-trigger"
+            disabled={disabled}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-controls={listboxId}
+            aria-activedescendant={
+              open && normalizedOptions[activeIndex] ? `${id}-option-${activeIndex}` : undefined
+            }
+            aria-invalid={Boolean(error) || undefined}
+            aria-describedby={describedBy}
+            onClick={() => setOpen((current) => !current)}
+            onKeyDown={handleTriggerKeyDown}
+          >
+            <span
+              className={
+                selectedOption ? 'ui-select-trigger__value' : 'ui-select-trigger__placeholder'
+              }
+            >
+              {selectedOption?.label ?? placeholder}
+            </span>
+            <span className="ui-select-trigger__icon" data-open={open} aria-hidden="true">
+              <Icon name="chevronDown" size={15} />
+            </span>
+          </button>
+
+          {open ? (
+            <div className="ui-select-popover" id={listboxId} role="listbox" aria-label={label}>
+              {normalizedOptions.length ? (
+                normalizedOptions.map((option, index) => (
+                  <div
+                    key={option.value}
+                    id={`${id}-option-${index}`}
+                    role="option"
+                    aria-selected={option.value === value}
+                    aria-disabled={option.disabled || undefined}
+                    data-active={index === activeIndex || undefined}
+                    data-disabled={option.disabled || undefined}
+                    className="ui-select-option"
+                    onMouseEnter={() => {
+                      if (!option.disabled) setActiveIndex(index);
+                    }}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectOption(option)}
+                  >
+                    <span className="ui-select-option__copy">
+                      <span>{option.label}</span>
+                      {option.description ? <small>{option.description}</small> : null}
+                    </span>
+                    {option.value === value ? (
+                      <span className="ui-select-option__check" aria-hidden="true">
+                        <Icon name="check" size={14} />
+                      </span>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <p className="ui-select-empty">Tidak ada pilihan tersedia.</p>
+              )}
+            </div>
+          ) : null}
         </div>
       )}
     </FieldFrame>
@@ -77,7 +258,6 @@ export function Combobox({
   const generatedId = useId();
   const id = providedId || `combobox-${generatedId.replaceAll(':', '')}`;
   const listboxId = `${id}-listbox`;
-  const rootRef = useRef(null);
   const normalizedOptions = useMemo(() => options.map(normalizeOption), [options]);
   const selectedOption = normalizedOptions.find((option) => option.value === value);
   const [query, setQuery] = useState(selectedOption?.label || '');
@@ -164,7 +344,6 @@ export function Combobox({
       {({ describedBy }) => (
         <div
           className="ui-combobox"
-          ref={rootRef}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) {
               setOpen(false);
@@ -205,7 +384,7 @@ export function Combobox({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => setOpen((current) => !current)}
             >
-              ▾
+              <Icon name="chevronDown" size={15} />
             </button>
           </div>
 

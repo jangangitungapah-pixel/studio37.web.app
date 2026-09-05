@@ -97,9 +97,50 @@
   gap: var(--space-4);
 }
 
+.price-session-identity-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(13rem, 0.85fr);
+  align-items: start;
+  gap: var(--space-4) var(--space-5);
+}
+
+.price-session-behavior-grid {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.52fr) minmax(0, 2.48fr);
+  align-items: start;
+  gap: var(--space-5);
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+  padding-top: var(--space-4);
+}
+
+.price-session-display-order {
+  width: 100%;
+  max-width: 15rem;
+  min-width: 0;
+}
+
 .price-session-switches {
   display: grid;
   gap: var(--space-2);
+}
+
+.ui-dialog .price-session-switches.price-session-switches--horizontal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-self: start;
+  gap: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 1px solid rgb(255 255 255 / 0.075);
+}
+
+.ui-dialog .price-session-switches--horizontal .price-session-switch {
+  min-height: 100%;
+  padding: 0.35rem 0.85rem 0.55rem 1rem;
+}
+
+.ui-dialog .price-session-switches--horizontal .price-session-switch + .price-session-switch {
+  border-top: 0;
+  border-left: 1px solid rgb(255 255 255 / 0.06);
 }
 
 .price-session-switch {
@@ -159,6 +200,17 @@
   border-radius: var(--radius-md);
   background: var(--color-surface-subtle);
   padding: var(--space-4);
+}
+
+.price-session-duration-heading {
+  max-width: 50rem;
+}
+
+.price-session-duration-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-5);
 }
 
 .price-session-status-summary {
@@ -376,6 +428,15 @@
     white-space: normal;
   }
 
+  .price-session-behavior-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .price-session-display-order {
+    max-width: 13rem;
+  }
+
   .price-settings-next {
     align-items: flex-start;
     flex-direction: column;
@@ -394,7 +455,9 @@
 }
 
 @media (max-width: 560px) {
-  .price-session-row {
+  .price-session-row,
+  .price-session-identity-grid,
+  .price-session-duration-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -407,6 +470,22 @@
 
   .price-session-row__actions {
     grid-column: auto;
+  }
+
+  .ui-dialog .price-session-switches.price-session-switches--horizontal {
+    grid-template-columns: minmax(0, 1fr);
+    border-left: 0;
+    border-top: 1px solid rgb(255 255 255 / 0.075);
+    border-bottom: 1px solid rgb(255 255 255 / 0.075);
+  }
+
+  .ui-dialog .price-session-switches--horizontal .price-session-switch {
+    padding: 0.75rem 0.6rem 0.75rem 0.7rem;
+  }
+
+  .ui-dialog .price-session-switches--horizontal .price-session-switch + .price-session-switch {
+    border-top: 1px solid rgb(255 255 255 / 0.06);
+    border-left: 0;
   }
 
   .pricing-preview__result,
