@@ -1971,7 +1971,7 @@ describe('initial Firestore authorization boundary', () => {
     );
   });
 
-  test('keeps remaining not-yet-implemented domain collections default-deny', async () => {
+  test('keeps unprivileged booking and commission access denied after compensation activation', async () => {
     await seedDocuments([
       ['commissionEntries/paid-1', { amount: 50_000, status: 'paid' }],
       ['bookings/booking-1', { status: 'confirmed' }],
@@ -1980,7 +1980,7 @@ describe('initial Firestore authorization boundary', () => {
     const ownerDb = authenticatedDb(OWNER_UID);
     const operatorDb = authenticatedDb(OPERATOR_UID);
 
-    await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));
+    await assertSucceeds(getDoc(doc(ownerDb, 'bookings/booking-1')));
     await assertFails(getDoc(doc(operatorDb, 'bookings/booking-1')));
     await assertFails(updateDoc(doc(operatorDb, 'commissionEntries/paid-1'), { amount: 0 }));
   });
