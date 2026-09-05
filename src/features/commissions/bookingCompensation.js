@@ -83,7 +83,10 @@ function normalizeOptionalDisplayReference(value, label) {
 
 function normalizeAssignment(value, index) {
   const assignment = requireRecord(value, `assignments[${index}]`);
-  const operatorId = requireSingleSegmentId(assignment.operatorId, `assignments[${index}].operatorId`);
+  const operatorId = requireSingleSegmentId(
+    assignment.operatorId,
+    `assignments[${index}].operatorId`,
+  );
 
   if (
     typeof assignment.operatorType !== 'string' ||
@@ -149,9 +152,7 @@ function cloneCalculationSnapshot(snapshot) {
     ...snapshot,
     configuration: Object.freeze({ ...snapshot.configuration }),
     percentageBase:
-      snapshot.percentageBase === null
-        ? null
-        : Object.freeze({ ...snapshot.percentageBase }),
+      snapshot.percentageBase === null ? null : Object.freeze({ ...snapshot.percentageBase }),
   });
 }
 
