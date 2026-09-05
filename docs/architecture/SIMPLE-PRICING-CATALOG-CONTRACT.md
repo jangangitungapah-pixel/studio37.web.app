@@ -43,18 +43,18 @@ Existing booking price snapshots remain authoritative for historical bookings. E
 
 The following items describe the current intended active catalog. They are examples/default operating data, not immutable product constants.
 
-| Service / package | Basis | Duration / unit | Customer price | Main studio |
-| --- | --- | ---: | ---: | --- |
-| Latihan / Rehearsal | Hourly | 1 hour | Rp120,000 | Yes |
-| Recording Standard | Duration package | 3 hours | Rp500,000 | Yes |
-| Recording Pro | Duration package | 6 hours | Rp950,000 | Yes |
-| Recording Live | Duration package | 3 hours | Rp600,000 | Yes |
-| Recording Drum Only | Duration package | 3 hours | Rp500,000 | Yes |
-| Recording Vocal Only | Duration package | 3 hours | Rp300,000 | Yes |
-| Recording 1 Instrument excluding Drum | Duration package | 3 hours | Rp400,000 | Yes |
-| Mixing | Fixed per unit | 1 song | Rp500,000 | No |
-| Mastering | Fixed per unit | 1 song | Rp500,000 | No |
-| Mixing + Mastering | Fixed per unit | 1 song | Rp900,000 | No |
+| Service / package                     | Basis            | Duration / unit | Customer price | Main studio |
+| ------------------------------------- | ---------------- | --------------: | -------------: | ----------- |
+| Latihan / Rehearsal                   | Hourly           |          1 hour |      Rp120,000 | Yes         |
+| Recording Standard                    | Duration package |         3 hours |      Rp500,000 | Yes         |
+| Recording Pro                         | Duration package |         6 hours |      Rp950,000 | Yes         |
+| Recording Live                        | Duration package |         3 hours |      Rp600,000 | Yes         |
+| Recording Drum Only                   | Duration package |         3 hours |      Rp500,000 | Yes         |
+| Recording Vocal Only                  | Duration package |         3 hours |      Rp300,000 | Yes         |
+| Recording 1 Instrument excluding Drum | Duration package |         3 hours |      Rp400,000 | Yes         |
+| Mixing                                | Fixed per unit   |          1 song |      Rp500,000 | No          |
+| Mastering                             | Fixed per unit   |          1 song |      Rp500,000 | No          |
+| Mixing + Mastering                    | Fixed per unit   |          1 song |      Rp900,000 | No          |
 
 Mixing, Mastering, and Mixing + Mastering are work performed by a Recording Operator and do not reserve the main studio. Their operator compensation is not part of the customer pricing calculation.
 
@@ -75,15 +75,15 @@ totalAmount = baseAmount - discountAmount
 
 Expected examples:
 
-| Duration | Base | Discount | Total |
-| ---: | ---: | ---: | ---: |
-| 1 hour | Rp120,000 | Rp0 | Rp120,000 |
-| 2 hours | Rp240,000 | Rp0 | Rp240,000 |
-| 3 hours | Rp360,000 | Rp40,000 | Rp320,000 |
-| 4 hours | Rp480,000 | Rp40,000 | Rp440,000 |
-| 5 hours | Rp600,000 | Rp40,000 | Rp560,000 |
-| 6 hours | Rp720,000 | Rp80,000 | Rp640,000 |
-| 9 hours | Rp1,080,000 | Rp120,000 | Rp960,000 |
+| Duration |        Base |  Discount |     Total |
+| -------: | ----------: | --------: | --------: |
+|   1 hour |   Rp120,000 |       Rp0 | Rp120,000 |
+|  2 hours |   Rp240,000 |       Rp0 | Rp240,000 |
+|  3 hours |   Rp360,000 |  Rp40,000 | Rp320,000 |
+|  4 hours |   Rp480,000 |  Rp40,000 | Rp440,000 |
+|  5 hours |   Rp600,000 |  Rp40,000 | Rp560,000 |
+|  6 hours |   Rp720,000 |  Rp80,000 | Rp640,000 |
+|  9 hours | Rp1,080,000 | Rp120,000 | Rp960,000 |
 
 The rule must be implemented generically as a recurring duration-block discount that can be configured for any eligible session type. Application code must not special-case `REHEARSAL`, a specific document id, or the current Rp120,000 / Rp40,000 values.
 
@@ -130,14 +130,14 @@ Customer pricing and operator compensation must remain separate calculations, co
 
 The following are current business examples for the future fee/commission phase and must not be stored as customer price fields:
 
-| Compensation example | Recipient | Rule example |
-| --- | --- | --- |
-| Rehearsal studio fee | Studio Operator | Rp10,000 per rehearsal hour |
-| Meal allowance | Studio Operator | Rp40,000 per eligible work day |
-| Recording track shift fee | Studio Operator | Rp50,000 per qualifying 6-hour recording shift |
-| Recording overtime | Studio Operator | Rp10,000 per overtime hour |
+| Compensation example           | Recipient          | Rule example                                         |
+| ------------------------------ | ------------------ | ---------------------------------------------------- |
+| Rehearsal studio fee           | Studio Operator    | Rp10,000 per rehearsal hour                          |
+| Meal allowance                 | Studio Operator    | Rp40,000 per eligible work day                       |
+| Recording track shift fee      | Studio Operator    | Rp50,000 per qualifying 6-hour recording shift       |
+| Recording overtime             | Studio Operator    | Rp10,000 per overtime hour                           |
 | Recording Pro track commission | Recording Operator | Rp450,000 for the current Rp950,000 / 6-hour package |
-| Recording Live commission | Recording Operator | Rp285,000 for the current Rp600,000 / 3-hour package |
+| Recording Live commission      | Recording Operator | Rp285,000 for the current Rp600,000 / 3-hour package |
 
 These values are examples of configurable compensation policy. They must not be hardcoded, and future compensation changes must not rewrite historical commission snapshots.
 
