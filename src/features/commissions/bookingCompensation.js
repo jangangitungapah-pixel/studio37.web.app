@@ -22,6 +22,7 @@ export const BOOKING_COMPENSATION_DIAGNOSTIC_CODES = Object.freeze({
 
 const supportedOperatorTypes = new Set(Object.values(OPERATOR_TYPES));
 const supportedCommissionStates = new Set(Object.values(COMMISSION_ENTRY_STATES));
+const supportedSourceEvents = new Set(Object.values(COMMISSION_ENTRY_SOURCE_EVENTS));
 const maxSafeIntegerBigInt = BigInt(Number.MAX_SAFE_INTEGER);
 
 function requireRecord(value, label) {
@@ -45,6 +46,22 @@ function requireSingleSegmentId(value, label) {
   }
   if (normalized.includes('/')) {
     throw new TypeError(`${label} must be a Firestore document id.`);
+  }
+
+  return normalized;
+}
+
+function requireOpaqueSourceKey(value) {
+  if (typeof value !== 'string') {
+    throw new TypeError('entry.sourceKey must be a string.');
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new TypeError('entry.sourceKey must be a non-empty string.');
+  }
+  if (normalized.length > 1024) {
+    throw new RangeError('entry.sourceKey must be at most 1024 characters.');
   }
 
   return normalized;
@@ -109,9 +126,22 @@ export function createCommissionSourceKey({
   ruleId,
   sourceEvent = COMMISSION_ENTRY_SOURCE_EVENTS.BOOKING_CONFIRMATION,
 }) {
-  return [bookingId, operatorId, operatorType, ruleId, sourceEvent]
-    .map((value) => encodeURIComponent(value))
-    .join('|');
+  const values = [
+    requireSingleSegmentId(bookingId, 'bookingId'),
+    requireSingleSegmentId(operatorId, 'operatorId'),
+    operatorType,
+    requireSingleSegmentId(ruleId, 'ruleId'),
+    sourceEvent,
+  ];
+
+  if (!supportedOperatorTypes.has(operatorType)) {
+    throw new RangeError('operatorType is not supported.');
+  }
+  if (!supportedSourceEvents.has(sourceEvent)) {
+    throw new RangeError('sourceEvent is not supported.');
+  }
+
+  return values.map((value) => encodeURIComponent(value)).join('|');
 }
 
 function cloneCalculationSnapshot(snapshot) {
@@ -352,7 +382,7 @@ export function buildCommissionEntryTransition(
     fromState,
     payoutId: normalizedPayoutId,
     reason: normalizedReason,
-    sourceKey: requireSingleSegmentId(entry.sourceKey, 'entry.sourceKey'),
+    sourceKey: requireOpaqueSourceKey(entry.sourceKey),
     toState,
   });
 }
