@@ -14,7 +14,11 @@ function snapshotFor(value) {
 
 function createFakeDb(initialEntries = {}) {
   const store = new Map(Object.entries(initialEntries));
-  const reference = (collectionName, id) => ({ collectionName, id, path: `${collectionName}/${id}` });
+  const reference = (collectionName, id) => ({
+    collectionName,
+    id,
+    path: `${collectionName}/${id}`,
+  });
 
   function collection(collectionName) {
     return {
@@ -165,7 +169,9 @@ describe('trusted booking compensation Admin Firestore gateway', () => {
     const db = createFakeDb({ 'bookings/booking-1': { status: 'confirmed' } });
     const gateway = createGateway(db);
     const projection = makeProjection();
-    const first = await gateway.persistProjection('booking-1', projection, { actorUid: 'owner-uid' });
+    const first = await gateway.persistProjection('booking-1', projection, {
+      actorUid: 'owner-uid',
+    });
     const entryPath = `commissionEntries/${first.createdEntryIds[0]}`;
     db.store.set(entryPath, {
       ...db.store.get(entryPath),
@@ -173,7 +179,9 @@ describe('trusted booking compensation Admin Firestore gateway', () => {
       state: 'paid',
     });
 
-    const retry = await gateway.persistProjection('booking-1', projection, { actorUid: 'owner-uid' });
+    const retry = await gateway.persistProjection('booking-1', projection, {
+      actorUid: 'owner-uid',
+    });
     expect(retry).toMatchObject({
       createdEntryIds: [],
       existingEntryIds: [first.createdEntryIds[0]],
@@ -186,7 +194,9 @@ describe('trusted booking compensation Admin Firestore gateway', () => {
     const db = createFakeDb({ 'bookings/booking-1': { status: 'confirmed' } });
     const gateway = createGateway(db);
     const projection = makeProjection();
-    const first = await gateway.persistProjection('booking-1', projection, { actorUid: 'owner-uid' });
+    const first = await gateway.persistProjection('booking-1', projection, {
+      actorUid: 'owner-uid',
+    });
     const entryPath = `commissionEntries/${first.createdEntryIds[0]}`;
     db.store.set(entryPath, { ...db.store.get(entryPath), amountIdr: 1 });
 
