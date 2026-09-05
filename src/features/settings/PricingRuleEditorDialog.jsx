@@ -19,6 +19,7 @@ import {
 import {
   DEFAULT_PRICING_RULE_FORM_VALUES,
   PRICING_RULE_PACKAGE_EXTRA_TIME_OPTIONS,
+  PRICING_RULE_RECURRING_DISCOUNT_OPTIONS,
   PRICING_RULE_ROUNDING_OPTIONS,
   toPricingRuleFormValues,
   validatePricingRuleForm,
@@ -52,11 +53,19 @@ function getUserFacingErrors(errors) {
   if (errors.additionalAmountPerIncrementIdr) {
     translated.additionalAmountPerIncrementIdr = 'Harga tambahan harus berupa angka rupiah 0 atau lebih.';
   }
+  if (errors.recurringDiscountAmountPerBlockIdr) {
+    translated.recurringDiscountAmountPerBlockIdr =
+      'Nominal diskon harus berupa angka rupiah 0 atau lebih.';
+  }
   if (errors.incrementMinutes) {
     translated.incrementMinutes = 'Interval harga harus kelipatan 15 menit antara 15–1440.';
   }
   if (errors.minimumDurationMinutes) {
     translated.minimumDurationMinutes = 'Durasi minimum harus kelipatan 15 menit antara 15–1440.';
+  }
+  if (errors.recurringDiscountBlockDurationMinutes) {
+    translated.recurringDiscountBlockDurationMinutes =
+      'Interval diskon harus kelipatan 15 menit dan selaras dengan interval harga.';
   }
   if (errors.durationMinutes) {
     translated.durationMinutes = 'Durasi paket harus kelipatan 15 menit antara 15–1440.';
@@ -152,12 +161,13 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
       formValues.incrementMinutes === '60'
         ? 'Harga per jam (IDR)'
         : `Harga per ${formValues.incrementMinutes || 'interval'} menit (IDR)`;
+    const recurringDiscountEnabled = formValues.recurringDiscountState === 'enabled';
 
     return (
       <div className="pricing-rule-config-panel">
         <div className="pricing-rule-config-panel__intro">
           <strong>Harga per jam</strong>
-          <span>Masukkan harga utama dan minimum durasi booking.</span>
+          <span>Masukkan harga utama, minimum booking, dan diskon berulang jika diperlukan.</span>
         </div>
         <div className="settings-form__grid">
           <Input
@@ -181,7 +191,51 @@ function ConfigurationFields({ fieldErrors, formValues, onChange, onDurationChan
             onValueChange={onDurationChange('minimumDurationMinutes')}
           />
         </div>
-        <DurationBehaviorSummary>{durationBehavior?.text}</DurationBehaviorSummary>
+
+        <div className="pricing-rule-config-panel__intro">
+          <strong>Diskon kelipatan durasi</strong>
+          <span>
+            Opsional. Contoh: potong Rp40.000 untuk setiap 3 jam penuh yang dibooking.
+          </span>
+        </div>
+        <Select
+          label="Status diskon"
+          value={formValues.recurringDiscountState}
+          options={PRICING_RULE_RECURRING_DISCOUNT_OPTIONS}
+          disabled={saving}
+          onChange={onChange('recurringDiscountState')}
+        />
+        {recurringDiscountEnabled ? (
+          <div className="settings-form__grid">
+            <DurationMinutesField
+              label="Diskon setiap"
+              value={formValues.recurringDiscountBlockDurationMinutes}
+              error={fieldErrors.recurringDiscountBlockDurationMinutes}
+              required
+              disabled={saving}
+              description="Contoh: 180 menit = setiap 3 jam, 240 menit = setiap 4 jam."
+              onValueChange={onDurationChange('recurringDiscountBlockDurationMinutes')}
+            />
+            <Input
+              type="number"
+              label="Nominal diskon (IDR)"
+              value={formValues.recurringDiscountAmountPerBlockIdr}
+              error={fieldErrors.recurringDiscountAmountPerBlockIdr}
+              min={0}
+              step={1}
+              required
+              disabled={saving}
+              description="Nominal dipotong sekali untuk setiap blok durasi yang selesai."
+              onChange={onChange('recurringDiscountAmountPerBlockIdr')}
+            />
+          </div>
+        ) : null}
+
+        <DurationBehaviorSummary>
+          {recurringDiscountEnabled
+            ? `${durationBehavior?.text ?? ''} Diskon diterapkan setiap ${formValues.recurringDiscountBlockDurationMinutes || '—'} menit penuh.`
+            : durationBehavior?.text}
+        </DurationBehaviorSummary>
         <AdvancedPricingFields>
           <div className="settings-form__grid">
             <DurationMinutesField
