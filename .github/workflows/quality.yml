@@ -33,8 +33,18 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Print Phase 6D2 formatting diff
+        shell: bash
+        run: |
+          npx prettier --write \
+            src/services/bookingCompensationPersistenceRepository.js \
+            src/services/bookingCompensationPersistenceRepository.test.js \
+            tests/bookingCompensationPersistenceRules.emulator.js
+          git diff -- \
+            src/services/bookingCompensationPersistenceRepository.js \
+            src/services/bookingCompensationPersistenceRepository.test.js \
+            tests/bookingCompensationPersistenceRules.emulator.js
+          exit 1
 
       - name: Lint
         run: npm run lint
