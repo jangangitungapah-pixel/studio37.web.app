@@ -51,6 +51,12 @@ jobs:
       - name: Test Phase 6C compensation engine
         run: npx vitest run src/features/commissions/compensationEngine.test.js
 
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
+
       - name: Build
         run: npm run build
 
@@ -70,12 +76,6 @@ jobs:
 
           cat /tmp/studio37-vite.log
           exit 1
-
-      - name: Test Firestore Security Rules
-        env:
-          CI: true
-          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
-        run: npm run test:rules
 
       - name: Test full unit suite
         run: npm test
