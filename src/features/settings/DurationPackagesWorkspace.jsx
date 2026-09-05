@@ -41,6 +41,10 @@ export function DurationPackagesWorkspace({
   studioScopeState = 'ready',
 }) {
   const { pushToast } = useToast();
+  const canDelete = canEdit && access.profile?.role === 'owner';
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [dialogError, setDialogError] = useState('');
   const [editingRule, setEditingRule] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -207,6 +211,40 @@ export function DurationPackagesWorkspace({
     }
   };
 
+  const openDeleteDialog = (rule) => {
+    if (!canDelete) return;
+    setDeleteTarget(rule);
+    setDeleteError('');
+  };
+
+  const closeDeleteDialog = useCallback(() => {
+    if (deleteSaving) return;
+    setDeleteTarget(null);
+    setDeleteError('');
+  }, [deleteSaving]);
+
+  const deletePackage = async () => {
+    if (!canDelete || !deleteTarget) return;
+
+    setDeleteSaving(true);
+    setDeleteError('');
+
+    try {
+      await repository.deletePricingRule(deleteTarget.id);
+      pushToast({
+        message: `${deleteTarget.name} sudah dihapus permanen dari paket harga.`,
+        tone: 'success',
+        title: 'Paket dihapus',
+      });
+      setDeleteTarget(null);
+      onChanged();
+    } catch (error) {
+      setDeleteError(getSafeFirebaseMessage(error, 'menghapus'));
+    } finally {
+      setDeleteSaving(false);
+    }
+  };
+
   return (
     <div className="duration-package-workspace" aria-labelledby="duration-packages-heading">
       <header className="duration-package-workspace__header">
@@ -321,6 +359,16 @@ export function DurationPackagesWorkspace({
                             >
                               {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                             </Button>
+                            {canDelete ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                aria-label={`Hapus paket ${rule.name}`}
+                                onClick={() => openDeleteDialog(rule)}
+                              >
+                                Hapus
+                              </Button>
+                            ) : null}
                           </div>
                         ) : null}
                       </article>
@@ -385,6 +433,39 @@ export function DurationPackagesWorkspace({
                 : ''}
             </strong>
             <span>Paket bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.</span>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        size="sm"
+        title={`Hapus ${deleteTarget?.name ?? 'paket'} permanen?`}
+        description="Paket akan dihapus dari pengaturan harga dan tidak bisa dipulihkan."
+        onClose={closeDeleteDialog}
+        footer={
+          <>
+            <Button variant="ghost" disabled={deleteSaving} onClick={closeDeleteDialog}>
+              Batal
+            </Button>
+            <Button variant="danger" loading={deleteSaving} onClick={deletePackage}>
+              Hapus permanen
+            </Button>
+          </>
+        }
+      >
+        {deleteError ? (
+          <div className="settings-notice" data-tone="danger" role="alert">
+            <strong>Paket belum bisa dihapus.</strong>
+            <span>{deleteError}</span>
+          </div>
+        ) : (
+          <div className="pricing-rule-status-summary">
+            <strong>Aksi ini tidak bisa dibatalkan.</strong>
+            <span>
+              Jika paket ini sudah pernah dipakai pada booking historis, gunakan Nonaktifkan sebagai
+              gantinya agar referensi histori tetap tersedia.
+            </span>
           </div>
         )}
       </Dialog>
