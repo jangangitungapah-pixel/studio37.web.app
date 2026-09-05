@@ -51,6 +51,9 @@ jobs:
       - name: Test Phase 6C compensation engine
         run: npx vitest run src/features/commissions/compensationEngine.test.js
 
+      - name: Test Phase 6D booking compensation foundation
+        run: npx vitest run src/features/commissions/bookingCompensation.test.js
+
       - name: Test Firestore Security Rules
         env:
           CI: true
