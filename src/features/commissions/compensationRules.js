@@ -175,7 +175,10 @@ function normalizePackageConfiguration(value) {
   requireExactFields(configuration, ['amountIdr', 'durationMinutes'], label);
   return Object.freeze({
     amountIdr: normalizeAmount(configuration.amountIdr, `${label}.amountIdr`),
-    durationMinutes: normalizeDuration(configuration.durationMinutes, `${label}.durationMinutes`),
+    durationMinutes: normalizeDuration(
+      configuration.durationMinutes,
+      `${label}.durationMinutes`,
+    ),
   });
 }
 
@@ -248,8 +251,13 @@ export function normalizeCompensationRuleDetails(value) {
     configuration: normalizeConfiguration(compensationModel, compensationRule.configuration),
     effectiveFrom,
     effectiveUntil,
-    name: requireTrimmedString(compensationRule.name, 'compensationRule.name', { maxLength: 100 }),
-    operatorId: normalizeOptionalReference(compensationRule.operatorId, 'compensationRule.operatorId'),
+    name: requireTrimmedString(compensationRule.name, 'compensationRule.name', {
+      maxLength: 100,
+    }),
+    operatorId: normalizeOptionalReference(
+      compensationRule.operatorId,
+      'compensationRule.operatorId',
+    ),
     operatorType: normalizeOperatorType(compensationRule.operatorType),
     priority: normalizePriority(compensationRule.priority),
     sessionTypeId: normalizeOptionalReference(
