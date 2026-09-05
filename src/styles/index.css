@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
+@import './signal-atelier.css';
 
 :root {
   font-family: var(--font-sans);
@@ -53,13 +54,13 @@ a {
 }
 
 ::selection {
-  background: var(--color-brand-soft);
+  background: rgb(201 242 107 / 0.26);
   color: var(--color-text);
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-brand) 38%, transparent);
-  outline-offset: 3px;
+  outline: 0;
+  box-shadow: var(--shadow-focus);
 }
 
 h1,
