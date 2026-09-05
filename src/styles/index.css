@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 @import './tokens.css';
 @import './signal-atelier.css';
@@ -28,6 +29,9 @@ body {
   min-height: 100vh;
   background: var(--color-canvas);
   color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.55;
 }
 
 button,
@@ -74,8 +78,11 @@ p {
 h1,
 h2,
 h3 {
+  font-family: var(--font-display);
   color: var(--color-text);
-  letter-spacing: -0.025em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 .sr-only {
