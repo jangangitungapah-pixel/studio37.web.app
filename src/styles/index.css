@@ -3,6 +3,7 @@
 @import './tokens.css';
 @import './signal-atelier.css';
 @import './signal-components.css';
+@import './signal-editorial.css';
 
 :root {
   font-family: var(--font-sans);
