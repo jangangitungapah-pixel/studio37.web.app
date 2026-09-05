@@ -63,12 +63,6 @@ jobs:
           FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
         run: npm run test:rules:booking-compensation
 
-      - name: Test Firestore Security Rules
-        env:
-          CI: true
-          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
-        run: npm run test:rules
-
       - name: Build
         run: npm run build
 
@@ -91,3 +85,9 @@ jobs:
 
       - name: Test full unit suite
         run: npm test
+
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
