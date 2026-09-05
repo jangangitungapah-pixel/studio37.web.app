@@ -43,6 +43,7 @@ function createDocument(overrides = {}) {
     createdAt: new Date('2026-08-25T01:00:00.000Z'),
     createdByUid: 'owner-1',
     id: 'rule-rehearsal-general',
+    name: 'Rehearsal hourly — general',
     status: 'active',
     updatedAt: new Date('2026-08-25T02:00:00.000Z'),
     updatedByUid: 'owner-1',
@@ -181,7 +182,9 @@ describe('pricing rule domain contract', () => {
   it('normalizes optional effective bounds as cloned instants and encodes Firestore timestamps', () => {
     const effectiveFrom = new Date('2026-09-01T00:00:00.000Z');
     const effectiveUntil = new Date('2026-10-01T00:00:00.000Z');
-    const normalized = normalizePricingRuleDetails(createDetails({ effectiveFrom, effectiveUntil }));
+    const normalized = normalizePricingRuleDetails(
+      createDetails({ effectiveFrom, effectiveUntil }),
+    );
     const encoded = encodePricingRuleDetails(normalized);
 
     expect(normalized.effectiveFrom).toEqual(effectiveFrom);
