@@ -3,31 +3,91 @@ name: Quality
 on:
   push:
     branches:
-      - phase/6d2-booking-compensation-persistence
+      - main
+      - 'phase/**'
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch:
+  quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: phase/6d2-booking-compensation-persistence
-          fetch-depth: 0
 
-      - name: Update legacy Firestore expectation
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java for Firebase Emulator Suite
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test Phase 6A2 repository boundary
+        run: npx vitest run src/services/compensationRuleRepository.test.js
+
+      - name: Test Phase 6B management core
+        run: >-
+          npx vitest run
+          src/features/commissions/compensationRuleManagement.test.js
+          src/services/compensationRuleManagementService.test.js
+
+      - name: Test Phase 6C compensation engine
+        run: npx vitest run src/features/commissions/compensationEngine.test.js
+
+      - name: Test Phase 6D booking compensation foundation
+        run: npx vitest run src/features/commissions/bookingCompensation.test.js
+
+      - name: Test Phase 6D2 persistence repository
+        run: npx vitest run src/services/bookingCompensationPersistenceRepository.test.js
+
+      - name: Test Phase 6D2 Firestore persistence boundary
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules:booking-compensation
+
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
+
+      - name: Build
+        run: npm run build
+
+      - name: Dev server smoke
         shell: bash
         run: |
-          python -c "from pathlib import Path; p=Path('tests/firestoreRules.emulator.js'); s=p.read_text(); old=\"test('keeps remaining not-yet-implemented domain collections default-deny', async () => {\"; new=\"test('keeps unprivileged booking and commission access denied after compensation activation', async () => {\"; assert old in s; p.write_text(s.replace(old,new,1))"
-          python -c "from pathlib import Path; p=Path('tests/firestoreRules.emulator.js'); s=p.read_text(); old=\"await assertFails(getDoc(doc(ownerDb, 'bookings/booking-1')));\"; new=\"await assertSucceeds(getDoc(doc(ownerDb, 'bookings/booking-1')));\"; assert old in s; p.write_text(s.replace(old,new,1))"
-          if git diff --quiet -- tests/firestoreRules.emulator.js; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/firestoreRules.emulator.js
-          git commit -m "test(rules): align booking expectations with phase 6d2"
-          git push origin HEAD:phase/6d2-booking-compensation-persistence
+          npm run dev -- --host 127.0.0.1 > /tmp/studio37-vite.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/studio37-vite.log
+          exit 1
+
+      - name: Test full unit suite
+        run: npm test
