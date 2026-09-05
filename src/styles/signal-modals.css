@@ -1,0 +1,634 @@
+/* Studio37 Signal Editorial modal system
+   One elevated modal surface. Internal hierarchy is expressed with typography,
+   whitespace, hairline dividers and semantic accent rails instead of nested cards. */
+
+/* ---------- Modal shell ---------- */
+.ui-dialog-backdrop {
+  align-items: center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background:
+    radial-gradient(circle at 50% -12%, rgb(99 216 255 / 0.055), transparent 34rem),
+    rgb(3 5 7 / 0.82);
+  backdrop-filter: blur(10px) saturate(112%);
+}
+
+.ui-dialog {
+  position: relative;
+  width: min(100%, 42rem);
+  max-height: min(92vh, 61rem);
+  border: 1px solid rgb(255 255 255 / 0.11);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.016), transparent 9rem),
+    color-mix(in srgb, var(--color-surface) 97%, black);
+  box-shadow:
+    0 38px 100px rgb(0 0 0 / 0.56),
+    0 1px 0 rgb(255 255 255 / 0.04) inset;
+}
+
+.ui-dialog[data-size='sm'] {
+  width: min(100%, 31rem);
+}
+
+.ui-dialog[data-size='lg'] {
+  width: min(100%, 58rem);
+}
+
+.ui-dialog::before {
+  inset: 0 2rem auto;
+  opacity: 0.72;
+}
+
+/* ---------- Header ---------- */
+.ui-dialog__header {
+  position: relative;
+  align-items: flex-start;
+  gap: 1.5rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.075);
+  background: transparent;
+  padding: 1.45rem 1.6rem 1.2rem;
+  backdrop-filter: none;
+}
+
+.ui-dialog__heading {
+  display: grid;
+  min-width: 0;
+  gap: 0.26rem;
+}
+
+.ui-dialog__kicker {
+  color: var(--color-brand);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.ui-dialog__heading h2 {
+  max-width: 32ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.32rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.042em;
+}
+
+.ui-dialog__heading p {
+  max-width: 72ch;
+  margin: 0.08rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.62;
+  letter-spacing: -0.006em;
+}
+
+.ui-dialog__close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-soft);
+  box-shadow: none;
+}
+
+.ui-dialog__close:hover {
+  transform: none;
+  border-color: rgb(255 255 255 / 0.075);
+  background: rgb(255 255 255 / 0.035);
+  color: var(--color-text);
+}
+
+/* ---------- Scrollable body ---------- */
+.ui-dialog__body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.35rem 1.6rem 1.55rem;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.ui-dialog__body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ui-dialog__body::-webkit-scrollbar-thumb {
+  border-width: 2px;
+}
+
+/* ---------- Footer ---------- */
+.ui-dialog__footer {
+  position: relative;
+  z-index: 2;
+  min-height: 64px;
+  align-items: center;
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+  background: linear-gradient(180deg, rgb(21 24 29 / 0.72), rgb(21 24 29 / 0.94));
+  padding: 0.8rem 1.6rem;
+  backdrop-filter: blur(12px);
+}
+
+/* ---------- Modal rhythm ---------- */
+.ui-dialog
+  :is(
+    .price-session-form,
+    .pricing-rule-form,
+    .permission-editor,
+    .permission-assignment,
+    .settings-account-link-dialog,
+    .settings-invitation-dialog,
+    .settings-invitation-result,
+    .settings-account-profile
+  ) {
+  gap: 1.2rem;
+}
+
+.ui-dialog .settings-form__grid {
+  gap: 1.05rem 1.15rem;
+}
+
+/* ---------- Semantic messages become accent rails ---------- */
+.ui-dialog .settings-notice,
+.ui-dialog .settings-dialog-note {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  border: 0;
+  border-left: 2px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.2rem 0 0.2rem 0.9rem;
+  box-shadow: none;
+  color: var(--color-info);
+  font-size: 0.75rem;
+  line-height: 1.58;
+}
+
+.ui-dialog .settings-notice strong,
+.ui-dialog .settings-dialog-note strong {
+  color: currentColor;
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+.ui-dialog .settings-notice span,
+.ui-dialog .settings-dialog-note span {
+  color: color-mix(in srgb, currentColor 82%, var(--color-text-muted));
+}
+
+.ui-dialog .settings-notice[data-tone='warning'] {
+  color: var(--color-warning);
+}
+
+.ui-dialog .settings-notice[data-tone='danger'] {
+  color: var(--color-danger);
+}
+
+.ui-dialog .settings-notice[data-tone='success'] {
+  color: var(--color-success);
+}
+
+.ui-dialog__body > .settings-notice,
+.ui-dialog .settings-room-form > .settings-notice {
+  margin-bottom: 1.2rem;
+}
+
+/* ---------- Flat form sub-sections ---------- */
+.ui-dialog
+  :is(
+    .price-session-duration-panel,
+    .pricing-rule-config-panel,
+    .pricing-rule-model-empty,
+    .pricing-rule-status-summary,
+    .price-session-status-summary,
+    .duration-behavior-summary,
+    .permission-editor__summary,
+    .settings-operator-account-note
+  ) {
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+  border-radius: 0;
+  background: transparent;
+  padding: 1rem 0 0;
+  box-shadow: none;
+}
+
+.ui-dialog
+  :is(
+    .price-session-duration-panel,
+    .pricing-rule-config-panel,
+    .permission-editor__summary,
+    .duration-behavior-summary
+  )
+  strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+
+/* ---------- Session-type switches ---------- */
+.ui-dialog .price-session-switches {
+  gap: 0;
+  align-self: start;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.ui-dialog .price-session-switch {
+  position: relative;
+  gap: 0.75rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.82rem 0.55rem 0.82rem 0.72rem;
+  box-shadow: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.ui-dialog .price-session-switch + .price-session-switch {
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.ui-dialog .price-session-switch:hover {
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.025), transparent 78%);
+}
+
+.ui-dialog .price-session-switch:has(input:checked) {
+  border-color: transparent;
+  background: linear-gradient(90deg, rgb(201 242 107 / 0.065), transparent 76%);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.ui-dialog .price-session-switch:has(input:disabled) {
+  opacity: 0.66;
+}
+
+.ui-dialog .price-session-switch > span {
+  gap: 0.18rem;
+}
+
+.ui-dialog .price-session-switch strong {
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.ui-dialog .price-session-switch small {
+  max-width: 38ch;
+  font-size: 0.69rem;
+  line-height: 1.52;
+}
+
+/* ---------- Duration presets stay tactile but quieter ---------- */
+.ui-dialog .duration-field__presets {
+  gap: 0.38rem;
+}
+
+.ui-dialog .duration-field__preset {
+  min-height: 1.95rem;
+  border-color: rgb(255 255 255 / 0.075);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  padding: 0.3rem 0.62rem;
+  font-size: 0.7rem;
+  box-shadow: none;
+}
+
+.ui-dialog .duration-field__preset:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: rgb(255 255 255 / 0.035);
+}
+
+.ui-dialog .duration-field__preset[data-selected='true'] {
+  border-color: color-mix(in srgb, var(--color-brand) 42%, var(--color-border));
+  background: rgb(201 242 107 / 0.055);
+  color: var(--color-text);
+}
+
+/* ---------- Operator type choices ---------- */
+.ui-dialog .settings-operator-types__grid {
+  gap: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.ui-dialog .settings-operator-types__grid label {
+  position: relative;
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.8rem 0.7rem;
+  box-shadow: none;
+}
+
+.ui-dialog .settings-operator-types__grid label + label {
+  border-left: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.ui-dialog .settings-operator-types__grid label:hover {
+  border-color: transparent;
+  background: rgb(255 255 255 / 0.025);
+}
+
+.ui-dialog .settings-operator-types__grid label[data-selected='true'] {
+  border-color: transparent;
+  background: linear-gradient(90deg, rgb(201 242 107 / 0.06), transparent 82%);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+/* ---------- Permission editor ---------- */
+.ui-dialog .permission-editor__groups {
+  gap: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+}
+
+.ui-dialog .permission-capability-group {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 1.05rem 0 0;
+  box-shadow: none;
+}
+
+.ui-dialog .permission-capability-group:nth-child(even) {
+  border-left: 1px solid rgb(255 255 255 / 0.07);
+  padding-left: 1rem;
+}
+
+.ui-dialog .permission-capability-group:nth-child(odd) {
+  padding-right: 1rem;
+}
+
+.ui-dialog .permission-capability-group:nth-child(n + 3) {
+  margin-top: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  padding-top: 1rem;
+}
+
+.ui-dialog .permission-capability-group legend {
+  gap: 0.2rem;
+  padding: 0;
+}
+
+.ui-dialog .permission-capability-group legend span {
+  font-family: var(--font-display);
+  font-size: 0.83rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.ui-dialog .permission-capability-group__options {
+  gap: 0;
+  margin-top: 0.72rem;
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.ui-dialog .permission-capability-group__options > label {
+  position: relative;
+  gap: 0.72rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.72rem 0.6rem;
+  box-shadow: none;
+}
+
+.ui-dialog .permission-capability-group__options > label + label {
+  border-top: 1px solid rgb(255 255 255 / 0.055);
+}
+
+.ui-dialog .permission-capability-group__options > label:hover {
+  border-color: transparent;
+  background: rgb(255 255 255 / 0.022);
+}
+
+.ui-dialog .permission-capability-group__options > label[data-selected='true'] {
+  border-color: transparent;
+  background: linear-gradient(90deg, rgb(201 242 107 / 0.055), transparent 84%);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.ui-dialog
+  .permission-capability-group__options
+  > label[data-sensitive='true'][data-selected='true'] {
+  border-color: transparent;
+  background: linear-gradient(90deg, rgb(243 189 97 / 0.055), transparent 84%);
+  box-shadow: inset 2px 0 0 var(--color-warning);
+}
+
+/* ---------- Invitation and account facts ---------- */
+.ui-dialog
+  :is(
+    .settings-invitation-summary,
+    .settings-account-profile__details,
+    .permission-assignment__profile dl
+  ) {
+  gap: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+  border-bottom: 1px solid rgb(255 255 255 / 0.075);
+}
+
+.ui-dialog
+  :is(
+    .settings-invitation-summary > div,
+    .settings-account-profile__details > div,
+    .permission-assignment__profile dl > div
+  ) {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.85rem 0.9rem;
+  box-shadow: none;
+}
+
+.ui-dialog .settings-invitation-summary > div + div,
+.ui-dialog .settings-account-profile__details > div + div,
+.ui-dialog .permission-assignment__profile dl > div + div {
+  border-left: 1px solid rgb(255 255 255 / 0.065);
+}
+
+.ui-dialog
+  :is(
+    .settings-invitation-summary dt,
+    .settings-account-profile__details dt,
+    .permission-assignment__profile dt
+  ) {
+  color: var(--color-text-soft);
+  font-size: 0.58rem;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+}
+
+.ui-dialog
+  :is(
+    .settings-invitation-summary dd,
+    .settings-account-profile__details dd,
+    .permission-assignment__profile dd
+  ) {
+  margin-top: 0.3rem;
+  font-size: 0.71rem;
+}
+
+/* ---------- Profile shells ---------- */
+.ui-dialog .settings-account-profile,
+.ui-dialog .permission-assignment__profile {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.ui-dialog .settings-account-profile__header,
+.ui-dialog .permission-assignment__heading {
+  padding-bottom: 0.15rem;
+}
+
+.ui-dialog .settings-account-profile__header strong,
+.ui-dialog .permission-assignment__heading strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Embedded loading and error states ---------- */
+.ui-dialog .settings-state--embedded {
+  border: 0;
+  border-left: 2px solid var(--color-border-strong);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.35rem 0 0.35rem 0.9rem;
+  box-shadow: none;
+}
+
+.ui-dialog .settings-state--embedded[data-tone='danger'] {
+  border-left-color: var(--color-danger);
+  background: transparent;
+}
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 767px) {
+  .ui-dialog .permission-editor__groups {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-dialog .permission-capability-group:nth-child(even),
+  .ui-dialog .permission-capability-group:nth-child(odd) {
+    border-left: 0;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .ui-dialog .permission-capability-group + .permission-capability-group {
+    margin-top: 1rem;
+    border-top: 1px solid rgb(255 255 255 / 0.07);
+    padding-top: 1rem;
+  }
+
+  .ui-dialog .settings-operator-types__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-dialog .settings-operator-types__grid label + label {
+    border-top: 1px solid rgb(255 255 255 / 0.06);
+    border-left: 0;
+  }
+
+  .ui-dialog
+    :is(
+      .settings-invitation-summary,
+      .settings-account-profile__details,
+      .permission-assignment__profile dl
+    ) {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-dialog .settings-invitation-summary > div + div,
+  .ui-dialog .settings-account-profile__details > div + div,
+  .ui-dialog .permission-assignment__profile dl > div + div {
+    border-top: 1px solid rgb(255 255 255 / 0.06);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .ui-dialog,
+  .ui-dialog[data-size='sm'],
+  .ui-dialog[data-size='lg'] {
+    width: 100%;
+    max-height: 94dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .ui-dialog::before {
+    inset-right: 1rem;
+    inset-left: 1rem;
+  }
+
+  .ui-dialog__header {
+    padding: 1.1rem 1rem 0.95rem;
+  }
+
+  .ui-dialog__heading h2 {
+    font-size: 1.08rem;
+  }
+
+  .ui-dialog__heading p {
+    font-size: 0.71rem;
+  }
+
+  .ui-dialog__body {
+    padding: 1.05rem 1rem 1.25rem;
+    scrollbar-gutter: auto;
+  }
+
+  .ui-dialog__footer {
+    min-height: 62px;
+    padding: 0.72rem 1rem max(0.72rem, env(safe-area-inset-bottom));
+  }
+
+  .ui-dialog .settings-form__grid {
+    gap: 1rem;
+  }
+
+  .ui-dialog .permission-capability-group {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .ui-dialog__footer {
+    display: grid;
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .ui-dialog__footer > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ui-dialog .duration-field__preset {
+    flex: 1 1 calc(33.333% - 0.38rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-dialog,
+  .ui-dialog-backdrop {
+    animation: none;
+  }
+}
