@@ -332,10 +332,7 @@ export function createFirebaseBookingCompensationRuntime({ db, timestampFactory 
   const persistBookingCompensation = async ({ actorUid, bookingId, projection }) => {
     const normalizedActorUid = requireSingleSegmentId(actorUid, 'actorUid');
     const normalizedBookingId = requireSingleSegmentId(bookingId, 'bookingId');
-    const normalizedProjection = normalizeProjectionForPersistence(
-      projection,
-      normalizedBookingId,
-    );
+    const normalizedProjection = normalizeProjectionForPersistence(projection, normalizedBookingId);
     const bookingReference = db.doc(`${BOOKINGS_COLLECTION}/${normalizedBookingId}`);
     const entryReferences = normalizedProjection.entryDescriptors.map((descriptor) => ({
       ...descriptor,
