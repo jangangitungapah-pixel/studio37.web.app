@@ -99,7 +99,9 @@ function assertSourceKeySetsMatch(snapshotEntries, commissionEntryDrafts) {
   }
 
   const snapshotSourceKeys = snapshotEntries.map((entry, index) =>
-    requireSourceKey(requireRecord(entry, `projection.bookingSnapshot.entries[${index}]`).sourceKey),
+    requireSourceKey(
+      requireRecord(entry, `projection.bookingSnapshot.entries[${index}]`).sourceKey,
+    ),
   );
   const draftSourceKeys = commissionEntryDrafts.map((entry, index) =>
     requireSourceKey(entry.sourceKey, `projection.commissionEntryDrafts[${index}].sourceKey`),
@@ -141,7 +143,9 @@ function normalizeCommissionEntryDraft(entryValue, index, bookingId) {
     throw new TypeError('Initial commission entry drafts must not reference a payout.');
   }
   if (entry.sourceEvent !== COMMISSION_ENTRY_SOURCE_EVENTS.BOOKING_CONFIRMATION) {
-    throw new TypeError('Initial commission entry drafts must use booking_confirmation sourceEvent.');
+    throw new TypeError(
+      'Initial commission entry drafts must use booking_confirmation sourceEvent.',
+    );
   }
 
   requireSingleSegmentId(entry.operatorId, `projection.commissionEntryDrafts[${index}].operatorId`);
@@ -149,7 +153,10 @@ function normalizeCommissionEntryDraft(entryValue, index, bookingId) {
   requireIntegerIdr(entry.amountIdr, {
     label: `projection.commissionEntryDrafts[${index}].amountIdr`,
   });
-  requireRecord(entry.calculationSnapshot, `projection.commissionEntryDrafts[${index}].calculationSnapshot`);
+  requireRecord(
+    entry.calculationSnapshot,
+    `projection.commissionEntryDrafts[${index}].calculationSnapshot`,
+  );
   requireSourceKey(entry.sourceKey, `projection.commissionEntryDrafts[${index}].sourceKey`);
 
   return entry;
@@ -266,10 +273,7 @@ export async function deriveCommissionEntryDocumentId(sourceKeyValue, { cryptoIm
     throw new Error('Web Crypto SHA-256 is unavailable for commission entry id derivation.');
   }
 
-  const digest = await resolvedCrypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(sourceKey),
-  );
+  const digest = await resolvedCrypto.subtle.digest('SHA-256', new TextEncoder().encode(sourceKey));
   return `booking-comp-${bytesToHex(new Uint8Array(digest))}`;
 }
 
