@@ -43,6 +43,7 @@ function createDocument(overrides = {}) {
     createdAt: new Date('2026-08-25T01:00:00.000Z'),
     createdByUid: 'owner-1',
     id: 'rule-rehearsal-general',
+    name: 'Rehearsal hourly — general',
     status: 'active',
     updatedAt: new Date('2026-08-25T02:00:00.000Z'),
     updatedByUid: 'owner-1',
@@ -58,6 +59,72 @@ describe('pricing rule domain contract', () => {
       ),
     ).toEqual(createDetails({ studioId: 'studio-a' }));
     expect(PRICING_RULE_LIST_LIMIT).toBe(200);
+  });
+
+  it('keeps legacy hourly documents valid while accepting generic recurring discounts', () => {
+    const recurring = normalizePricingRuleDetails(
+      createDetails({
+        configuration: createHourlyConfiguration({
+          recurringDurationDiscount: {
+            amountPerBlockIdr: 40_000,
+            blockDurationMinutes: 180,
+            enabled: true,
+          },
+        }),
+      }),
+    );
+
+    expect(recurring.configuration.recurringDurationDiscount).toEqual({
+      amountPerBlockIdr: 40_000,
+      blockDurationMinutes: 180,
+      enabled: true,
+    });
+    expect(normalizePricingRuleDetails(createDetails()).configuration).not.toHaveProperty(
+      'recurringDurationDiscount',
+    );
+  });
+
+  it('rejects malformed recurring discounts and block durations that do not align with the rate increment', () => {
+    expect(() =>
+      normalizePricingRuleDetails(
+        createDetails({
+          configuration: createHourlyConfiguration({
+            recurringDurationDiscount: {
+              amountPerBlockIdr: 40_000,
+              blockDurationMinutes: 90,
+              enabled: true,
+            },
+          }),
+        }),
+      ),
+    ).toThrow(/must align with incrementMinutes/);
+    expect(() =>
+      normalizePricingRuleDetails(
+        createDetails({
+          configuration: createHourlyConfiguration({
+            recurringDurationDiscount: {
+              amountPerBlockIdr: 40_000,
+              blockDurationMinutes: 180,
+              enabled: 'yes',
+            },
+          }),
+        }),
+      ),
+    ).toThrow(/enabled must be a boolean/);
+    expect(() =>
+      normalizePricingRuleDetails(
+        createDetails({
+          configuration: createHourlyConfiguration({
+            recurringDurationDiscount: {
+              amountPerBlockIdr: 40_000,
+              blockDurationMinutes: 180,
+              enabled: true,
+              sessionCode: 'REHEARSAL',
+            },
+          }),
+        }),
+      ),
+    ).toThrow(/unsupported document shape/);
   });
 
   it('supports fixed-session, duration-package, and base-plus-additional configurations', () => {

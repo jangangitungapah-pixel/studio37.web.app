@@ -72,6 +72,14 @@ const baseCalculationFieldNames = Object.freeze({
     'totalAmountIdr',
   ]),
 });
+const hourlyRecurringDiscountCalculationFieldNames = Object.freeze([
+  'baseAmountIdr',
+  'discountAmountIdr',
+  'recurringDiscountAmountPerBlockIdr',
+  'recurringDiscountBlockCount',
+  'recurringDiscountBlockDurationMinutes',
+  'recurringDiscountEnabled',
+]);
 
 const addOnCalculationFieldNames = Object.freeze(['items', 'totalAddOnAmountIdr']);
 const addOnItemFieldNames = Object.freeze([
@@ -125,9 +133,23 @@ function assertSamePrimitiveRecord(actual, expected, label) {
   }
 }
 
+function getBaseCalculationFieldNames(rule) {
+  const fields = baseCalculationFieldNames[rule.pricingModel];
+  if (!fields) return null;
+
+  if (
+    rule.pricingModel === PRICING_RULE_MODELS.HOURLY &&
+    rule.configuration.recurringDurationDiscount
+  ) {
+    return [...fields, ...hourlyRecurringDiscountCalculationFieldNames];
+  }
+
+  return fields;
+}
+
 function replayBaseCalculation(value, rule) {
   const calculation = requireRecord(value, 'pricingSnapshot.baseCalculation');
-  const expectedFields = baseCalculationFieldNames[rule.pricingModel];
+  const expectedFields = getBaseCalculationFieldNames(rule);
 
   if (!expectedFields) {
     throw new RangeError('pricingSnapshot pricing model is not supported.');

@@ -76,12 +76,15 @@ describe('pricingRuleSettings form adapter', () => {
     expect(result.value.studioId).toBe('studio-a');
   });
 
-  it('supports canonical hourly configuration', () => {
+  it('supports canonical hourly configuration with a dormant recurring discount', () => {
     const result = validate({
       amountPerIncrementIdr: '120000',
       incrementMinutes: '60',
       minimumDurationMinutes: '120',
       pricingModel: PRICING_RULE_MODELS.HOURLY,
+      recurringDiscountAmountPerBlockIdr: '40000',
+      recurringDiscountBlockDurationMinutes: '180',
+      recurringDiscountState: 'disabled',
       roundingMode: PRICING_RULE_ROUNDING_MODES.ROUND_UP,
     });
 
@@ -89,8 +92,48 @@ describe('pricingRuleSettings form adapter', () => {
       amountPerIncrementIdr: 120000,
       incrementMinutes: 60,
       minimumDurationMinutes: 120,
+      recurringDurationDiscount: {
+        amountPerBlockIdr: 40000,
+        blockDurationMinutes: 180,
+        enabled: false,
+      },
       roundingMode: PRICING_RULE_ROUNDING_MODES.ROUND_UP,
     });
+  });
+
+  it('lets Owner change recurring discount from 3h/Rp40k to 4h/Rp20k as data', () => {
+    const result = validate({
+      amountPerIncrementIdr: '120000',
+      incrementMinutes: '60',
+      minimumDurationMinutes: '60',
+      pricingModel: PRICING_RULE_MODELS.HOURLY,
+      recurringDiscountAmountPerBlockIdr: '20000',
+      recurringDiscountBlockDurationMinutes: '240',
+      recurringDiscountState: 'enabled',
+      roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
+    });
+
+    expect(result.errors).toEqual({});
+    expect(result.value.configuration.recurringDurationDiscount).toEqual({
+      amountPerBlockIdr: 20000,
+      blockDurationMinutes: 240,
+      enabled: true,
+    });
+  });
+
+  it('rejects recurring discount intervals that do not align with the hourly increment', () => {
+    const result = validate({
+      amountPerIncrementIdr: '120000',
+      incrementMinutes: '60',
+      minimumDurationMinutes: '60',
+      pricingModel: PRICING_RULE_MODELS.HOURLY,
+      recurringDiscountAmountPerBlockIdr: '40000',
+      recurringDiscountBlockDurationMinutes: '90',
+      recurringDiscountState: 'enabled',
+    });
+
+    expect(result.value).toBeNull();
+    expect(result.errors.recurringDiscountBlockDurationMinutes).toBe(true);
   });
 
   it('supports duration-package additional-time configuration', () => {
@@ -218,6 +261,31 @@ describe('pricingRuleSettings form adapter', () => {
     });
   });
 
+  it('round-trips existing recurring discount configuration into Owner-editable values', () => {
+    const values = toPricingRuleFormValues(
+      createPersistedRule({
+        configuration: {
+          amountPerIncrementIdr: 120000,
+          incrementMinutes: 60,
+          minimumDurationMinutes: 60,
+          recurringDurationDiscount: {
+            amountPerBlockIdr: 20000,
+            blockDurationMinutes: 240,
+            enabled: true,
+          },
+          roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
+        },
+        pricingModel: PRICING_RULE_MODELS.HOURLY,
+      }),
+    );
+
+    expect(values).toMatchObject({
+      recurringDiscountAmountPerBlockIdr: '20000',
+      recurringDiscountBlockDurationMinutes: '240',
+      recurringDiscountState: 'enabled',
+    });
+  });
+
   it('formats a human-readable rule summary without running a booking calculation', () => {
     const summary = formatPricingRuleConfigurationSummary(
       createPersistedRule({
@@ -225,6 +293,11 @@ describe('pricingRuleSettings form adapter', () => {
           amountPerIncrementIdr: 120000,
           incrementMinutes: 60,
           minimumDurationMinutes: 60,
+          recurringDurationDiscount: {
+            amountPerBlockIdr: 40000,
+            blockDurationMinutes: 180,
+            enabled: true,
+          },
           roundingMode: PRICING_RULE_ROUNDING_MODES.EXACT,
         },
         pricingModel: PRICING_RULE_MODELS.HOURLY,
@@ -234,5 +307,7 @@ describe('pricingRuleSettings form adapter', () => {
     expect(summary).toContain('120.000');
     expect(summary).toContain('60 mnt');
     expect(summary).toContain('harus pas');
+    expect(summary).toContain('40.000');
+    expect(summary).toContain('180 mnt');
   });
 });
