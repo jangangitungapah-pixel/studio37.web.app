@@ -63,6 +63,9 @@ jobs:
           FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
         run: npm run test:rules:booking-compensation
 
+      - name: Test Phase 6E trusted execution core
+        run: npx vitest run src/services/trustedBookingCompensationExecution.test.js
+
       - name: Test Firestore Security Rules
         env:
           CI: true
