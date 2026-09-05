@@ -67,6 +67,38 @@ function resolveBillableDuration(durationMinutes, configuration) {
   return Object.freeze({ billableDurationMinutes, billedIncrementCount });
 }
 
+function calculateRecurringDurationDiscount(inputDurationMinutes, configuration, baseAmountIdr) {
+  const discount = configuration.recurringDurationDiscount;
+  if (!discount) return null;
+
+  const recurringDiscountBlockCount = discount.enabled
+    ? Math.floor(inputDurationMinutes / discount.blockDurationMinutes)
+    : 0;
+  const discountAmountIdr = multiplyIntegerIdr(
+    discount.amountPerBlockIdr,
+    recurringDiscountBlockCount,
+    {
+      label: 'hourlyPricing.recurringDurationDiscount.amountPerBlockIdr',
+      multiplierLabel: 'hourlyPricing.recurringDurationDiscount.blockCount',
+    },
+  );
+  const totalAmountIdr = baseAmountIdr - discountAmountIdr;
+
+  if (!Number.isSafeInteger(totalAmountIdr) || totalAmountIdr < 0) {
+    throw new RangeError('hourlyPricing recurring discount exceeds the calculated base amount.');
+  }
+
+  return Object.freeze({
+    baseAmountIdr,
+    discountAmountIdr,
+    recurringDiscountAmountPerBlockIdr: discount.amountPerBlockIdr,
+    recurringDiscountBlockCount,
+    recurringDiscountBlockDurationMinutes: discount.blockDurationMinutes,
+    recurringDiscountEnabled: discount.enabled,
+    totalAmountIdr,
+  });
+}
+
 export function calculateHourlyPrice(value) {
   const input = requireRecord(value, 'hourlyPricing input');
   requireExactFields(input, calculationInputFieldNames, 'hourlyPricing input');
@@ -88,7 +120,7 @@ export function calculateHourlyPrice(value) {
     inputDurationMinutes,
     configuration,
   );
-  const totalAmountIdr = multiplyIntegerIdr(
+  const baseAmountIdr = multiplyIntegerIdr(
     configuration.amountPerIncrementIdr,
     billedIncrementCount,
     {
@@ -96,6 +128,12 @@ export function calculateHourlyPrice(value) {
       multiplierLabel: 'hourlyPricing.billedIncrementCount',
     },
   );
+  const recurringDiscount = calculateRecurringDurationDiscount(
+    inputDurationMinutes,
+    configuration,
+    baseAmountIdr,
+  );
+  const totalAmountIdr = recurringDiscount?.totalAmountIdr ?? baseAmountIdr;
 
   return Object.freeze({
     amountPerIncrementIdr: configuration.amountPerIncrementIdr,
@@ -106,6 +144,7 @@ export function calculateHourlyPrice(value) {
     minimumDurationMinutes: configuration.minimumDurationMinutes,
     pricingModel: PRICING_RULE_MODELS.HOURLY,
     roundingMode: configuration.roundingMode,
+    ...(recurringDiscount ?? {}),
     totalAmountIdr,
   });
 }
