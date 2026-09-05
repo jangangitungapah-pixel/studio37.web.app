@@ -86,9 +86,12 @@ describe('compensation rule resolver', () => {
 
     expect(getCompensationRuleSpecificity(makeRule())).toBe(0);
     expect(getCompensationRuleSpecificity(packageRule)).toBe(1);
-    expect(resolveCompensationRule([makeRule({ id: 'generic', priority: 999 }), packageRule], makeContext())?.id).toBe(
-      'package',
-    );
+    expect(
+      resolveCompensationRule(
+        [makeRule({ id: 'generic', priority: 999 }), packageRule],
+        makeContext(),
+      )?.id,
+    ).toBe('package');
   });
 
   it('rejects equal-winning rules instead of falling back to name, id, or query order', () => {
@@ -136,10 +139,7 @@ describe('compensation arithmetic', () => {
 
   it('returns canonical per-session and fixed amounts unchanged', () => {
     expect(
-      calculateCompensationAmount(
-        makeRule({ configuration: { amountIdr: 50000 } }),
-        makeContext(),
-      ),
+      calculateCompensationAmount(makeRule({ configuration: { amountIdr: 50000 } }), makeContext()),
     ).toBe(50000);
     expect(
       calculateCompensationAmount(
@@ -172,10 +172,7 @@ describe('compensation arithmetic', () => {
     });
 
     expect(
-      calculateCompensationAmount(
-        rule,
-        makeContext({ percentageBaseAmounts: { [base]: 999 } }),
-      ),
+      calculateCompensationAmount(rule, makeContext({ percentageBaseAmounts: { [base]: 999 } })),
     ).toBe(125);
   });
 
