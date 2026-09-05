@@ -35,17 +35,20 @@ function createDetails(overrides = {}) {
 }
 
 function createHarness({ documents } = {}) {
-  const collectionReference = { path: 'sessionTypes' };
   const generatedReference = {
     id: 'generated-session-type',
     path: 'sessionTypes/generated-session-type',
   };
   const writeTimestamp = { kind: 'server-timestamp' };
+  const batch = {
+    commit: vi.fn(async () => undefined),
+    delete: vi.fn(),
+  };
   const adapter = {
-    collection: vi.fn(() => collectionReference),
-    doc: vi.fn((_collectionReference, sessionTypeId) =>
-      sessionTypeId
-        ? { id: sessionTypeId, path: `sessionTypes/${sessionTypeId}` }
+    collection: vi.fn((_db, name) => ({ path: name })),
+    doc: vi.fn((collectionReference, documentId) =>
+      documentId
+        ? { id: documentId, path: `${collectionReference.path}/${documentId}` }
         : generatedReference,
     ),
     getDocs: vi.fn(async () => ({
@@ -62,6 +65,8 @@ function createHarness({ documents } = {}) {
     query: vi.fn((...constraints) => ({ constraints })),
     setDoc: vi.fn(async () => undefined),
     updateDoc: vi.fn(async () => undefined),
+    where: vi.fn((field, operator, value) => ({ field, operator, type: 'where', value })),
+    writeBatch: vi.fn(() => batch),
   };
   const timestampFactory = vi.fn(() => writeTimestamp);
   const repository = createSessionTypeRepository({
@@ -70,7 +75,7 @@ function createHarness({ documents } = {}) {
     timestampFactory,
   });
 
-  return { adapter, generatedReference, repository, timestampFactory, writeTimestamp };
+  return { adapter, batch, generatedReference, repository, timestampFactory, writeTimestamp };
 }
 
 describe('sessionTypeRepository', () => {
@@ -85,7 +90,8 @@ describe('sessionTypeRepository', () => {
     expect(adapter.getDocs).toHaveBeenCalledOnce();
     expect(sessionTypes.map(({ id }) => id)).toEqual(['rehearsal', 'recording']);
     expect(repository).not.toHaveProperty('listAll');
-    expect(repository).not.toHaveProperty('deleteSessionType');
+    expect(repository.getSessionTypeDeleteImpact).toEqual(expect.any(Function));
+    expect(repository.deleteSessionType).toEqual(expect.any(Function));
   });
 
   it('creates an active session type with an auto id and server-owned metadata', async () => {
@@ -130,7 +136,7 @@ describe('sessionTypeRepository', () => {
     expect(adapter.updateDoc.mock.calls[0][1]).not.toHaveProperty('status');
   });
 
-  it('soft-disables session types without exposing hard delete', async () => {
+  it('soft-disables session types while keeping hard delete as an explicit separate action', async () => {
     const { adapter, repository, writeTimestamp } = createHarness();
 
     await expect(
@@ -145,7 +151,50 @@ describe('sessionTypeRepository', () => {
         updatedByUid: 'owner-1',
       },
     );
-    expect(repository.deleteSessionType).toBeUndefined();
+    expect(repository.deleteSessionType).toEqual(expect.any(Function));
+  });
+
+  it('deletes a session type and its scoped pricing configuration in one batch', async () => {
+    const { adapter, batch, repository } = createHarness();
+    const pricingRuleDocuments = [{ id: 'rule-hourly' }, { id: 'package-180' }];
+    const addOnDocuments = [{ id: 'addon-engineer' }];
+
+    adapter.getDocs
+      .mockResolvedValueOnce({ docs: pricingRuleDocuments })
+      .mockResolvedValueOnce({ docs: addOnDocuments });
+
+    await expect(repository.getSessionTypeDeleteImpact('rehearsal')).resolves.toEqual({
+      addOnCount: 1,
+      pricingRuleCount: 2,
+      sessionTypeId: 'rehearsal',
+    });
+
+    expect(adapter.where).toHaveBeenCalledWith('sessionTypeId', '==', 'rehearsal');
+
+    adapter.getDocs
+      .mockResolvedValueOnce({ docs: pricingRuleDocuments })
+      .mockResolvedValueOnce({ docs: addOnDocuments });
+
+    await expect(repository.deleteSessionType('rehearsal')).resolves.toEqual({
+      addOnsDeleted: 1,
+      pricingRulesDeleted: 2,
+      sessionTypeId: 'rehearsal',
+    });
+
+    expect(batch.delete).toHaveBeenCalledWith({
+      id: 'rule-hourly',
+      path: 'pricingRules/rule-hourly',
+    });
+    expect(batch.delete).toHaveBeenCalledWith({
+      id: 'package-180',
+      path: 'pricingRules/package-180',
+    });
+    expect(batch.delete).toHaveBeenCalledWith({
+      id: 'addon-engineer',
+      path: 'addOns/addon-engineer',
+    });
+    expect(batch.delete).toHaveBeenCalledWith({ id: 'rehearsal', path: 'sessionTypes/rehearsal' });
+    expect(batch.commit).toHaveBeenCalledOnce();
   });
 
   it('rejects malformed values and stored documents before returning or writing', async () => {
