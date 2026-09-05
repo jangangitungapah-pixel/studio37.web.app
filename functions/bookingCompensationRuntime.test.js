@@ -49,7 +49,12 @@ class FakeQuery {
 
   where(field, operator, value) {
     if (operator !== '==') throw new Error('FakeQuery supports only == filters.');
-    return new FakeQuery(this.db, this.collectionName, [...this.filters, [field, value]], this.limitCount);
+    return new FakeQuery(
+      this.db,
+      this.collectionName,
+      [...this.filters, [field, value]],
+      this.limitCount,
+    );
   }
 
   limit(limitCount) {
@@ -61,7 +66,9 @@ class FakeQuery {
     const prefix = `${this.collectionName}/`;
     let rows = [...this.db.documents.entries()]
       .filter(([path]) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/'))
-      .filter(([, value]) => this.filters.every(([field, expected]) => value?.[field] === expected));
+      .filter(([, value]) =>
+        this.filters.every(([field, expected]) => value?.[field] === expected),
+      );
     if (this.limitCount !== null) rows = rows.slice(0, this.limitCount);
     const docs = rows.map(([path, value]) => new FakeDocumentSnapshot(this.db.doc(path), value));
     return { docs, size: docs.length };
@@ -93,7 +100,8 @@ class FakeTransaction {
         continue;
       }
       const current = this.db.documents.get(write.path);
-      if (current === undefined) throw new Error(`Cannot update missing fake document ${write.path}.`);
+      if (current === undefined)
+        throw new Error(`Cannot update missing fake document ${write.path}.`);
       this.db.documents.set(write.path, { ...current, ...write.value });
     }
   }
@@ -246,7 +254,10 @@ test('unauthorized operator is rejected before protected booking or compensation
     createRuntime(db).execute({ actorUid: OPERATOR_UID, bookingId: BOOKING_ID }),
     (error) => error?.name === 'TrustedBookingCompensationAuthorizationError',
   );
-  assert.equal(db.documentReads.some((path) => path.startsWith('bookings/')), false);
+  assert.equal(
+    db.documentReads.some((path) => path.startsWith('bookings/')),
+    false,
+  );
   assert.equal(db.collectionReads.includes('compensationRules'), false);
 });
 
@@ -277,7 +288,9 @@ test('callable request accepts only bookingId and rejects compensation-shaped fo
 });
 
 test('active compensation-rule count above the trusted bound fails before persistence', async () => {
-  const documents = createBaseDocuments().filter(([path]) => !path.startsWith('compensationRules/'));
+  const documents = createBaseDocuments().filter(
+    ([path]) => !path.startsWith('compensationRules/'),
+  );
   for (let index = 0; index < 201; index += 1) {
     documents.push([`compensationRules/rule-${index}`, createRule(`rule-${index}`)]);
   }
@@ -285,7 +298,9 @@ test('active compensation-rule count above the trusted bound fails before persis
 
   await assert.rejects(
     createRuntime(db).execute({ actorUid: OWNER_UID, bookingId: BOOKING_ID }),
-    (error) => error instanceof FirebaseBookingCompensationRuntimeError && error.code === 'rule-limit-exceeded',
+    (error) =>
+      error instanceof FirebaseBookingCompensationRuntimeError &&
+      error.code === 'rule-limit-exceeded',
   );
   assert.equal(findCommissionEntries(db).length, 0);
   assert.equal(db.documents.get(`bookings/${BOOKING_ID}`).compensationSnapshot, undefined);
@@ -337,7 +352,8 @@ test('booking without server-authoritative compensationContext fails closed', as
   await assert.rejects(
     createRuntime(db).execute({ actorUid: OWNER_UID, bookingId: BOOKING_ID }),
     (error) =>
-      error instanceof FirebaseBookingCompensationRuntimeError && error.code === 'booking-context-missing',
+      error instanceof FirebaseBookingCompensationRuntimeError &&
+      error.code === 'booking-context-missing',
   );
 });
 
