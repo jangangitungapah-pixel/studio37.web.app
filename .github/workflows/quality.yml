@@ -60,8 +60,11 @@ jobs:
       - name: Test Phase 6D2 persistence repository
         run: npx vitest run src/services/bookingCompensationPersistenceRepository.test.js
 
-      - name: Test Phase 6E trusted execution core
-        run: npx vitest run functions/src/trustedBookingCompensationCore.test.js
+      - name: Test Phase 6E trusted execution boundary
+        run: >-
+          npx vitest run
+          functions/src/trustedBookingCompensationCore.test.js
+          functions/src/trustedBookingCompensationFirestoreGateway.test.js
 
       - name: Build Phase 6E Cloud Functions bundle
         run: npm --prefix functions run build
