@@ -15,6 +15,25 @@ const options = [
   { value: 'mixing', label: 'Mixing' },
 ];
 
+function SelectHarness() {
+  const [value, setValue] = useState('pending');
+
+  return (
+    <>
+      <Select
+        label="Payment status"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        options={[
+          { value: 'pending', label: 'Pending' },
+          { value: 'paid', label: 'Lunas' },
+        ]}
+      />
+      <output>{value}</output>
+    </>
+  );
+}
+
 function ComboboxHarness() {
   const [value, setValue] = useState('');
 
@@ -46,7 +65,7 @@ function ToastHarness() {
 }
 
 describe('Phase 1C interaction primitives', () => {
-  it('renders an accessible native select and forwards changes', async () => {
+  it('preserves the accessible native select contract and forwards changes', async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
@@ -66,6 +85,23 @@ describe('Phase 1C interaction primitives', () => {
     await user.selectOptions(select, 'paid');
 
     expect(handleChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a visible custom listbox and preserves controlled onChange semantics', async () => {
+    const user = userEvent.setup();
+    render(<SelectHarness />);
+
+    const trigger = screen.getByRole('button', { name: 'Payment status' });
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('option', { name: 'Pending' })).toHaveAttribute('aria-selected', 'true');
+
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(screen.getByText('paid')).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveTextContent('Lunas');
   });
 
   it('filters and selects combobox options with the keyboard', async () => {
