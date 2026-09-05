@@ -202,7 +202,7 @@ export function PriceSettingsPage({
   };
 
   const openDeleteDialog = async (sessionType) => {
-    if (!canDelete) return;
+    if (!canDelete || sessionType.status !== SESSION_TYPE_STATUSES.DISABLED) return;
 
     setDeleteTarget(sessionType);
     setDeleteImpact(null);
@@ -228,7 +228,14 @@ export function PriceSettingsPage({
   }, [deleteSaving]);
 
   const deleteSessionType = async () => {
-    if (!canDelete || !deleteTarget || deleteLoadState !== 'ready') return;
+    if (
+      !canDelete ||
+      !deleteTarget ||
+      deleteTarget.status !== SESSION_TYPE_STATUSES.DISABLED ||
+      deleteLoadState !== 'ready'
+    ) {
+      return;
+    }
 
     setDeleteSaving(true);
     setDeleteError('');
@@ -399,7 +406,7 @@ export function PriceSettingsPage({
                       >
                         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                       </Button>
-                      {canDelete ? (
+                      {canDelete && !isActive ? (
                         <Button
                           size="sm"
                           variant="ghost"
