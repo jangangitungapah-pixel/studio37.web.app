@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -26,6 +27,7 @@ import { firestoreDb } from '../lib/firebase/client.js';
 const defaultFirestoreAdapter = Object.freeze({
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -48,6 +50,20 @@ function requireFirestore(value) {
   return value;
 }
 
+function decodeSnapshot(compensationRuleSnapshot) {
+  return decodeCompensationRuleDocument({
+    ...compensationRuleSnapshot.data(),
+    id: compensationRuleSnapshot.id,
+  });
+}
+
+function describeDecodeFailure(compensationRuleSnapshot, error) {
+  return Object.freeze({
+    id: compensationRuleSnapshot.id,
+    reason: error instanceof Error ? error.message : 'Unknown compensation rule decode error.',
+  });
+}
+
 export function createCompensationRuleRepository({
   adapter = defaultFirestoreAdapter,
   db = firestoreDb,
@@ -60,29 +76,48 @@ export function createCompensationRuleRepository({
   const getDocumentReference = (compensationRuleId) =>
     adapter.doc(collectionReference, normalizeCompensationRuleId(compensationRuleId));
 
+  async function listCompensationRulesWithDiagnostics() {
+    const compensationRuleQuery = adapter.query(
+      collectionReference,
+      adapter.orderBy('priority', 'desc'),
+      adapter.limit(COMPENSATION_RULE_LIST_LIMIT),
+    );
+    const snapshot = await adapter.getDocs(compensationRuleQuery);
+    const rules = [];
+    const invalidDocuments = [];
+
+    for (const compensationRuleSnapshot of snapshot.docs) {
+      try {
+        rules.push(decodeSnapshot(compensationRuleSnapshot));
+      } catch (error) {
+        invalidDocuments.push(describeDecodeFailure(compensationRuleSnapshot, error));
+      }
+    }
+
+    rules.sort(compareCompensationRules);
+
+    return Object.freeze({
+      invalidDocuments: Object.freeze(invalidDocuments),
+      rules: Object.freeze(rules),
+    });
+  }
+
   return Object.freeze({
     collectionName: COMPENSATION_RULES_COLLECTION_NAME,
     listLimit: COMPENSATION_RULE_LIST_LIMIT,
 
-    async listCompensationRules() {
-      const compensationRuleQuery = adapter.query(
-        collectionReference,
-        adapter.orderBy('priority', 'desc'),
-        adapter.limit(COMPENSATION_RULE_LIST_LIMIT),
-      );
-      const snapshot = await adapter.getDocs(compensationRuleQuery);
-
-      return Object.freeze(
-        snapshot.docs
-          .map((compensationRuleSnapshot) =>
-            decodeCompensationRuleDocument({
-              ...compensationRuleSnapshot.data(),
-              id: compensationRuleSnapshot.id,
-            }),
-          )
-          .sort(compareCompensationRules),
-      );
+    async getCompensationRule(compensationRuleId) {
+      const snapshot = await adapter.getDoc(getDocumentReference(compensationRuleId));
+      if (!snapshot.exists()) return null;
+      return decodeSnapshot(snapshot);
     },
+
+    async listCompensationRules() {
+      const { rules } = await listCompensationRulesWithDiagnostics();
+      return rules;
+    },
+
+    listCompensationRulesWithDiagnostics,
 
     async createCompensationRule(value, { actorUid } = {}) {
       const details = encodeCompensationRuleDetails(value);

@@ -39,8 +39,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Test Phase 6A2 repository boundary
+        run: npx vitest run src/services/compensationRuleRepository.test.js
 
       - name: Test Firestore Security Rules
         env:
@@ -67,3 +67,6 @@ jobs:
 
           cat /tmp/studio37-vite.log
           exit 1
+
+      - name: Test full unit suite
+        run: npm test
