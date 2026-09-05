@@ -14,6 +14,10 @@
   padding: var(--space-4);
 }
 
+.pricing-rule-row--simple {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .pricing-rule-row[data-disabled='true'] {
   background: var(--color-surface-subtle);
   opacity: 0.8;
@@ -182,6 +186,66 @@
   font-size: 0.78rem;
 }
 
+.pricing-advanced {
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.pricing-advanced > summary {
+  width: fit-content;
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  font-weight: 720;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pricing-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-advanced > summary::after {
+  content: ' +';
+  color: var(--color-brand);
+}
+
+.pricing-advanced[open] > summary::after {
+  content: ' −';
+}
+
+.pricing-advanced__content {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.pricing-advanced__content .pricing-configuration-health {
+  margin-bottom: 0;
+}
+
+.pricing-advanced__rules {
+  display: grid;
+  border-top: 1px solid var(--color-border);
+}
+
+.pricing-advanced__rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+.pricing-advanced__rule + .pricing-advanced__rule {
+  border-top: 1px solid var(--color-border);
+}
+
+.pricing-advanced__rule strong {
+  color: var(--color-text);
+}
+
 .pricing-rule-form {
   display: grid;
   gap: var(--space-4);
@@ -251,14 +315,23 @@
     grid-template-columns: 4.5rem minmax(0, 1fr);
   }
 
+  .pricing-rule-row--simple {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .pricing-rule-row__actions {
     grid-column: 2;
     justify-content: flex-start;
   }
+
+  .pricing-rule-row--simple .pricing-rule-row__actions {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 640px) {
-  .pricing-rule-row {
+  .pricing-rule-row,
+  .pricing-rule-row--simple {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
     padding: var(--space-3);
@@ -275,7 +348,8 @@
     font-size: 1rem;
   }
 
-  .pricing-rule-row__actions {
+  .pricing-rule-row__actions,
+  .pricing-rule-row--simple .pricing-rule-row__actions {
     grid-column: auto;
     justify-content: stretch;
   }
@@ -294,7 +368,8 @@
     flex-direction: column;
   }
 
-  .pricing-configuration-health__issues li {
+  .pricing-configuration-health__issues li,
+  .pricing-advanced__rule {
     grid-template-columns: minmax(0, 1fr);
   }
 
