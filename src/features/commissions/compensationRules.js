@@ -175,10 +175,7 @@ function normalizePackageConfiguration(value) {
   requireExactFields(configuration, ['amountIdr', 'durationMinutes'], label);
   return Object.freeze({
     amountIdr: normalizeAmount(configuration.amountIdr, `${label}.amountIdr`),
-    durationMinutes: normalizeDuration(
-      configuration.durationMinutes,
-      `${label}.durationMinutes`,
-    ),
+    durationMinutes: normalizeDuration(configuration.durationMinutes, `${label}.durationMinutes`),
   });
 }
 
@@ -187,10 +184,7 @@ function normalizePercentageConfiguration(value) {
   const configuration = requireRecord(value, label);
   requireExactFields(configuration, ['base', 'basisPoints'], label);
 
-  if (
-    typeof configuration.base !== 'string' ||
-    !supportedPercentageBases.has(configuration.base)
-  ) {
+  if (typeof configuration.base !== 'string' || !supportedPercentageBases.has(configuration.base)) {
     throw new RangeError('compensationRule.configuration.base is not supported.');
   }
   if (
