@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Icon } from '../ui/Icon.jsx';
 import './dialog.css';
 
 const focusableSelector = [
@@ -92,6 +93,7 @@ export function Dialog({
   return createPortal(
     <div
       className="ui-dialog-backdrop"
+      data-open="true"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -111,6 +113,9 @@ export function Dialog({
       >
         <header className="ui-dialog__header">
           <div className="ui-dialog__heading">
+            <span className="ui-dialog__kicker" aria-hidden="true">
+              Studio37 workspace
+            </span>
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
@@ -120,7 +125,7 @@ export function Dialog({
             aria-label={closeLabel}
             onClick={onClose}
           >
-            ×
+            <Icon name="close" size={17} />
           </button>
         </header>
 
