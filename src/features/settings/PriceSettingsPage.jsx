@@ -47,6 +47,13 @@ export function PriceSettingsPage({
   const access = useAuth();
   const { pushToast } = useToast();
   const canEdit = hasCapability(access, CAPABILITIES.SETTINGS_PRICING_EDIT);
+  const canDelete = canEdit && access.profile?.role === 'owner';
+  const [configurationRevision, setConfigurationRevision] = useState(0);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteImpact, setDeleteImpact] = useState(null);
+  const [deleteLoadState, setDeleteLoadState] = useState('idle');
+  const [deleteSaving, setDeleteSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [dialogError, setDialogError] = useState('');
   const [editingSessionType, setEditingSessionType] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -191,6 +198,58 @@ export function PriceSettingsPage({
       setStatusError(getSafeFirebaseMessage(error, 'mengubah status'));
     } finally {
       setStatusSaving(false);
+    }
+  };
+
+  const openDeleteDialog = async (sessionType) => {
+    if (!canDelete) return;
+
+    setDeleteTarget(sessionType);
+    setDeleteImpact(null);
+    setDeleteError('');
+    setDeleteLoadState('loading');
+
+    try {
+      const impact = await repository.getSessionTypeDeleteImpact(sessionType.id);
+      setDeleteImpact(impact);
+      setDeleteLoadState('ready');
+    } catch (error) {
+      setDeleteError(getSafeFirebaseMessage(error, 'memeriksa sebelum menghapus'));
+      setDeleteLoadState('error');
+    }
+  };
+
+  const closeDeleteDialog = useCallback(() => {
+    if (deleteSaving) return;
+    setDeleteTarget(null);
+    setDeleteImpact(null);
+    setDeleteError('');
+    setDeleteLoadState('idle');
+  }, [deleteSaving]);
+
+  const deleteSessionType = async () => {
+    if (!canDelete || !deleteTarget || deleteLoadState !== 'ready') return;
+
+    setDeleteSaving(true);
+    setDeleteError('');
+
+    try {
+      const result = await repository.deleteSessionType(deleteTarget.id);
+      pushToast({
+        message: `${deleteTarget.name} dihapus permanen bersama ${result.pricingRulesDeleted} harga/paket dan ${result.addOnsDeleted} layanan tambahan terkait.`,
+        tone: 'success',
+        title: 'Layanan dihapus',
+      });
+      setDeleteTarget(null);
+      setDeleteImpact(null);
+      setDeleteLoadState('idle');
+      setReloadKey((value) => value + 1);
+      setConfigurationRevision((value) => value + 1);
+    } catch (error) {
+      setDeleteError(getSafeFirebaseMessage(error, 'menghapus'));
+      setDeleteLoadState('error');
+    } finally {
+      setDeleteSaving(false);
     }
   };
 
@@ -340,6 +399,16 @@ export function PriceSettingsPage({
                       >
                         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
                       </Button>
+                      {canDelete ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Hapus ${sessionType.name}`}
+                          onClick={() => openDeleteDialog(sessionType)}
+                        >
+                          Hapus
+                        </Button>
+                      ) : null}
                     </div>
                   ) : null}
                 </article>
@@ -350,6 +419,7 @@ export function PriceSettingsPage({
       </section>
 
       <PricingRulesSection
+        key={`pricing-rules-${configurationRevision}`}
         access={access}
         canEdit={canEdit}
         repository={pricingRulesRepository}
@@ -358,6 +428,7 @@ export function PriceSettingsPage({
       />
 
       <AddOnsSection
+        key={`add-ons-${configurationRevision}`}
         access={access}
         canEdit={canEdit}
         repository={addOnsRepository}
@@ -365,6 +436,7 @@ export function PriceSettingsPage({
       />
 
       <PricingPreviewSection
+        key={`pricing-preview-${configurationRevision}`}
         access={access}
         addOnsRepository={addOnsRepository}
         pricingRulesRepository={pricingRulesRepository}
@@ -423,6 +495,62 @@ export function PriceSettingsPage({
             </span>
           </div>
         )}
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        size="sm"
+        title={`Hapus ${deleteTarget?.name ?? 'layanan'} permanen?`}
+        description="Layanan dan seluruh harga, paket, serta layanan tambahan yang terikat akan dihapus permanen."
+        onClose={closeDeleteDialog}
+        footer={
+          <>
+            <Button variant="ghost" disabled={deleteSaving} onClick={closeDeleteDialog}>
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteSaving}
+              disabled={deleteLoadState !== 'ready'}
+              onClick={deleteSessionType}
+            >
+              Hapus permanen
+            </Button>
+          </>
+        }
+      >
+        {deleteLoadState === 'loading' ? (
+          <div className="settings-state settings-state--embedded" aria-busy="true">
+            <span className="settings-state__spinner" aria-hidden="true" />
+            <div>
+              <p className="settings-state__title">Memeriksa data terkait</p>
+              <p className="settings-state__description">
+                Menghitung harga, paket, dan layanan tambahan yang ikut dihapus.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {deleteError ? (
+          <div className="settings-notice" data-tone="danger" role="alert">
+            <strong>Layanan belum bisa dihapus.</strong>
+            <span>{deleteError}</span>
+          </div>
+        ) : null}
+
+        {deleteLoadState === 'ready' && deleteImpact ? (
+          <div className="price-session-status-summary">
+            <strong>Aksi ini tidak bisa dibatalkan.</strong>
+            <span>
+              {deleteImpact.pricingRuleCount} harga/paket dan {deleteImpact.addOnCount} layanan
+              tambahan yang terikat akan ikut dihapus.
+            </span>
+            <span>
+              Jika layanan ini sudah pernah dipakai pada booking historis, gunakan Nonaktifkan
+              sebagai gantinya agar referensi histori tetap tersedia.
+            </span>
+          </div>
+        ) : null}
       </Dialog>
     </SettingsWorkspace>
   );
