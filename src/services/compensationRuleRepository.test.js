@@ -37,7 +37,7 @@ function createStoredRule(overrides = {}) {
   };
 }
 
-function createHarness({ documents } = {}) {
+function createHarness({ documents, getDocument } = {}) {
   const collectionReference = { path: 'compensationRules' };
   const generatedReference = {
     id: 'generated-compensation-rule',
@@ -51,6 +51,21 @@ function createHarness({ documents } = {}) {
         ? { id: compensationRuleId, path: `compensationRules/${compensationRuleId}` }
         : generatedReference,
     ),
+    getDoc: vi.fn(async (reference) => {
+      if (getDocument === null) {
+        return {
+          data: () => undefined,
+          exists: () => false,
+          id: reference.id,
+        };
+      }
+
+      return {
+        data: () => getDocument ?? createStoredRule(),
+        exists: () => true,
+        id: reference.id,
+      };
+    }),
     getDocs: vi.fn(async () => ({
       docs: documents ?? [
         {
@@ -77,6 +92,32 @@ function createHarness({ documents } = {}) {
 }
 
 describe('compensationRuleRepository', () => {
+  it('gets one strict rule by id and returns null when it does not exist', async () => {
+    const existing = createHarness();
+
+    await expect(existing.repository.getCompensationRule('rehearsal')).resolves.toMatchObject({
+      id: 'rehearsal',
+      name: 'Rehearsal studio operator',
+    });
+    expect(existing.adapter.getDoc).toHaveBeenCalledWith({
+      id: 'rehearsal',
+      path: 'compensationRules/rehearsal',
+    });
+
+    const missing = createHarness({ getDocument: null });
+    await expect(missing.repository.getCompensationRule('missing')).resolves.toBeNull();
+  });
+
+  it('keeps exact get fail-closed for malformed stored rules', async () => {
+    const malformed = createHarness({
+      getDocument: createStoredRule({ unexpectedField: true }),
+    });
+
+    await expect(malformed.repository.getCompensationRule('rehearsal')).rejects.toThrow(
+      /unsupported document shape/,
+    );
+  });
+
   it('lists rules with one bounded priority-desc query', async () => {
     const { adapter, repository } = createHarness();
 
@@ -90,6 +131,28 @@ describe('compensationRuleRepository', () => {
     expect(repository).not.toHaveProperty('listAll');
     expect(repository).not.toHaveProperty('deleteCompensationRule');
     expect(repository).not.toHaveProperty('calculateCompensation');
+  });
+
+  it('isolates corrupt list documents while exposing diagnostics to callers that need them', async () => {
+    const { repository } = createHarness({
+      documents: [
+        { data: () => createStoredRule({ priority: 200 }), id: 'valid-rule' },
+        { data: () => createStoredRule({ unexpectedField: true }), id: 'legacy-rule' },
+      ],
+    });
+
+    await expect(repository.listCompensationRules()).resolves.toEqual([
+      expect.objectContaining({ id: 'valid-rule' }),
+    ]);
+
+    const diagnostics = await repository.listCompensationRulesWithDiagnostics();
+    expect(diagnostics.rules).toEqual([expect.objectContaining({ id: 'valid-rule' })]);
+    expect(diagnostics.invalidDocuments).toEqual([
+      {
+        id: 'legacy-rule',
+        reason: expect.stringMatching(/unsupported document shape/),
+      },
+    ]);
   });
 
   it('creates an active rule with encoded timestamps and server-owned metadata', async () => {
@@ -154,7 +217,7 @@ describe('compensationRuleRepository', () => {
     expect(repository).not.toHaveProperty('deleteCompensationRule');
   });
 
-  it('fails closed for malformed writes and stored documents', async () => {
+  it('fails closed for malformed writes', async () => {
     const { adapter, repository } = createHarness();
 
     await expect(
@@ -172,12 +235,5 @@ describe('compensationRuleRepository', () => {
     ).rejects.toThrow(/status/);
     expect(adapter.setDoc).not.toHaveBeenCalled();
     expect(adapter.updateDoc).not.toHaveBeenCalled();
-
-    const malformed = createHarness({
-      documents: [{ data: () => createStoredRule({ unexpectedField: true }), id: 'rehearsal' }],
-    });
-    await expect(malformed.repository.listCompensationRules()).rejects.toThrow(
-      /unsupported document shape/,
-    );
   });
 });
