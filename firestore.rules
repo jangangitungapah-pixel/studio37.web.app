@@ -434,6 +434,9 @@ service cloud.firestore {
         && data.name.size() <= 80
         && data.description is string
         && data.description.size() <= 240
+        && data.displayOrder is int
+        && data.displayOrder >= 1
+        && data.displayOrder <= 999
         && data.requiresStudioReservation is bool
         && hasValidSessionDurationPair(data)
         && data.status in ['active', 'disabled']
