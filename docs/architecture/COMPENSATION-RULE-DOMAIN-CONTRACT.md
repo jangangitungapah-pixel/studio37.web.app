@@ -127,6 +127,14 @@ It intentionally exposes no:
 - commission-entry generation
 - payout operation
 
+## Firestore activation boundary
+
+Phase 6A intentionally leaves `compensationRules` under the repository-wide Firestore default-deny fallback. The client repository and domain model exist, but production/client Firestore access is not enabled yet.
+
+This fail-closed state is deliberate. Compensation rates are sensitive and should not become live-readable or writable before the exact Owner-only rules, reference checks, metadata preservation, bounded list query, and emulator tests land together.
+
+The follow-up activation slice must allow only an active Owner to get/list/create/update compensation rules, cap list queries at 200, validate exact operator/session/studio references, verify an exact operator supports the declared operator type, preserve creation metadata, require server-time update metadata, and continue denying hard delete. No Studio Operator capability should implicitly grant access to the rule table.
+
 ## Historical safety
 
 Configuration is soft-disabled rather than hard-deleted. Later booking/commission integration must snapshot the selected rule, normalized configuration, calculation inputs, expected amount, and source rule ID. Editing a rule must never silently change historical compensation expectations.
@@ -147,6 +155,7 @@ The missing semantics are tracked separately in GitHub issue #49 and require a d
 
 ## Phase 6A non-goals
 
+- no live Firestore access to compensation rules yet
 - no compensation calculation yet
 - no rule winner/resolver yet
 - no snapshots yet
