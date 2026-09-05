@@ -80,7 +80,11 @@ export function Select({
 
     const nativeSelect = nativeRef.current;
     if (nativeSelect) {
-      nativeSelect.value = option.value;
+      const nativeValueSetter = Object.getOwnPropertyDescriptor(
+        HTMLSelectElement.prototype,
+        'value',
+      )?.set;
+      nativeValueSetter?.call(nativeSelect, option.value);
       nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
@@ -184,7 +188,11 @@ export function Select({
             onClick={() => setOpen((current) => !current)}
             onKeyDown={handleTriggerKeyDown}
           >
-            <span className={selectedOption ? 'ui-select-trigger__value' : 'ui-select-trigger__placeholder'}>
+            <span
+              className={
+                selectedOption ? 'ui-select-trigger__value' : 'ui-select-trigger__placeholder'
+              }
+            >
               {selectedOption?.label ?? placeholder}
             </span>
             <span className="ui-select-trigger__icon" data-open={open} aria-hidden="true">
