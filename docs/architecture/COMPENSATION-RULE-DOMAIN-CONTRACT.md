@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 6A foundation plus the Phase 6A2 Firestore activation boundary for PRD-07. This contract defines configurable operator-compensation rules and their Owner-only persistence boundary. It does not implement calculation, rule resolution, booking integration, commission entries, payout, adjustment, or management UI.
+Phase 6A/6A2 rule and Firestore foundation plus Phase 6B Owner-management foundation and Phase 6C pure resolver/calculation foundation for PRD-07. This contract defines configurable operator-compensation rules and their Owner-only persistence boundary. Deterministic resolution and arithmetic are defined by `COMPENSATION-RESOLUTION-CALCULATION-CONTRACT.md`. Booking integration, persisted commission entries, payout, adjustment, and settlement remain later work.
 
 ## Separation from customer pricing
 
@@ -46,7 +46,7 @@ configuration:
 
 Example: Studio Operator rehearsal compensation of Rp10.000 per compensated hour.
 
-The exact partial-hour arithmetic is intentionally deferred to the Phase 6 calculation slice and must be specified/tested before booking integration.
+Phase 6C prorates partial hours by compensated minutes and rounds half-up to the nearest whole IDR. The exact contract is documented in `COMPENSATION-RESOLUTION-CALCULATION-CONTRACT.md`.
 
 ### `per_session`
 
@@ -64,7 +64,7 @@ configuration:
   amountIdr: integer IDR
 ```
 
-Represents a fixed fee whose earning trigger is defined by the later calculation/lifecycle contract.
+Represents a fixed fee whose earning trigger is defined by the later lifecycle contract.
 
 ### `package`
 
@@ -91,11 +91,11 @@ configuration:
         service_amount
 ```
 
-The base is mandatory. The engine must never guess a percentage base.
+The base is mandatory. The engine never guesses a percentage base. Phase 6C reads only the explicitly selected base amount and rounds the result half-up to the nearest whole IDR.
 
-## Scope and later resolution
+## Scope and deterministic resolution
 
-Phase 6A persists the scope required by PRD-07:
+The persisted scope required by PRD-07 includes:
 
 - operator type
 - optional exact operator
@@ -105,7 +105,14 @@ Phase 6A persists the scope required by PRD-07:
 - effective period
 - numeric priority
 
-Phase 6A does **not** declare the final precedence algorithm. A later pure resolver must define specificity and priority sequencing, then reject equal-winning ambiguous rules rather than choosing by name, ID, query order, or insertion order.
+Phase 6C resolves matching rules with the following deterministic sequence:
+
+1. active/effective/scope/package-duration eligibility
+2. highest exact-scope specificity
+3. highest numeric priority among equally specific candidates
+4. ambiguity rejection when multiple candidates remain tied
+
+The resolver never chooses by name, document ID, query order, insertion order, or update time. Package duration contributes one specificity dimension because PRD-07 explicitly treats duration/package as compensation scope.
 
 ## Repository boundary
 
@@ -119,16 +126,18 @@ The feature repository owns a strict single-document read, one bounded `priority
 
 List decoding may skip malformed legacy/corrupt rows while returning diagnostics; strict single-document reads fail closed on invalid data.
 
-It intentionally exposes no:
+The repository intentionally exposes no:
 
 - generic unbounded `listAll()`
 - listener
 - hard delete
-- compensation calculation
-- rule resolution
+- compensation calculation operation
+- rule-resolution operation
 - booking mutation
 - commission-entry generation
 - payout operation
+
+Calculation/resolution remain pure domain functions rather than persistence concerns.
 
 ## Firestore activation boundary
 
@@ -149,11 +158,13 @@ The boundary requires:
 
 This activation does not broaden compensation-rate visibility to operators. The raw rule table remains sensitive Owner-only operational/financial configuration.
 
-The emulator acceptance suite must cover the authorization boundary, query bounds, all five canonical models, exact schema/configuration validation, reference checks, operator/type compatibility, metadata integrity, soft lifecycle, and hard-delete denial.
+The emulator acceptance suite covers the authorization boundary, query bounds, all five canonical models, exact schema/configuration validation, reference checks, operator/type compatibility, metadata integrity, soft lifecycle, and hard-delete denial.
 
 ## Historical safety
 
-Configuration is soft-disabled rather than hard-deleted. Later booking/commission integration must snapshot the selected rule, normalized configuration, calculation inputs, expected amount, and source rule ID. Editing a rule must never silently change historical compensation expectations.
+Configuration is soft-disabled rather than hard-deleted. Phase 6C can produce a serialization-ready pure calculation snapshot containing the selected rule, normalized configuration, calculation inputs, expected amount, and source rule ID.
+
+That snapshot is not persisted in Phase 6C. Later booking/commission integration must persist the relevant snapshot so editing a rule never silently changes historical compensation expectations.
 
 ## Owner-only administration
 
@@ -169,14 +180,14 @@ Do **not** encode this as a per-session or generic fixed booking fee. Doing so r
 
 The missing semantics are tracked separately in GitHub issue #49 and require a deliberate `per_day`, `per_shift`, or equivalent eligibility/idempotency contract.
 
-## Phase 6A2 non-goals
+## Current non-goals after Phase 6C
 
-- no compensation calculation yet
-- no rule winner/resolver yet
-- no booking/commission snapshot integration yet
+- no persisted booking/commission snapshot integration yet
 - no Pending/Earned/Paid/Void entries yet
+- no cancellation/repricing reconciliation yet
+- no already-paid protection flow yet
 - no manual adjustments yet
 - no payout settlement yet
-- no commission-management UI yet
+- no complete commission-management UI yet
 - no daily allowance approximation
 - no customer pricing changes
