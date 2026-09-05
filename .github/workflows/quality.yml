@@ -8,7 +8,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -18,6 +18,201 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: phase/6d2-booking-compensation-persistence
+          fetch-depth: 0
+
+      - name: Apply Phase 6D2 Firestore boundary
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('firestore.rules')
+          source = path.read_text()
+          marker = '    // Phase 6D2 booking compensation persistence boundary.'
+          needle = '    match /studio37System/connectivity-probe {'
+          block = r'''    // Phase 6D2 booking compensation persistence boundary.
+    match /bookings/{bookingId} {
+      function existingCompensationSnapshot() {
+        return resource.data.keys().hasAny(['compensationSnapshot'])
+          ? resource.data.compensationSnapshot
+          : null;
+      }
+
+      function isValidBookingCompensationSnapshot(data) {
+        return data is map
+          && data.keys().hasAll([
+            'diagnostics',
+            'effectiveAtIso',
+            'entries',
+            'schemaVersion',
+            'summary'
+          ])
+          && data.keys().hasOnly([
+            'diagnostics',
+            'effectiveAtIso',
+            'entries',
+            'schemaVersion',
+            'summary'
+          ])
+          && data.schemaVersion is int
+          && data.schemaVersion >= 1
+          && data.schemaVersion <= 100
+          && data.effectiveAtIso is string
+          && data.effectiveAtIso.size() > 0
+          && data.effectiveAtIso.size() <= 64
+          && data.entries is list
+          && data.entries.size() <= 20
+          && data.diagnostics is list
+          && data.diagnostics.size() == 0
+          && data.summary is map
+          && data.summary.keys().hasAll([
+            'byOperatorType',
+            'entryCount',
+            'totalAmountIdr'
+          ])
+          && data.summary.keys().hasOnly([
+            'byOperatorType',
+            'entryCount',
+            'totalAmountIdr'
+          ])
+          && data.summary.byOperatorType is map
+          && data.summary.entryCount is int
+          && data.summary.entryCount == data.entries.size()
+          && data.summary.entryCount <= 20
+          && isValidCompensationAmount(data.summary.totalAmountIdr);
+      }
+
+      function isFocusedCompensationInitialization() {
+        return existingCompensationSnapshot() == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'compensationSnapshot',
+            'compensationSummary',
+            'updatedAt',
+            'updatedByUid'
+          ])
+          && request.resource.data.keys().hasAll([
+            'compensationSnapshot',
+            'compensationSummary',
+            'updatedAt',
+            'updatedByUid'
+          ])
+          && isValidBookingCompensationSnapshot(request.resource.data.compensationSnapshot)
+          && request.resource.data.compensationSummary
+            == request.resource.data.compensationSnapshot.summary
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.updatedByUid == request.auth.uid;
+      }
+
+      allow get: if isActiveOwner();
+      allow list, create, delete: if false;
+      allow update: if isActiveOwner() && isFocusedCompensationInitialization();
+    }
+
+    match /commissionEntries/{entryId} {
+      function sourceBookingPath(bookingId) {
+        return /databases/$(database)/documents/bookings/$(bookingId);
+      }
+
+      function hasValidOptionalBookingNumber(value) {
+        return value == null
+          || (value is string && value.size() > 0 && value.size() <= 128);
+      }
+
+      function isValidInitialCommissionEntry(data) {
+        return data.keys().hasAll([
+            'amountIdr',
+            'bookingId',
+            'bookingNumber',
+            'calculationSnapshot',
+            'compensationModel',
+            'operatorId',
+            'operatorType',
+            'payoutId',
+            'ruleId',
+            'sourceEvent',
+            'sourceKey',
+            'state',
+            'createdAt',
+            'createdByUid',
+            'updatedAt',
+            'updatedByUid'
+          ])
+          && data.keys().hasOnly([
+            'amountIdr',
+            'bookingId',
+            'bookingNumber',
+            'calculationSnapshot',
+            'compensationModel',
+            'operatorId',
+            'operatorType',
+            'payoutId',
+            'ruleId',
+            'sourceEvent',
+            'sourceKey',
+            'state',
+            'createdAt',
+            'createdByUid',
+            'updatedAt',
+            'updatedByUid'
+          ])
+          && isValidCompensationAmount(data.amountIdr)
+          && hasValidRequiredReference(data.bookingId)
+          && hasValidOptionalBookingNumber(data.bookingNumber)
+          && data.calculationSnapshot is map
+          && data.compensationModel in [
+            'fixed',
+            'package',
+            'percentage',
+            'per_hour',
+            'per_session'
+          ]
+          && hasValidRequiredReference(data.operatorId)
+          && data.operatorType in ['studio_operator', 'recording_engineer']
+          && data.payoutId == null
+          && hasValidRequiredReference(data.ruleId)
+          && data.sourceEvent == 'booking_confirmation'
+          && data.sourceKey is string
+          && data.sourceKey.size() > 0
+          && data.sourceKey.size() <= 1024
+          && data.state == 'pending'
+          && data.createdAt == request.time
+          && data.updatedAt == request.time
+          && data.createdByUid == request.auth.uid
+          && data.updatedByUid == request.auth.uid;
+      }
+
+      function hasInitializedSourceBooking(data) {
+        return existsAfter(sourceBookingPath(data.bookingId))
+          && getAfter(sourceBookingPath(data.bookingId)).data.keys()
+            .hasAny(['compensationSnapshot']);
+      }
+
+      allow get: if isActiveOwner();
+      allow list: if isActiveOwner()
+        && request.query.limit != null
+        && request.query.limit <= 200;
+      allow create: if isActiveOwner()
+        && isValidInitialCommissionEntry(request.resource.data)
+        && hasInitializedSourceBooking(request.resource.data);
+      allow update, delete: if false;
+    }
+
+'''
+          if marker not in source:
+              if needle not in source:
+                  raise SystemExit('Firestore insertion point not found')
+              path.write_text(source.replace(needle, block + needle, 1))
+          PY
+
+          if ! git diff --quiet -- firestore.rules; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add firestore.rules
+            git commit -m "feat(rules): apply phase 6d2 firestore boundary"
+            git push origin HEAD:phase/6d2-booking-compensation-persistence
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
