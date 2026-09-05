@@ -199,11 +199,11 @@ describe('Studio37 application shell', () => {
       await screen.findByRole('heading', { name: 'Akses tidak diizinkan' }),
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/bookkeeping');
-    expect(screen.getByText('Dashboard', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.getByText('Booking Calendar', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.getByText('Settings', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.queryByText('Fee & Commission', { selector: 'a' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Pembukuan', { selector: 'a' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Booking Calendar' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Fee & Commission' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Pembukuan' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Pembukuan' })).not.toBeInTheDocument();
   });
 
