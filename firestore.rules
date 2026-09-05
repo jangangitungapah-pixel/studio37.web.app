@@ -434,9 +434,6 @@ service cloud.firestore {
         && data.name.size() <= 80
         && data.description is string
         && data.description.size() <= 240
-        && data.displayOrder is int
-        && data.displayOrder >= 1
-        && data.displayOrder <= 999
         && data.requiresStudioReservation is bool
         && hasValidSessionDurationPair(data)
         && data.status in ['active', 'disabled']
@@ -468,6 +465,24 @@ service cloud.firestore {
       return value in ['exact', 'round_up'];
     }
 
+    function isValidRecurringDurationDiscount(data, incrementMinutes) {
+      return data is map
+        && data.keys().hasAll([
+          'amountPerBlockIdr',
+          'blockDurationMinutes',
+          'enabled'
+        ])
+        && data.keys().hasOnly([
+          'amountPerBlockIdr',
+          'blockDurationMinutes',
+          'enabled'
+        ])
+        && isValidPricingAmount(data.amountPerBlockIdr)
+        && isValidPricingDuration(data.blockDurationMinutes)
+        && data.blockDurationMinutes % incrementMinutes == 0
+        && data.enabled is bool;
+    }
+
     function isValidHourlyPricingConfiguration(data) {
       return data is map
         && data.keys().hasAll([
@@ -480,12 +495,18 @@ service cloud.firestore {
           'amountPerIncrementIdr',
           'incrementMinutes',
           'minimumDurationMinutes',
+          'recurringDurationDiscount',
           'roundingMode'
         ])
         && isValidPricingAmount(data.amountPerIncrementIdr)
         && isValidPricingDuration(data.incrementMinutes)
         && isValidPricingDuration(data.minimumDurationMinutes)
-        && isValidPricingRoundingMode(data.roundingMode);
+        && isValidPricingRoundingMode(data.roundingMode)
+        && (!data.keys().hasAny(['recurringDurationDiscount'])
+          || isValidRecurringDurationDiscount(
+            data.recurringDurationDiscount,
+            data.incrementMinutes
+          ));
     }
 
     function isValidFixedSessionPricingConfiguration(data) {
