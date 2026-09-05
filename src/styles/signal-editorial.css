@@ -1,0 +1,389 @@
+/* Studio37 editorial hierarchy
+   Cards define major sections only. Nested content uses rhythm, whitespace and hairline dividers. */
+
+.page-context h1,
+.page-context__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.page-context__eyebrow,
+.settings-card__eyebrow,
+.ui-dialog__kicker,
+.pricing-configuration-health__eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.page-context p,
+.page-context__description {
+  max-width: 760px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  letter-spacing: -0.006em;
+}
+
+.settings-navigation__link,
+.ui-button,
+.settings-access-badge,
+.ui-badge {
+  font-family: var(--font-sans);
+}
+
+.settings-workspace__content {
+  gap: 1rem;
+}
+
+/* Major settings sections remain cards. */
+.settings-card {
+  border-color: rgb(255 255 255 / 0.085);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.014), transparent 9rem),
+    color-mix(in srgb, var(--color-surface) 96%, black);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.018);
+}
+
+.settings-card__header {
+  margin-bottom: 0;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.075);
+}
+
+.settings-card__header h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.settings-card__subtitle,
+.settings-card__header > p {
+  max-width: 760px;
+  font-size: 0.75rem;
+  line-height: 1.62;
+  letter-spacing: -0.004em;
+}
+
+.settings-card__eyebrow {
+  margin-bottom: 0.32rem;
+  font-size: 0.58rem;
+}
+
+/* List containers become continuous editorial streams. */
+.price-session-list,
+.pricing-rule-list,
+.duration-package-groups,
+.duration-package-list {
+  gap: 0;
+}
+
+.settings-card :is(
+    .price-session-row,
+    .pricing-rule-row,
+    .settings-room-row,
+    .settings-operator-row,
+    .permission-template-row,
+    .permission-operator-row,
+    .duration-package-row
+  ) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.price-session-row,
+.pricing-rule-row,
+.settings-room-row,
+.settings-operator-row,
+.permission-template-row,
+.permission-operator-row {
+  padding: 1rem 0;
+}
+
+.price-session-row + .price-session-row,
+.pricing-rule-row + .pricing-rule-row,
+.settings-room-row + .settings-room-row,
+.settings-operator-row + .settings-operator-row,
+.permission-template-row + .permission-template-row,
+.permission-operator-row + .permission-operator-row,
+.duration-package-row + .duration-package-row {
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.settings-card :is(
+    .price-session-row,
+    .pricing-rule-row,
+    .settings-room-row,
+    .settings-operator-row,
+    .permission-template-row,
+    .permission-operator-row,
+    .duration-package-row
+  ):hover {
+  transform: none;
+  border-color: rgb(255 255 255 / 0.07);
+  background: linear-gradient(90deg, rgb(201 242 107 / 0.035), transparent 70%);
+  box-shadow: none;
+}
+
+.settings-card :is(
+    .price-session-row,
+    .pricing-rule-row,
+    .settings-room-row,
+    .settings-operator-row,
+    .permission-template-row,
+    .permission-operator-row,
+    .duration-package-row
+  )[data-disabled='true'] {
+  background: transparent;
+  opacity: 0.58;
+}
+
+.price-session-row__heading h3,
+.pricing-rule-row__heading h3,
+.settings-room-row h3,
+.settings-operator-row h3,
+.permission-template-row h3,
+.permission-operator-row h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+/* Metadata is typographic, not a stack of mini pills. */
+.duration-package-group__meta span,
+.pricing-rule-row__meta span,
+.price-session-row__meta span,
+.pricing-preview__facts > div {
+  min-height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.duration-package-group__meta span + span::before,
+.pricing-rule-row__meta span + span::before,
+.price-session-row__meta span + span::before {
+  margin-right: 0.5rem;
+  color: var(--color-border-emphasis);
+  content: '·';
+}
+
+.price-session-row__meta,
+.pricing-rule-row__meta,
+.duration-package-group__meta {
+  gap: 0.5rem;
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.price-session-row__order,
+.duration-package-row__duration {
+  border-color: rgb(255 255 255 / 0.075);
+  background: rgb(255 255 255 / 0.025);
+  box-shadow: none;
+}
+
+/* Empty/loading/error states inside a section are flat content bands. */
+.settings-card :is(
+    .price-session-empty,
+    .pricing-rule-empty,
+    .duration-package-empty,
+    .settings-room-empty,
+    .settings-operator-empty,
+    .permission-empty-state,
+    .settings-state--embedded
+  ) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 1rem 0;
+}
+
+.settings-card :is(.price-session-empty, .pricing-rule-empty, .duration-package-empty) {
+  border-bottom: 1px solid rgb(255 255 255 / 0.065);
+}
+
+/* Informational states inside a card become accent rails instead of another card. */
+.settings-card > .settings-notice,
+.settings-card .duration-package-workspace__note,
+.settings-card .pricing-rule-scope-note {
+  border: 0;
+  border-left: 2px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.75rem 0 0.75rem 0.95rem;
+  box-shadow: none;
+}
+
+.settings-card > .settings-notice {
+  margin-top: 0.85rem;
+}
+
+/* Configuration health is a section row, not a nested dashboard widget. */
+.pricing-configuration-health {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 1rem 0;
+  box-shadow: none;
+}
+
+.pricing-configuration-health__header h3 {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.pricing-configuration-health__summary,
+.pricing-configuration-health__footnote {
+  font-size: 0.73rem;
+  line-height: 1.6;
+}
+
+/* Package groups flatten into subsection dividers. */
+.duration-package-workspace {
+  margin-top: 0.5rem;
+  border-top-color: rgb(255 255 255 / 0.075);
+  padding-top: 1.2rem;
+}
+
+.duration-package-group {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.duration-package-group + .duration-package-group {
+  margin-top: 0.35rem;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  padding-top: 0.35rem;
+}
+
+.duration-package-group__header {
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  background: transparent;
+  padding: 0.9rem 0;
+}
+
+.duration-package-row {
+  padding: 0.85rem 0;
+}
+
+/* Preview keeps the two-column relationship without a card inside a card. */
+.pricing-preview__workspace {
+  gap: 1.4rem;
+}
+
+.pricing-preview__result {
+  border: 0;
+  border-left: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0 1.4rem;
+  box-shadow: none;
+}
+
+.pricing-preview__rule-card,
+.pricing-preview__addon,
+.pricing-preview__placeholder,
+.pricing-preview__footnote {
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.065);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.9rem 0;
+  box-shadow: none;
+}
+
+.pricing-preview__facts {
+  gap: 0.75rem 1rem;
+}
+
+.pricing-preview__facts > div {
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+  padding-top: 0.65rem;
+}
+
+/* Editor dialogs use separators for conceptual groups while interactive choices stay tactile. */
+.ui-dialog :is(
+    .price-session-duration-panel,
+    .pricing-rule-config-panel,
+    .pricing-rule-model-empty,
+    .permission-capability-group,
+    .pricing-rule-status-summary,
+    .price-session-status-summary
+  ) {
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+  border-radius: 0;
+  background: transparent;
+  padding: 1rem 0 0;
+  box-shadow: none;
+}
+
+.ui-dialog__heading h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+@media (max-width: 900px) {
+  .pricing-preview__result {
+    border-left: 0;
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+    padding: 1.1rem 0 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-context h1,
+  .page-context__title {
+    font-size: clamp(1.75rem, 9vw, 2.2rem);
+  }
+
+  .settings-card {
+    border-radius: 15px;
+  }
+
+  .price-session-row,
+  .pricing-rule-row,
+  .settings-room-row,
+  .settings-operator-row,
+  .permission-template-row,
+  .permission-operator-row {
+    padding: 0.9rem 0;
+  }
+
+  .price-session-row__meta,
+  .pricing-rule-row__meta,
+  .duration-package-group__meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .duration-package-group__meta span + span::before,
+  .pricing-rule-row__meta span + span::before,
+  .price-session-row__meta span + span::before {
+    content: none;
+  }
+}
