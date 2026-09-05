@@ -94,7 +94,10 @@ describe('trusted booking compensation execution', () => {
   it('requires authentication before reading protected data', async () => {
     const gateway = makeGateway();
     await expectTrustedError(
-      executeTrustedBookingCompensation({ auth: null, data: { bookingId: 'booking-1' } }, { gateway }),
+      executeTrustedBookingCompensation(
+        { auth: null, data: { bookingId: 'booking-1' } },
+        { gateway },
+      ),
       'unauthenticated',
     );
     expect(gateway.getUser).not.toHaveBeenCalled();
