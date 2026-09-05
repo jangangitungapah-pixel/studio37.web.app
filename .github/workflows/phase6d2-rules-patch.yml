@@ -1,4 +1,3 @@
-# One-time helper; remove after the rules patch commit lands.
 name: Phase 6D2 Rules Patch
 
 on:
@@ -11,7 +10,6 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'apply phase 6d2 firestore boundary') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Patch Firestore rules
-        shell: python
+        shell: bash
         run: |
+          python <<'PY'
           from pathlib import Path
 
           path = Path('firestore.rules')
@@ -203,6 +202,7 @@ jobs:
                   raise SystemExit('Firestore insertion point not found')
               source = source.replace(needle, block + needle, 1)
               path.write_text(source)
+          PY
 
       - name: Commit rules patch
         shell: bash
