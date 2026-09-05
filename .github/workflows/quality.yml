@@ -33,15 +33,8 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Print Phase 6B formatting diff
-        run: |
-          npx prettier --write \
-            src/features/commissions/compensationRuleManagement.test.js \
-            src/services/compensationRuleManagementService.test.js
-          git diff -- \
-            src/features/commissions/compensationRuleManagement.test.js \
-            src/services/compensationRuleManagementService.test.js
-          exit 1
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Lint
         run: npm run lint
