@@ -257,11 +257,7 @@ describe('compensation rule Firestore authorization boundary', () => {
       ['per-session', 'per_session', { amountIdr: 50_000 }],
       ['fixed', 'fixed', { amountIdr: 40_000 }],
       ['package', 'package', { amountIdr: 450_000, durationMinutes: 360 }],
-      [
-        'percentage',
-        'percentage',
-        { base: 'booking_subtotal_before_discount', basisPoints: 1250 },
-      ],
+      ['percentage', 'percentage', { base: 'booking_subtotal_before_discount', basisPoints: 1250 }],
     ];
 
     for (const [id, compensationModel, configuration] of cases) {
