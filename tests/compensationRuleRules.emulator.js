@@ -35,7 +35,12 @@ const FIXTURE_TIMESTAMP = Timestamp.fromMillis(Date.UTC(2026, 0, 1));
 
 let testEnvironment;
 
-function createUserProfile({ uid, role = 'studio_operator', permissionSetId = null, ...overrides }) {
+function createUserProfile({
+  uid,
+  role = 'studio_operator',
+  permissionSetId = null,
+  ...overrides
+}) {
   return {
     uid,
     displayName: `Studio37 ${uid}`,
