@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --write src/features/settings/DurationPackagesWorkspace.jsx src/features/settings/DurationPackagesWorkspace.test.jsx src/features/settings/PriceSettingsPage.test.jsx src/features/settings/PricingPreviewSection.jsx src/features/settings/PricingRuleEditorDialog.jsx src/features/settings/PricingRulesSection.jsx src/services/pricingRuleRepository.test.js && prettier --check .",
     "test": "vitest run",
-    "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js tests/addOnRules.emulator.js tests/recurringDiscountRules.emulator.js\"",
+    "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js tests/addOnRules.emulator.js tests/recurringDiscountRules.emulator.js tests/compensationRuleRules.emulator.js\"",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -25,14 +25,6 @@
     "@eslint/js": "^9.0.0",
     "@firebase/rules-unit-testing": "5.0.2",
     "@tailwindcss/vite": "^4.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/user-event": "^14.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "eslint": "^9.0.0",
-    "eslint-plugin-react": "^7.37.0",
-    "eslint-plugin-react-hooks": "^6.0.0",
-    "eslint-plugin-react-refresh": "^0.4.0",
     "firebase-tools": "15.28.1",
     "globals": "^16.0.0",
     "jsdom": "^26.0.0",
