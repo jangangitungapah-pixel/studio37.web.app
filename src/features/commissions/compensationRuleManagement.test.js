@@ -50,6 +50,15 @@ describe('compensation rule management core', () => {
     );
   });
 
+  it('rejects malformed exact-reference filters before projection', () => {
+    expect(() => normalizeCompensationRuleManagementFilters({ operatorId: ' ' })).toThrow(
+      'filters.operatorId must be a non-empty string.',
+    );
+    expect(() => normalizeCompensationRuleManagementFilters({ sessionTypeId: 'a/b' })).toThrow(
+      'filters.sessionTypeId must be a Firestore document id.',
+    );
+  });
+
   it('filters by admin dimensions, searches name/id, and preserves canonical ordering', () => {
     const rules = [
       makeRule({
