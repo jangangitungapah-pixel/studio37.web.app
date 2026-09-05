@@ -1,0 +1,19 @@
+{
+  "name": "studio37-functions",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "node --test bookingCompensationRuntime.test.js",
+    "smoke": "node -e \"import('./index.js').then(() => console.log('Functions import smoke passed.'))\""
+  },
+  "dependencies": {
+    "firebase": "12.18.0",
+    "firebase-admin": "14.3.0",
+    "firebase-functions": "7.3.2"
+  }
+}
