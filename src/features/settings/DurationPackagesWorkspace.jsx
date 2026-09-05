@@ -18,29 +18,14 @@ import './duration-package-settings.css';
 
 function getSafeFirebaseMessage(error, action) {
   if (error?.code === 'permission-denied') {
-    return `Akun ini tidak memiliki izin untuk ${action} package.`;
+    return `Akun ini tidak memiliki izin untuk ${action} paket harga.`;
   }
 
   if (error?.code === 'unavailable') {
-    return `Firestore sedang tidak tersedia. Coba ${action} package lagi setelah koneksi pulih.`;
+    return `Paket harga sedang tidak tersedia. Coba ${action} lagi setelah koneksi pulih.`;
   }
 
-  return `Package belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
-}
-
-function formatEffectiveWindow(group) {
-  if (group.effectiveFrom === null && group.effectiveUntil === null) return 'Tanpa batas waktu';
-
-  const formatDate = (value) =>
-    value
-      ? new Intl.DateTimeFormat('id-ID', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        }).format(value)
-      : '∞';
-
-  return `${formatDate(group.effectiveFrom)} → ${formatDate(group.effectiveUntil)}`;
+  return `Paket harga belum bisa ${action}. Coba lagi tanpa menghapus konfigurasi.`;
 }
 
 export function DurationPackagesWorkspace({
@@ -120,14 +105,12 @@ export function DurationPackagesWorkspace({
     const editsActiveRule = editingRule?.status === PRICING_RULE_STATUSES.ACTIVE;
 
     if (!canEdit || !actorUid) {
-      setDialogError('Sesi ini tidak diizinkan menyimpan package.');
+      setDialogError('Sesi ini tidak diizinkan menyimpan paket harga.');
       return;
     }
 
     if (limitReached) {
-      setDialogError(
-        `Batas ${listLimit} pricing rule tercapai. Package diblok karena candidate set mungkin tidak lengkap.`,
-      );
+      setDialogError(`Batas ${listLimit} pengaturan harga sudah tercapai.`);
       return;
     }
 
@@ -136,7 +119,7 @@ export function DurationPackagesWorkspace({
       hasPricingRuleWriteCollision(pricingRules, details, { excludeId: editingRule?.id ?? null })
     ) {
       setDialogError(
-        'Package aktif dengan durasi yang sama sudah ada pada session, studio scope, dan priority ini, atau ada rule non-package yang membuat envelope ini belum aman.',
+        'Paket dengan durasi yang sama sudah aktif untuk layanan dan studio ini, atau bentrok dengan harga lain.',
       );
       return;
     }
@@ -152,9 +135,9 @@ export function DurationPackagesWorkspace({
       }
 
       pushToast({
-        message: `${details.name} sudah ${editingRule ? 'diperbarui' : 'ditambahkan'} tanpa mengubah snapshot booking historis.`,
+        message: `${details.name} sudah ${editingRule ? 'diperbarui' : 'ditambahkan'}. Booking lama tetap memakai harga sebelumnya.`,
         tone: 'success',
-        title: editingRule ? 'Package diperbarui' : 'Package ditambahkan',
+        title: editingRule ? 'Paket diperbarui' : 'Paket ditambahkan',
       });
       setEditorOpen(false);
       setEditingRule(null);
@@ -183,24 +166,20 @@ export function DurationPackagesWorkspace({
     const actorUid = access.user?.uid;
 
     if (!statusTarget || !canEdit || !actorUid) {
-      setStatusError('Sesi ini tidak diizinkan mengubah status package.');
+      setStatusError('Sesi ini tidak diizinkan mengubah status paket harga.');
       return;
     }
 
     if (nextStatus === PRICING_RULE_STATUSES.ACTIVE) {
       if (limitReached) {
-        setStatusError(
-          `Aktivasi diblok saat batas ${listLimit} rule tercapai karena candidate set mungkin tidak lengkap.`,
-        );
+        setStatusError(`Paket belum bisa diaktifkan saat batas ${listLimit} harga sudah tercapai.`);
         return;
       }
 
       if (
         hasPricingRuleWriteCollision(pricingRules, statusTarget, { excludeId: statusTarget.id })
       ) {
-        setStatusError(
-          'Aktivasi diblok karena durasi package ini sudah aktif pada envelope yang sama atau berpotensi bentrok dengan rule non-package.',
-        );
+        setStatusError('Paket ini bentrok dengan harga lain untuk layanan dan studio yang sama.');
         return;
       }
     }
@@ -213,13 +192,13 @@ export function DurationPackagesWorkspace({
       pushToast({
         message:
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? `${statusTarget.name} kembali tersedia sebagai pilihan package untuk pricing baru.`
-            : `${statusTarget.name} tidak lagi tersedia untuk pricing baru; snapshot historis tetap aman.`,
+            ? `${statusTarget.name} kembali tersedia untuk booking baru.`
+            : `${statusTarget.name} tidak lagi ditawarkan untuk booking baru.`,
         tone: 'success',
         title:
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Package diaktifkan'
-            : 'Package dinonaktifkan',
+            ? 'Paket diaktifkan'
+            : 'Paket dinonaktifkan',
       });
       setStatusTarget(null);
       onChanged();
@@ -234,11 +213,11 @@ export function DurationPackagesWorkspace({
     <div className="duration-package-workspace" aria-labelledby="duration-packages-heading">
       <header className="duration-package-workspace__header">
         <div>
-          <p className="settings-card__eyebrow">Package workspace</p>
-          <h3 id="duration-packages-heading">Duration packages</h3>
+          <p className="settings-card__eyebrow">Paket</p>
+          <h3 id="duration-packages-heading">Paket harga</h3>
           <p>
-            Kelola beberapa pilihan durasi sebagai satu set. Package set berbagi session, studio
-            scope, priority, dan effective window yang sama.
+            Gunakan paket kalau layanan punya harga khusus untuk durasi tertentu, misalnya 3 jam
+            Rp400.000 atau 6 jam Rp750.000.
           </p>
         </div>
         {canEdit ? (
@@ -247,7 +226,7 @@ export function DurationPackagesWorkspace({
             disabled={limitReached || activeSessionTypes.length === 0}
             onClick={openCreateDialog}
           >
-            Tambah package
+            Tambah paket
           </Button>
         ) : null}
       </header>
@@ -256,10 +235,10 @@ export function DurationPackagesWorkspace({
         <div className="duration-package-empty">
           <span className="settings-placeholder__dot" aria-hidden="true" />
           <div>
-            <p className="settings-placeholder__title">Belum ada duration package</p>
+            <p className="settings-placeholder__title">Belum ada paket harga</p>
             <p className="settings-placeholder__description">
-              Buat package pertama, pilih scope general atau studio tertentu, lalu tambahkan sibling
-              package tanpa hardcode di Booking UI.
+              Bagian ini opsional. Tambahkan paket hanya jika studio memang punya harga khusus untuk
+              durasi tertentu.
             </p>
           </div>
         </div>
@@ -276,19 +255,10 @@ export function DurationPackagesWorkspace({
                 <header className="duration-package-group__header">
                   <div>
                     <div className="duration-package-group__title-row">
-                      <h4>{sessionType?.name ?? `Session ${group.sessionTypeId}`}</h4>
-                      <Badge
-                        tone={
-                          sessionType?.status === SESSION_TYPE_STATUSES.ACTIVE ? 'brand' : 'neutral'
-                        }
-                      >
-                        {sessionType?.code ?? group.sessionTypeId}
-                      </Badge>
+                      <h4>{sessionType?.name ?? 'Layanan'}</h4>
                     </div>
                     <div className="duration-package-group__meta">
                       <span>{formatStudioScopeLabel(group.studioId, studioRooms)}</span>
-                      <span>Priority {group.priority}</span>
-                      <span>{formatEffectiveWindow(group)}</span>
                     </div>
                   </div>
                   {canEdit ? (
@@ -298,14 +268,14 @@ export function DurationPackagesWorkspace({
                       disabled={!canAddSibling}
                       onClick={() => openSiblingDialog(template)}
                     >
-                      Tambah ke set ini
+                      Tambah paket lain
                     </Button>
                   ) : null}
                 </header>
 
                 <div
                   className="duration-package-list"
-                  aria-label={`Package ${sessionType?.name ?? group.sessionTypeId}`}
+                  aria-label={`Paket ${sessionType?.name ?? group.sessionTypeId}`}
                 >
                   {group.rules.map((rule) => {
                     const isActive = rule.status === PRICING_RULE_STATUSES.ACTIVE;
@@ -340,7 +310,7 @@ export function DurationPackagesWorkspace({
                               size="sm"
                               variant="ghost"
                               disabled={limitReached}
-                              aria-label={`Edit package ${rule.name}`}
+                              aria-label={`Edit paket ${rule.name}`}
                               onClick={() => openEditDialog(rule)}
                             >
                               Edit
@@ -348,7 +318,7 @@ export function DurationPackagesWorkspace({
                             <Button
                               size="sm"
                               variant={isActive ? 'ghost' : 'secondary'}
-                              aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} package ${rule.name}`}
+                              aria-label={`${isActive ? 'Nonaktifkan' : 'Aktifkan'} paket ${rule.name}`}
                               onClick={() => openStatusDialog(rule)}
                             >
                               {isActive ? 'Nonaktifkan' : 'Aktifkan'}
@@ -364,15 +334,6 @@ export function DurationPackagesWorkspace({
           })}
         </div>
       )}
-
-      <div className="duration-package-workspace__note">
-        <strong>Boundary 5B5</strong>
-        <span>
-          Package baru dapat memilih studio scope. Sibling/edit tetap menjaga envelope set;
-          effective period, add-on, preview kalkulasi, dan full ambiguity validation tetap
-          checkpoint terpisah.
-        </span>
-      </div>
 
       <DurationPackageEditorDialog
         dialogError={dialogError}
@@ -391,11 +352,11 @@ export function DurationPackagesWorkspace({
       <Dialog
         open={Boolean(statusTarget)}
         size="sm"
-        title={`${nextStatusLabel} ${statusTarget?.name ?? 'package'}?`}
+        title={`${nextStatusLabel} ${statusTarget?.name ?? 'paket'}?`}
         description={
           nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Package akan kembali tersedia untuk pricing baru setelah package-aware collision guard lolos.'
-            : 'Package tidak lagi tersedia untuk pricing baru, tetapi snapshot dan referensi historis tetap dipertahankan.'
+            ? 'Paket akan kembali tersedia untuk booking baru.'
+            : 'Paket tidak lagi ditawarkan untuk booking baru. Booking lama tetap aman.'
         }
         onClose={closeStatusDialog}
         footer={
@@ -415,7 +376,7 @@ export function DurationPackagesWorkspace({
       >
         {statusError ? (
           <div className="settings-notice" data-tone="danger" role="alert">
-            <strong>Status package belum berubah.</strong>
+            <strong>Status paket belum berubah.</strong>
             <span>{statusError}</span>
           </div>
         ) : (
@@ -425,11 +386,7 @@ export function DurationPackagesWorkspace({
                 ? `${statusTarget.configuration.durationMinutes} menit · ${formatIntegerIdr(statusTarget.configuration.amountIdr)}`
                 : ''}
             </strong>
-            <span>
-              {nextStatus === PRICING_RULE_STATUSES.DISABLED
-                ? 'Tidak ada hard delete. Histori pricing yang sudah tersnapshot tetap utuh.'
-                : 'Aktivasi mempertahankan session, studio scope, priority, dan effective window package.'}
-            </span>
+            <span>Paket bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.</span>
           </div>
         )}
       </Dialog>
