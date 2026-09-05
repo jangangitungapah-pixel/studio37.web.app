@@ -48,6 +48,9 @@ jobs:
           src/features/commissions/compensationRuleManagement.test.js
           src/services/compensationRuleManagementService.test.js
 
+      - name: Test Phase 6C compensation engine
+        run: npx vitest run src/features/commissions/compensationEngine.test.js
+
       - name: Test Firestore Security Rules
         env:
           CI: true
