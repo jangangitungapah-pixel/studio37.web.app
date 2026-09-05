@@ -1,6 +1,6 @@
 import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
 
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const runtimeRoot = join(projectRoot, 'functions', 'runtime-src');
@@ -24,5 +24,3 @@ for (const sourcePath of runtimeSourceFiles) {
   await mkdir(dirname(destination), { recursive: true });
   await copyFile(source, destination);
 }
-
-console.log(`Prepared ${runtimeSourceFiles.length} trusted Functions runtime source files.`);
