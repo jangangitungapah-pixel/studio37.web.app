@@ -16,8 +16,10 @@ This phase adds a buildable Firebase Cloud Functions source package. It does **n
 
 Accepted request data is exactly:
 
-```js
-{ bookingId }
+```json
+{
+  "bookingId": "booking-id"
+}
 ```
 
 The callable rejects additional fields. In particular, the caller cannot supply:
