@@ -37,7 +37,7 @@ const SIMPLE_PRICING_MODEL_OPTIONS = Object.freeze([
 function getUserFacingErrors(errors) {
   const translated = {};
 
-  if (errors.name) translated.name = 'Nama pengaturan wajib diisi dan maksimal 100 karakter.';
+  if (errors.name) translated.name = 'Nama pengaturan maksimal 100 karakter.';
   if (errors.sessionTypeId) translated.sessionTypeId = 'Pilih layanan yang valid.';
   if (errors.studioId) translated.studioId = 'Pilih studio yang valid.';
   if (errors.pricingModel) translated.pricingModel = 'Pilih cara menghitung harga.';
@@ -406,7 +406,17 @@ export function PricingRuleEditorDialog({
 
   const submit = (event) => {
     event.preventDefault();
-    const validation = validatePricingRuleForm(formValues, { editingRule });
+    const sessionType = sessionTypes.find((item) => item.id === formValues.sessionTypeId);
+    const pricingModel = SIMPLE_PRICING_MODEL_OPTIONS.find(
+      (option) => option.value === formValues.pricingModel,
+    );
+    const submissionValues = {
+      ...formValues,
+      name:
+        formValues.name.trim() ||
+        `${sessionType?.name ?? 'Harga'} · ${pricingModel?.label ?? 'Pengaturan'}`,
+    };
+    const validation = validatePricingRuleForm(submissionValues, { editingRule });
     const errors = getUserFacingErrors(validation.errors);
     setFieldErrors(errors);
     if (!validation.value) return;
@@ -493,15 +503,13 @@ export function PricingRuleEditorDialog({
           <div className="pricing-advanced__content">
             <div className="settings-form__grid">
               <Input
-                label="Nama pengaturan"
+                label="Nama pengaturan (opsional)"
                 value={formValues.name}
                 error={fieldErrors.name}
                 maxLength={100}
-                required
                 disabled={saving}
-                data-autofocus="true"
-                placeholder="Contoh: Latihan reguler"
-                description="Hanya untuk memudahkan identifikasi di halaman pengaturan."
+                placeholder="Dibuat otomatis jika dikosongkan"
+                description="Kosongkan agar sistem membuat nama dari layanan dan cara harga."
                 onChange={changeField('name')}
               />
               <Input
