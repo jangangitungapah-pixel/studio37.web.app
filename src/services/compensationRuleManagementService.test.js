@@ -71,7 +71,9 @@ describe('compensation rule management service', () => {
     const service = createCompensationRuleManagementService({ repository });
     const details = { name: 'Rule details' };
 
-    await expect(service.createRule(details, { actorUid: 'owner-1' })).resolves.toBe('created-rule');
+    await expect(service.createRule(details, { actorUid: 'owner-1' })).resolves.toBe(
+      'created-rule',
+    );
     await expect(service.updateRule('rule-1', details, { actorUid: 'owner-1' })).resolves.toBe(
       'rule-1',
     );
