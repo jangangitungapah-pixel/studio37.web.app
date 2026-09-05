@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Install Functions dependencies
+        run: npm --prefix functions install --no-audit --no-fund
+
       - name: Check formatting
         run: npm run format:check
 
@@ -57,17 +60,20 @@ jobs:
       - name: Test Phase 6D2 persistence repository
         run: npx vitest run src/services/bookingCompensationPersistenceRepository.test.js
 
+      - name: Test Phase 6E trusted execution boundary
+        run: >-
+          npx vitest run
+          functions/src/trustedBookingCompensationCore.test.js
+          functions/src/trustedBookingCompensationFirestoreGateway.test.js
+
+      - name: Build Phase 6E Cloud Functions bundle
+        run: npm --prefix functions run build
+
       - name: Test Phase 6D2 Firestore persistence boundary
         env:
           CI: true
           FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
         run: npm run test:rules:booking-compensation
-
-      - name: Test Firestore Security Rules
-        env:
-          CI: true
-          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
-        run: npm run test:rules
 
       - name: Build
         run: npm run build
@@ -91,3 +97,9 @@ jobs:
 
       - name: Test full unit suite
         run: npm test
+
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
