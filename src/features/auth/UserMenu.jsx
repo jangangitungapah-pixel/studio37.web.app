@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { Button } from '../../components/ui/Button.jsx';
+import { Icon } from '../../components/ui/Icon.jsx';
 import { useAuth } from './useAuth.js';
 import { USER_PROFILE_ROLES } from './userProfile.js';
 
@@ -18,20 +19,6 @@ function getInitials(displayName) {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
 
   return `${words[0][0]}${words.at(-1)[0]}`.toUpperCase();
-}
-
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="m6.5 8 3.5 3.5L13.5 8"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 export function UserMenu() {
@@ -112,8 +99,8 @@ export function UserMenu() {
           <span className="user-menu__trigger-name">{displayName}</span>
           <span className="user-menu__trigger-role">{roleLabel}</span>
         </span>
-        <span className="user-menu__chevron" data-open={open}>
-          <ChevronIcon />
+        <span className="user-menu__chevron" data-open={open} aria-hidden="true">
+          <Icon name="chevronDown" size={15} />
         </span>
       </button>
 
@@ -129,7 +116,12 @@ export function UserMenu() {
             </div>
           </div>
 
-          <span className="user-menu__role-badge">{roleLabel}</span>
+          <div className="user-menu__context">
+            <span className="user-menu__role-badge">{roleLabel}</span>
+            <span className="user-menu__session-state">
+              <i aria-hidden="true" /> Sesi aktif
+            </span>
+          </div>
 
           {error ? (
             <div className="user-menu__error" role="alert">
@@ -143,6 +135,7 @@ export function UserMenu() {
             onClick={handleSignOut}
             variant="secondary"
           >
+            <Icon name="logout" size={15} />
             Keluar dari Studio37
           </Button>
         </section>
