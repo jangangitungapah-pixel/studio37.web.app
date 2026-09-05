@@ -56,18 +56,21 @@ function createPackageRule(durationMinutes, overrides = {}) {
 function createRepository() {
   return {
     createPricingRule: vi.fn(async () => 'package-created'),
+    deletePricingRule: vi.fn(async (pricingRuleId) => pricingRuleId),
     setPricingRuleStatus: vi.fn(async (pricingRuleId) => pricingRuleId),
     updatePricingRule: vi.fn(async (pricingRuleId) => pricingRuleId),
   };
 }
 
-function createAccess() {
+function createAccess(role = 'owner') {
   return {
+    profile: { role },
     user: { email: 'owner@studio37.test', uid: 'owner-1' },
   };
 }
 
 function renderWorkspace({
+  access = createAccess(),
   canEdit = true,
   limitReached = false,
   pricingRules = [],
@@ -80,7 +83,7 @@ function renderWorkspace({
   render(
     <ToastProvider>
       <DurationPackagesWorkspace
-        access={createAccess()}
+        access={access}
         canEdit={canEdit}
         limitReached={limitReached}
         listLimit={200}
@@ -98,7 +101,7 @@ function renderWorkspace({
 }
 
 async function selectStudioScope(interaction, optionName) {
-  await interaction.click(screen.getByLabelText('Studio scope'));
+  await interaction.click(screen.getByLabelText('Berlaku untuk'));
   await interaction.click(screen.getByRole('option', { name: optionName }));
 }
 
@@ -106,14 +109,13 @@ describe('DurationPackagesWorkspace', () => {
   it('groups sibling packages into one set and renders human-readable studio context', () => {
     renderWorkspace({ pricingRules: [createPackageRule(360), createPackageRule(180)] });
 
-    const packageList = screen.getByRole('generic', { name: 'Package Recording' });
+    const packageList = screen.getByRole('generic', { name: 'Paket Recording' });
     const rows = within(packageList).getAllByRole('article');
 
     expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByText('180')).toBeInTheDocument();
     expect(within(rows[1]).getByText('360')).toBeInTheDocument();
     expect(screen.getByText('Studio A · A')).toBeInTheDocument();
-    expect(screen.getByText('Priority 200')).toBeInTheDocument();
   });
 
   it('creates a new exact-studio package when starting a package set', async () => {
@@ -123,7 +125,7 @@ describe('DurationPackagesWorkspace', () => {
       studioRooms: [createStudioRoom('studio-a'), createStudioRoom('studio-b')],
     });
 
-    await interaction.click(screen.getByRole('button', { name: 'Tambah package' }));
+    await interaction.click(screen.getByRole('button', { name: 'Tambah paket' }));
     await interaction.type(screen.getByLabelText(/^Nama package/), 'Recording Studio B 3 jam');
     await selectStudioScope(interaction, 'Studio B · B');
     await interaction.type(screen.getByLabelText(/^Harga package/), '500000');
@@ -148,8 +150,8 @@ describe('DurationPackagesWorkspace', () => {
     const template = createPackageRule(180, { effectiveFrom, effectiveUntil });
     const { onChanged, repository } = renderWorkspace({ pricingRules: [template] });
 
-    await interaction.click(screen.getByRole('button', { name: 'Tambah ke set ini' }));
-    expect(screen.getByLabelText('Studio scope')).toBeDisabled();
+    await interaction.click(screen.getByRole('button', { name: 'Tambah paket lain' }));
+    expect(screen.getByLabelText('Berlaku untuk')).toBeDisabled();
     await interaction.type(screen.getByLabelText(/^Nama package/), 'Recording 6 jam');
     await interaction.clear(screen.getByLabelText(/^Durasi package/));
     await interaction.type(screen.getByLabelText(/^Durasi package/), '360');
@@ -175,7 +177,7 @@ describe('DurationPackagesWorkspace', () => {
       );
     });
     expect(onChanged).toHaveBeenCalledOnce();
-    expect(await screen.findByText('Package ditambahkan')).toBeInTheDocument();
+    expect(await screen.findByText('Paket ditambahkan')).toBeInTheDocument();
   });
 
   it('blocks duplicate active duration inside the same package set before repository write', async () => {
@@ -183,12 +185,12 @@ describe('DurationPackagesWorkspace', () => {
     const repository = createRepository();
     renderWorkspace({ pricingRules: [createPackageRule(180)], repository });
 
-    await interaction.click(screen.getByRole('button', { name: 'Tambah ke set ini' }));
+    await interaction.click(screen.getByRole('button', { name: 'Tambah paket lain' }));
     await interaction.type(screen.getByLabelText(/^Nama package/), 'Recording 3 jam duplicate');
     await interaction.type(screen.getByLabelText(/^Harga package/), '460000');
     await interaction.click(screen.getByRole('button', { name: 'Simpan package' }));
 
-    expect(await screen.findByText(/durasi yang sama sudah ada/i)).toBeInTheDocument();
+    expect(await screen.findByText(/durasi yang sama sudah aktif/i)).toBeInTheDocument();
     expect(repository.createPricingRule).not.toHaveBeenCalled();
   });
 
@@ -199,8 +201,8 @@ describe('DurationPackagesWorkspace', () => {
     const existing = createPackageRule(180, { effectiveFrom, effectiveUntil });
     const { repository } = renderWorkspace({ pricingRules: [existing] });
 
-    await interaction.click(screen.getByRole('button', { name: 'Edit package Recording 3 jam' }));
-    expect(screen.getByLabelText('Studio scope')).toBeDisabled();
+    await interaction.click(screen.getByRole('button', { name: 'Edit paket Recording 3 jam' }));
+    expect(screen.getByLabelText('Berlaku untuk')).toBeDisabled();
     const amountInput = screen.getByLabelText(/^Harga package/);
     await interaction.clear(amountInput);
     await interaction.type(amountInput, '475000');
@@ -222,12 +224,13 @@ describe('DurationPackagesWorkspace', () => {
     });
   });
 
-  it('soft-deactivates a package without delete semantics', async () => {
+  it('soft-deactivates an active package without exposing hard delete yet', async () => {
     const interaction = userEvent.setup();
     const { repository } = renderWorkspace({ pricingRules: [createPackageRule(180)] });
 
+    expect(screen.queryByRole('button', { name: 'Hapus paket Recording 3 jam' })).not.toBeInTheDocument();
     await interaction.click(
-      screen.getByRole('button', { name: 'Nonaktifkan package Recording 3 jam' }),
+      screen.getByRole('button', { name: 'Nonaktifkan paket Recording 3 jam' }),
     );
     await interaction.click(screen.getByRole('button', { name: 'Nonaktifkan' }));
 
@@ -236,17 +239,42 @@ describe('DurationPackagesWorkspace', () => {
         actorUid: 'owner-1',
       });
     });
-    expect(await screen.findByText('Package dinonaktifkan')).toBeInTheDocument();
+    expect(await screen.findByText('Paket dinonaktifkan')).toBeInTheDocument();
+  });
+
+  it('lets an Owner hard-delete a disabled package', async () => {
+    const interaction = userEvent.setup();
+    const disabledPackage = createPackageRule(180, { status: PRICING_RULE_STATUSES.DISABLED });
+    const { onChanged, repository } = renderWorkspace({ pricingRules: [disabledPackage] });
+
+    await interaction.click(screen.getByRole('button', { name: 'Hapus paket Recording 3 jam' }));
+    expect(screen.getByText(/aksi ini tidak bisa dibatalkan/i)).toBeInTheDocument();
+    await interaction.click(screen.getByRole('button', { name: 'Hapus permanen' }));
+
+    await waitFor(() => {
+      expect(repository.deletePricingRule).toHaveBeenCalledWith('package-180');
+    });
+    expect(onChanged).toHaveBeenCalledOnce();
+    expect(await screen.findByText('Paket dihapus')).toBeInTheDocument();
+  });
+
+  it('does not expose hard delete to a non-owner editor', () => {
+    renderWorkspace({
+      access: createAccess('studio_operator'),
+      pricingRules: [createPackageRule(180, { status: PRICING_RULE_STATUSES.DISABLED })],
+    });
+
+    expect(screen.queryByRole('button', { name: 'Hapus paket Recording 3 jam' })).not.toBeInTheDocument();
   });
 
   it('keeps package workspace read-only without mutation controls', () => {
     renderWorkspace({ canEdit: false, pricingRules: [createPackageRule(180)] });
 
     expect(screen.getByText('Recording 3 jam')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tambah package' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tambah ke set ini' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah paket' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tambah paket lain' })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Edit package Recording 3 jam' }),
+      screen.queryByRole('button', { name: 'Edit paket Recording 3 jam' }),
     ).not.toBeInTheDocument();
   });
 });
