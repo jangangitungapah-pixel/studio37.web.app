@@ -348,8 +348,12 @@ export function AddOnsSection({ access, canEdit, repository = addOnRepository, s
           </div>
         ) : (
           <div className="price-session-status-summary">
-            <strong>{statusTarget ? getAddOnPricingTypeLabel(statusTarget.pricingType) : ''}</strong>
-            <span>Layanan tambahan bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.</span>
+            <strong>
+              {statusTarget ? getAddOnPricingTypeLabel(statusTarget.pricingType) : ''}
+            </strong>
+            <span>
+              Layanan tambahan bisa diaktifkan kembali kapan saja tanpa mengubah booking lama.
+            </span>
           </div>
         )}
       </Dialog>
