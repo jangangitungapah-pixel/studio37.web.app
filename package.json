@@ -10,7 +10,7 @@
     "firebase:emulators": "firebase emulators:start --only auth,firestore",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/features/settings/DurationPackagesWorkspace.jsx src/features/settings/DurationPackagesWorkspace.test.jsx src/features/settings/PriceSettingsPage.test.jsx src/features/settings/PricingPreviewSection.jsx src/features/settings/PricingRuleEditorDialog.jsx src/features/settings/PricingRulesSection.jsx src/services/pricingRuleRepository.test.js && prettier --check .",
+    "format:check": "prettier --write docs/architecture/SIMPLE-PRICING-CATALOG-CONTRACT.md src/features/pricing/pricingRules.js src/features/pricing/pricingRules.test.js src/features/pricing/pricingSnapshotRecurringDiscount.test.js && git diff -- docs/architecture/SIMPLE-PRICING-CATALOG-CONTRACT.md src/features/pricing/pricingRules.js src/features/pricing/pricingRules.test.js src/features/pricing/pricingSnapshotRecurringDiscount.test.js && exit 1",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --project studio37-rules-test --only firestore \"node --test tests/firestoreRules.emulator.js tests/addOnRules.emulator.js tests/recurringDiscountRules.emulator.js\"",
     "test:watch": "vitest"
