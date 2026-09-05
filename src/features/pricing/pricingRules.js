@@ -146,23 +146,72 @@ function normalizeAmount(value, label) {
   return requireIntegerIdr(value, { label });
 }
 
+function normalizeRecurringDurationDiscount(value, incrementMinutes) {
+  const discount = requireRecord(
+    value,
+    'pricingRule.configuration.recurringDurationDiscount',
+  );
+  requireExactFields(
+    discount,
+    ['amountPerBlockIdr', 'blockDurationMinutes', 'enabled'],
+    'pricingRule.configuration.recurringDurationDiscount',
+  );
+
+  if (typeof discount.enabled !== 'boolean') {
+    throw new TypeError(
+      'pricingRule.configuration.recurringDurationDiscount.enabled must be a boolean.',
+    );
+  }
+
+  const blockDurationMinutes = normalizeDuration(
+    discount.blockDurationMinutes,
+    'pricingRule.configuration.recurringDurationDiscount.blockDurationMinutes',
+  );
+
+  if (blockDurationMinutes % incrementMinutes !== 0) {
+    throw new RangeError(
+      'pricingRule.configuration.recurringDurationDiscount.blockDurationMinutes must align with incrementMinutes.',
+    );
+  }
+
+  return Object.freeze({
+    amountPerBlockIdr: normalizeAmount(
+      discount.amountPerBlockIdr,
+      'pricingRule.configuration.recurringDurationDiscount.amountPerBlockIdr',
+    ),
+    blockDurationMinutes,
+    enabled: discount.enabled,
+  });
+}
+
 export function normalizeHourlyPricingConfiguration(value) {
   const configuration = requireRecord(value, 'pricingRule.configuration');
+  const hasRecurringDurationDiscount = Object.prototype.hasOwnProperty.call(
+    configuration,
+    'recurringDurationDiscount',
+  );
   requireExactFields(
     configuration,
-    ['amountPerIncrementIdr', 'incrementMinutes', 'minimumDurationMinutes', 'roundingMode'],
+    [
+      'amountPerIncrementIdr',
+      'incrementMinutes',
+      'minimumDurationMinutes',
+      'roundingMode',
+      ...(hasRecurringDurationDiscount ? ['recurringDurationDiscount'] : []),
+    ],
     'pricingRule.configuration',
   );
 
-  return Object.freeze({
+  const incrementMinutes = normalizeDuration(
+    configuration.incrementMinutes,
+    'pricingRule.configuration.incrementMinutes',
+  );
+  const normalized = {
     amountPerIncrementIdr: normalizeAmount(
       configuration.amountPerIncrementIdr,
       'pricingRule.configuration.amountPerIncrementIdr',
     ),
-    incrementMinutes: normalizeDuration(
-      configuration.incrementMinutes,
-      'pricingRule.configuration.incrementMinutes',
-    ),
+    incrementMinutes,
     minimumDurationMinutes: normalizeDuration(
       configuration.minimumDurationMinutes,
       'pricingRule.configuration.minimumDurationMinutes',
@@ -171,7 +220,16 @@ export function normalizeHourlyPricingConfiguration(value) {
       configuration.roundingMode,
       'pricingRule.configuration.roundingMode',
     ),
-  });
+  };
+
+  if (hasRecurringDurationDiscount) {
+    normalized.recurringDurationDiscount = normalizeRecurringDurationDiscount(
+      configuration.recurringDurationDiscount,
+      incrementMinutes,
+    );
+  }
+
+  return Object.freeze(normalized);
 }
 
 function normalizeFixedSessionConfiguration(value) {
