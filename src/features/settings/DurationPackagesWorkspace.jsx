@@ -196,9 +196,7 @@ export function DurationPackagesWorkspace({
             : `${statusTarget.name} tidak lagi ditawarkan untuk booking baru.`,
         tone: 'success',
         title:
-          nextStatus === PRICING_RULE_STATUSES.ACTIVE
-            ? 'Paket diaktifkan'
-            : 'Paket dinonaktifkan',
+          nextStatus === PRICING_RULE_STATUSES.ACTIVE ? 'Paket diaktifkan' : 'Paket dinonaktifkan',
       });
       setStatusTarget(null);
       onChanged();
