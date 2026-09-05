@@ -147,10 +147,7 @@ function normalizeAmount(value, label) {
 }
 
 function normalizeRecurringDurationDiscount(value, incrementMinutes) {
-  const discount = requireRecord(
-    value,
-    'pricingRule.configuration.recurringDurationDiscount',
-  );
+  const discount = requireRecord(value, 'pricingRule.configuration.recurringDurationDiscount');
   requireExactFields(
     discount,
     ['amountPerBlockIdr', 'blockDurationMinutes', 'enabled'],
