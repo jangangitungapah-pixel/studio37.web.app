@@ -1253,7 +1253,7 @@ service cloud.firestore {
         && isValidSessionType(request.resource.data)
         && preservesSessionTypeHistory();
 
-      allow delete: if false;
+      allow delete: if isActiveOwner();
     }
 
     match /pricingRules/{pricingRuleId} {
@@ -1272,7 +1272,7 @@ service cloud.firestore {
         && hasValidPricingRuleReferences(request.resource.data)
         && preservesPricingRuleHistory();
 
-      allow delete: if false;
+      allow delete: if isActiveOwner();
     }
 
     match /addOns/{addOnId} {
@@ -1291,7 +1291,7 @@ service cloud.firestore {
         && hasValidAddOnReferences(request.resource.data)
         && preservesAddOnHistory();
 
-      allow delete: if false;
+      allow delete: if isActiveOwner();
     }
 
     match /operators/{operatorId} {
