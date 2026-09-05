@@ -1253,7 +1253,8 @@ service cloud.firestore {
         && isValidSessionType(request.resource.data)
         && preservesSessionTypeHistory();
 
-      allow delete: if isActiveOwner();
+      allow delete: if isActiveOwner()
+        && resource.data.status == 'disabled';
     }
 
     match /pricingRules/{pricingRuleId} {
@@ -1272,7 +1273,9 @@ service cloud.firestore {
         && hasValidPricingRuleReferences(request.resource.data)
         && preservesPricingRuleHistory();
 
-      allow delete: if isActiveOwner();
+      allow delete: if isActiveOwner()
+        && (resource.data.status == 'disabled'
+          || !existsAfter(sessionTypePath(resource.data.sessionTypeId)));
     }
 
     match /addOns/{addOnId} {
@@ -1291,7 +1294,10 @@ service cloud.firestore {
         && hasValidAddOnReferences(request.resource.data)
         && preservesAddOnHistory();
 
-      allow delete: if isActiveOwner();
+      allow delete: if isActiveOwner()
+        && (resource.data.status == 'disabled'
+          || (resource.data.sessionTypeId is string
+            && !existsAfter(sessionTypePath(resource.data.sessionTypeId))));
     }
 
     match /operators/{operatorId} {
