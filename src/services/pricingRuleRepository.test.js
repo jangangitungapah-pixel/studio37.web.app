@@ -52,6 +52,7 @@ function createHarness({ documents } = {}) {
   const writeTimestamp = { kind: 'server-timestamp' };
   const adapter = {
     collection: vi.fn(() => collectionReference),
+    deleteDoc: vi.fn(async () => undefined),
     doc: vi.fn((_collectionReference, pricingRuleId) =>
       pricingRuleId
         ? { id: pricingRuleId, path: `pricingRules/${pricingRuleId}` }
@@ -94,7 +95,7 @@ describe('pricingRuleRepository', () => {
     expect(adapter.getDocs).toHaveBeenCalledOnce();
     expect(pricingRules.map(({ id }) => id)).toEqual(['studio-rule', 'general-rule']);
     expect(repository).not.toHaveProperty('listAll');
-    expect(repository).not.toHaveProperty('deletePricingRule');
+    expect(repository.deletePricingRule).toEqual(expect.any(Function));
     expect(repository).not.toHaveProperty('resolvePricingRule');
   });
 
@@ -142,7 +143,7 @@ describe('pricingRuleRepository', () => {
     expect(adapter.updateDoc.mock.calls[0][1]).not.toHaveProperty('status');
   });
 
-  it('soft-disables rules without exposing hard delete', async () => {
+  it('soft-disables rules while keeping hard delete as an explicit separate action', async () => {
     const { adapter, repository, writeTimestamp } = createHarness();
 
     await expect(
@@ -157,7 +158,18 @@ describe('pricingRuleRepository', () => {
         updatedByUid: 'owner-1',
       },
     );
-    expect(repository.deletePricingRule).toBeUndefined();
+    expect(repository.deletePricingRule).toEqual(expect.any(Function));
+  });
+
+  it('hard-deletes one pricing rule by normalized document id', async () => {
+    const { adapter, repository } = createHarness();
+
+    await expect(repository.deletePricingRule('package-180')).resolves.toBe('package-180');
+
+    expect(adapter.deleteDoc).toHaveBeenCalledWith({
+      id: 'package-180',
+      path: 'pricingRules/package-180',
+    });
   });
 
   it('rejects malformed values and stored documents before returning or writing', async () => {
@@ -177,8 +189,10 @@ describe('pricingRuleRepository', () => {
     await expect(
       repository.setPricingRuleStatus('general-rule', 'archived', { actorUid: 'owner-1' }),
     ).rejects.toThrow(/status/);
+    await expect(repository.deletePricingRule('pricingRules/general')).rejects.toThrow(/document id/);
     expect(adapter.setDoc).not.toHaveBeenCalled();
     expect(adapter.updateDoc).not.toHaveBeenCalled();
+    expect(adapter.deleteDoc).not.toHaveBeenCalled();
 
     const malformed = createHarness({
       documents: [
