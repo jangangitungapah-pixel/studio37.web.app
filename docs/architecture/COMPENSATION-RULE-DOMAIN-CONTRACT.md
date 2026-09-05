@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 6A foundation for PRD-07. This contract defines configurable operator-compensation rules only. It does not implement calculation, rule resolution, booking integration, commission entries, payout, adjustment, or management UI.
+Phase 6A foundation plus the Phase 6A2 Firestore activation boundary for PRD-07. This contract defines configurable operator-compensation rules and their Owner-only persistence boundary. It does not implement calculation, rule resolution, booking integration, commission entries, payout, adjustment, or management UI.
 
 ## Separation from customer pricing
 
@@ -33,7 +33,7 @@ Rules use immutable auto-generated document IDs, soft status, deterministic prio
 - `status`: `active | disabled`
 - `createdAt`, `createdByUid`, `updatedAt`, `updatedByUid`
 
-A non-null exact operator scope must refer to an operator that supports the rule's `operatorType`. Reference existence and relationship checks belong at the Firestore authorization boundary.
+A non-null exact operator scope must refer to an operator that supports the rule's `operatorType`. Reference existence and relationship checks are enforced at the Firestore authorization boundary.
 
 ## Supported models
 
@@ -109,16 +109,19 @@ Phase 6A does **not** declare the final precedence algorithm. A later pure resol
 
 ## Repository boundary
 
-The feature repository owns one bounded `priority desc + limit(200)` one-shot query and focused operations:
+The feature repository owns a strict single-document read, one bounded `priority desc + limit(200)` one-shot query, and focused writes:
 
+- get one rule
 - list rules
 - create rule
 - edit rule
 - soft activate/deactivate
 
+List decoding may skip malformed legacy/corrupt rows while returning diagnostics; strict single-document reads fail closed on invalid data.
+
 It intentionally exposes no:
 
-- generic `listAll()`
+- generic unbounded `listAll()`
 - listener
 - hard delete
 - compensation calculation
@@ -129,11 +132,24 @@ It intentionally exposes no:
 
 ## Firestore activation boundary
 
-Phase 6A intentionally leaves `compensationRules` under the repository-wide Firestore default-deny fallback. The client repository and domain model exist, but production/client Firestore access is not enabled yet.
+Phase 6A2 activates `compensationRules` persistence behind a strict active-Owner-only Firestore boundary.
 
-This fail-closed state is deliberate. Compensation rates are sensitive and should not become live-readable or writable before the exact Owner-only rules, reference checks, metadata preservation, bounded list query, and emulator tests land together.
+The boundary requires:
 
-The follow-up activation slice must allow only an active Owner to get/list/create/update compensation rules, cap list queries at 200, validate exact operator/session/studio references, verify an exact operator supports the declared operator type, preserve creation metadata, require server-time update metadata, and continue denying hard delete. No Studio Operator capability should implicitly grant access to the rule table.
+- `get` only for an active Owner
+- `list` only for an active Owner with an explicit query limit of at most 200
+- `create` only for an active Owner with the exact canonical document/configuration shape
+- new rules to start with `active` status
+- server-owned create/update timestamps and actor UIDs
+- `update` to preserve immutable creation metadata
+- non-null `sessionTypeId`, `studioId`, and `operatorId` references to exist
+- an exact `operatorId` to support the declared `operatorType`
+- Studio Operators to remain denied even when delegated commission capabilities are present
+- hard delete to remain denied
+
+This activation does not broaden compensation-rate visibility to operators. The raw rule table remains sensitive Owner-only operational/financial configuration.
+
+The emulator acceptance suite must cover the authorization boundary, query bounds, all five canonical models, exact schema/configuration validation, reference checks, operator/type compatibility, metadata integrity, soft lifecycle, and hard-delete denial.
 
 ## Historical safety
 
@@ -153,12 +169,11 @@ Do **not** encode this as a per-session or generic fixed booking fee. Doing so r
 
 The missing semantics are tracked separately in GitHub issue #49 and require a deliberate `per_day`, `per_shift`, or equivalent eligibility/idempotency contract.
 
-## Phase 6A non-goals
+## Phase 6A2 non-goals
 
-- no live Firestore access to compensation rules yet
 - no compensation calculation yet
 - no rule winner/resolver yet
-- no snapshots yet
+- no booking/commission snapshot integration yet
 - no Pending/Earned/Paid/Void entries yet
 - no manual adjustments yet
 - no payout settlement yet
