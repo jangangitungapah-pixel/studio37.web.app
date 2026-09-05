@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Install Functions dependencies
+        run: npm --prefix functions install --no-audit --no-fund
+
       - name: Check formatting
         run: npm run format:check
 
@@ -56,6 +59,12 @@ jobs:
 
       - name: Test Phase 6D2 persistence repository
         run: npx vitest run src/services/bookingCompensationPersistenceRepository.test.js
+
+      - name: Test Phase 6E trusted execution core
+        run: npx vitest run functions/src/trustedBookingCompensationCore.test.js
+
+      - name: Build Phase 6E Cloud Functions bundle
+        run: npm --prefix functions run build
 
       - name: Test Phase 6D2 Firestore persistence boundary
         env:
