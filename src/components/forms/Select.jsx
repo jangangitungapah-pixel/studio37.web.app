@@ -27,6 +27,7 @@ export function Select({
 }) {
   const generatedId = useId();
   const id = providedId || `select-${generatedId.replaceAll(':', '')}`;
+  const nativeId = `${id}-native`;
   const listboxId = `${id}-listbox`;
   const normalizedOptions = useMemo(() => options.map(normalizeOption), [options]);
   const selectedOption = normalizedOptions.find((option) => option.value === value);
@@ -148,15 +149,15 @@ export function Select({
           <select
             {...props}
             ref={nativeRef}
-            id={id}
+            id={nativeId}
             value={value}
             onChange={onChange}
             required={required}
             disabled={disabled}
             tabIndex={-1}
-            aria-invalid={Boolean(error) || undefined}
-            aria-describedby={describedBy}
+            aria-hidden="true"
             className="sr-only ui-select__native-contract"
+            data-select-native-contract="true"
             onFocus={() => triggerRef.current?.focus()}
           >
             {placeholder ? (
@@ -173,10 +174,10 @@ export function Select({
 
           <button
             ref={triggerRef}
+            id={id}
             type="button"
             className="ui-field__control ui-select-trigger"
             disabled={disabled}
-            aria-label={label}
             aria-haspopup="listbox"
             aria-expanded={open}
             aria-controls={listboxId}

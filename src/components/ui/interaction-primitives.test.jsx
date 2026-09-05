@@ -65,13 +65,14 @@ function ToastHarness() {
 }
 
 describe('Phase 1C interaction primitives', () => {
-  it('preserves the accessible native select contract and forwards changes', async () => {
+  it('keeps the native form contract while exposing only the visible select trigger', async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
-    render(
+    const { container } = render(
       <Select
         label="Payment status"
+        name="paymentStatus"
         value="pending"
         onChange={handleChange}
         options={[
@@ -81,8 +82,14 @@ describe('Phase 1C interaction primitives', () => {
       />,
     );
 
-    const select = screen.getByRole('combobox', { name: 'Payment status' });
-    await user.selectOptions(select, 'paid');
+    const trigger = screen.getByLabelText('Payment status');
+    const nativeSelect = container.querySelector('select[name="paymentStatus"]');
+
+    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+    expect(nativeSelect).toHaveAttribute('aria-hidden', 'true');
+    expect(nativeSelect).toHaveAttribute('tabindex', '-1');
+
+    await user.selectOptions(nativeSelect, 'paid');
 
     expect(handleChange).toHaveBeenCalledTimes(1);
   });
