@@ -66,10 +66,7 @@ function buildSnapshot(configuration, updatedAt) {
 
 describe('recurring discount pricing snapshots', () => {
   it('captures the recurring rule and exact discount breakdown used by the booking', () => {
-    const snapshot = buildSnapshot(
-      createConfiguration(),
-      new Date('2026-09-05T07:00:00.000Z'),
-    );
+    const snapshot = buildSnapshot(createConfiguration(), new Date('2026-09-05T07:00:00.000Z'));
 
     expect(snapshot.baseCalculation).toMatchObject({
       baseAmountIdr: 720_000,
