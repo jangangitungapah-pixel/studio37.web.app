@@ -7,7 +7,7 @@ function createStoredCustomer(overrides = {}) {
   return {
     createdAt: new Date('2026-09-01T03:00:00.000Z'),
     createdByUid: 'owner-1',
-    displayPhone: '0812-3456-7890',
+    displayPhone: '+6281234567890',
     email: 'client@example.com',
     name: 'Raka Studio',
     normalizedPhone: '+6281234567890',
@@ -109,14 +109,16 @@ describe('customerRepository', () => {
 
     expect(timestampFactory).toHaveBeenCalledOnce();
     expect(adapter.setDoc).toHaveBeenCalledWith(generatedReference, {
-      ...createDetails(),
+      displayPhone: '+6281234567890',
+      email: 'client@example.com',
+      name: 'Raka Studio',
+      normalizedPhone: '+6281234567890',
+      notes: 'Repeat customer',
       createdAt: writeTimestamp,
       createdByUid: 'owner-1',
-      normalizedPhone: '+6281234567890',
       updatedAt: writeTimestamp,
       updatedByUid: 'owner-1',
     });
-    expect(adapter.setDoc.mock.calls[0][1].email).toBe('client@example.com');
   });
 
   it('updates only mutable customer details plus server update metadata', async () => {
@@ -133,8 +135,11 @@ describe('customerRepository', () => {
     expect(adapter.updateDoc).toHaveBeenCalledWith(
       { id: 'customer-001', path: 'customers/customer-001' },
       {
-        ...createDetails({ displayPhone: '+62 813 0000 0000', name: 'Raka Baru' }),
+        displayPhone: '+6281300000000',
+        email: 'client@example.com',
+        name: 'Raka Baru',
         normalizedPhone: '+6281300000000',
+        notes: 'Repeat customer',
         updatedAt: writeTimestamp,
         updatedByUid: 'owner-1',
       },
@@ -160,7 +165,7 @@ describe('customerRepository', () => {
     expect(adapter.updateDoc).not.toHaveBeenCalled();
   });
 
-  it('fails closed when stored normalized-phone evidence is inconsistent', async () => {
+  it('fails closed when stored phone evidence is inconsistent', async () => {
     const { repository } = createHarness({
       phoneDocuments: [
         {
@@ -170,8 +175,6 @@ describe('customerRepository', () => {
       ],
     });
 
-    await expect(repository.findCustomersByPhone('0812-3456-7890')).rejects.toThrow(
-      /does not match/,
-    );
+    await expect(repository.findCustomersByPhone('0812-3456-7890')).rejects.toThrow(/not canonical/);
   });
 });
