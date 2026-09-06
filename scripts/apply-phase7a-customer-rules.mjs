@@ -61,7 +61,7 @@ const customerHelpers = `    function isValidCustomer(data) {
 const helperAnchor = '    function isValidStudioOperatingHours(data, bookingIntervalMinutes) {';
 if (!source.includes('    function isValidCustomer(data) {')) {
   if (!source.includes(helperAnchor)) throw new Error('Customer helper insertion anchor was not found.');
-  source = source.replace(helperAnchor, `${customerHelpers}${helperAnchor}`);
+  source = source.replace(helperAnchor, () => `${customerHelpers}${helperAnchor}`);
 }
 
 const customerMatch = `    match /customers/{customerId} {
@@ -86,7 +86,7 @@ const customerMatch = `    match /customers/{customerId} {
 const matchAnchor = '    // Phase 6D2 booking compensation persistence boundary.';
 if (!source.includes('    match /customers/{customerId} {')) {
   if (!source.includes(matchAnchor)) throw new Error('Customer match insertion anchor was not found.');
-  source = source.replace(matchAnchor, `${customerMatch}${matchAnchor}`);
+  source = source.replace(matchAnchor, () => `${customerMatch}${matchAnchor}`);
 }
 
 await writeFile(rulesUrl, source);
