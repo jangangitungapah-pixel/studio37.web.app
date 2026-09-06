@@ -33,8 +33,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Diagnose Phase 7A formatting
+        shell: bash
+        run: |
+          npx prettier --write src/services/customerRepository.test.js
+          echo '=== PHASE 7A PRETTIER DIFF ==='
+          git diff -- src/services/customerRepository.test.js
+          exit 1
 
       - name: Lint
         run: npm run lint
