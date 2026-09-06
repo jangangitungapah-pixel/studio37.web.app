@@ -45,21 +45,9 @@ decoding.
 - trimmed
 - maximum 120 characters
 
-### Display phone
+### Phone evidence
 
-`displayPhone` preserves the user's useful human-readable Indonesian formatting after outer
-whitespace is removed.
-
-- required string
-- maximum 40 characters
-- must be accepted by the centralized Indonesian phone normalizer
-
-### Normalized phone
-
-`normalizedPhone` is always derived from `displayPhone` through
-`normalizeIndonesianPhone()` and is never accepted as independent mutable input.
-
-Examples that converge to the same canonical value:
+Customer input may use practical Indonesian formats such as:
 
 ```text
 0812-3456-7890
@@ -67,14 +55,27 @@ Examples that converge to the same canonical value:
 6281234567890
 ```
 
-Canonical match value:
+All accepted forms converge through the existing centralized `normalizeIndonesianPhone()` utility
+to:
 
 ```text
 +6281234567890
 ```
 
-Stored documents fail closed when `normalizedPhone` does not match the normalized representation of
-`displayPhone`.
+Both persisted phone fields are deliberately canonical in Phase 7A:
+
+```text
+displayPhone == normalizedPhone == canonical +62 value
+```
+
+This duplication follows the PRD field model while keeping the Firestore integrity rule enforceable.
+Firestore Rules cannot reliably strip arbitrary presentation punctuation, so preserving formatted
+input in the document would make the cross-field invariant impossible to prove at the security
+boundary. Human-friendly phone formatting is therefore a presentation concern for later UI work.
+
+`normalizedPhone` is never accepted as independent mutable repository input. It is always derived
+from the entered `displayPhone` value. Stored documents fail closed unless both phone evidence fields
+are canonical and equal.
 
 ### Email
 
@@ -210,7 +211,7 @@ The targeted Phase 7A gates cover:
 
 1. Indonesian phone normalization and matching convergence
 2. canonical customer schema validation
-3. normalized-phone evidence consistency
+3. canonical/equal phone evidence
 4. detached minimal snapshot construction
 5. exact customer reads
 6. bounded exact-phone repository queries
