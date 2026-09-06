@@ -88,17 +88,18 @@ export function normalizeCustomerDetails(value) {
   const customer = requireRecord(value, 'customer');
   requireExactFields(customer, customerDetailFieldNames, 'customer');
 
-  const displayPhone = requireTrimmedString(customer.displayPhone, 'customer.displayPhone', {
+  const enteredPhone = requireTrimmedString(customer.displayPhone, 'customer.displayPhone', {
     maxLength: 40,
+  });
+  const normalizedPhone = normalizeIndonesianPhone(enteredPhone, {
+    label: 'customer.displayPhone',
   });
 
   return Object.freeze({
-    displayPhone,
+    displayPhone: normalizedPhone,
     email: normalizeCustomerEmail(customer.email),
     name: requireTrimmedString(customer.name, 'customer.name', { maxLength: 120 }),
-    normalizedPhone: normalizeIndonesianPhone(displayPhone, {
-      label: 'customer.displayPhone',
-    }),
+    normalizedPhone,
     notes: requireTrimmedString(customer.notes, 'customer.notes', {
       allowEmpty: true,
       maxLength: 2000,
@@ -129,8 +130,11 @@ export function decodeCustomerDocument(value) {
     notes: customer.notes,
   });
 
-  if (customer.normalizedPhone !== details.normalizedPhone) {
-    throw new RangeError('customer.normalizedPhone does not match customer.displayPhone.');
+  if (
+    customer.displayPhone !== details.displayPhone ||
+    customer.normalizedPhone !== details.normalizedPhone
+  ) {
+    throw new RangeError('customer phone evidence is not canonical and internally consistent.');
   }
 
   const createdAt = toJavaScriptDate(customer.createdAt, { label: 'customer.createdAt' });
@@ -151,36 +155,32 @@ export function decodeCustomerDocument(value) {
 
 export function buildCustomerSnapshot(value) {
   const customer = requireRecord(value, 'customer snapshot source');
-  const snapshot = {
-    customerId: normalizeCustomerId(customer.id),
-    displayPhone: requireTrimmedString(customer.displayPhone, 'customer.displayPhone', {
-      maxLength: 40,
-    }),
-    email: normalizeCustomerEmail(customer.email),
-    name: requireTrimmedString(customer.name, 'customer.name', { maxLength: 120 }),
-    normalizedPhone: normalizeCustomerPhoneMatch(customer.displayPhone),
-  };
+  const normalizedPhone = normalizeCustomerPhoneMatch(customer.displayPhone);
 
-  if (customer.normalizedPhone !== snapshot.normalizedPhone) {
-    throw new RangeError('customer.normalizedPhone does not match customer.displayPhone.');
+  if (customer.displayPhone !== normalizedPhone || customer.normalizedPhone !== normalizedPhone) {
+    throw new RangeError('customer phone evidence is not canonical and internally consistent.');
   }
 
-  return Object.freeze(snapshot);
+  return Object.freeze({
+    customerId: normalizeCustomerId(customer.id),
+    displayPhone: normalizedPhone,
+    email: normalizeCustomerEmail(customer.email),
+    name: requireTrimmedString(customer.name, 'customer.name', { maxLength: 120 }),
+    normalizedPhone,
+  });
 }
 
 export function decodeCustomerSnapshot(value) {
   const snapshot = requireRecord(value, 'customer snapshot');
   requireExactFields(snapshot, snapshotFieldNames, 'customer snapshot');
 
-  const normalized = buildCustomerSnapshot({
+  return buildCustomerSnapshot({
     displayPhone: snapshot.displayPhone,
     email: snapshot.email,
     id: snapshot.customerId,
     name: snapshot.name,
     normalizedPhone: snapshot.normalizedPhone,
   });
-
-  return normalized;
 }
 
 export function customerMatchesPhone(customer, phone) {
