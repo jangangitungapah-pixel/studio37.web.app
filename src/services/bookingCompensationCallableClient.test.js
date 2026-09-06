@@ -88,12 +88,16 @@ describe('booking compensation callable client boundary', () => {
       }),
     });
 
-    await expect(unknownFieldClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject({
-      code: 'unexpected-receipt-shape',
-    });
-    await expect(missingFieldClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject({
-      code: 'unexpected-receipt-shape',
-    });
+    await expect(unknownFieldClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject(
+      {
+        code: 'unexpected-receipt-shape',
+      },
+    );
+    await expect(missingFieldClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject(
+      {
+        code: 'unexpected-receipt-shape',
+      },
+    );
   });
 
   it('rejects mismatched booking IDs and invalid receipt counters', async () => {
@@ -107,7 +111,9 @@ describe('booking compensation callable client boundary', () => {
     await expect(mismatchedClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject({
       code: 'booking-mismatch',
     });
-    await expect(invalidCounterClient.initialize({ bookingId: 'booking-001' })).rejects.toMatchObject({
+    await expect(
+      invalidCounterClient.initialize({ bookingId: 'booking-001' }),
+    ).rejects.toMatchObject({
       code: 'invalid-receipt',
     });
   });
