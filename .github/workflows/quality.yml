@@ -78,6 +78,12 @@ jobs:
       - name: Smoke Phase 6E2 deployable Functions module
         run: npm --prefix functions run smoke
 
+      - name: Test Firestore Security Rules
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules
+
       - name: Build
         run: npm run build
 
@@ -98,19 +104,5 @@ jobs:
           cat /tmp/studio37-vite.log
           exit 1
 
-      - name: Diagnose full unit suite
-        shell: bash
-        run: |
-          set +e
-          npm test > /tmp/studio37-full-unit.log 2>&1
-          STATUS=$?
-          set -e
-          echo '=== FULL UNIT FAILURE SUMMARY ==='
-          grep -E 'FAIL|failed|AssertionError|Test Files|Tests|Error:|×|❯|\.test\.(js|jsx|ts|tsx)' /tmp/studio37-full-unit.log | tail -n 120 || true
-          exit "$STATUS"
-
-      - name: Test Firestore Security Rules
-        env:
-          CI: true
-          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
-        run: npm run test:rules
+      - name: Test full unit suite
+        run: npm test
