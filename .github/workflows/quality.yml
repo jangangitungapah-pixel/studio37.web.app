@@ -33,8 +33,21 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Diagnose Phase 6E3 formatting
+        shell: bash
+        run: |
+          npx prettier --write \
+            docs/architecture/BOOKING-COMPENSATION-CALLABLE-CLIENT-CONTRACT.md \
+            src/lib/firebase/client.js \
+            src/services/bookingCompensationCallableClient.js \
+            src/services/bookingCompensationCallableClient.test.js
+          echo '=== PHASE 6E3 PRETTIER DIFF ==='
+          git diff -- \
+            docs/architecture/BOOKING-COMPENSATION-CALLABLE-CLIENT-CONTRACT.md \
+            src/lib/firebase/client.js \
+            src/services/bookingCompensationCallableClient.js \
+            src/services/bookingCompensationCallableClient.test.js
+          exit 1
 
       - name: Lint
         run: npm run lint
