@@ -27,15 +27,12 @@ function getOrCreateFirebaseApp() {
 export const firebaseApp = getOrCreateFirebaseApp();
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
 export const firestoreDb = firebaseApp ? getFirestore(firebaseApp) : null;
-export const firebaseFunctions = firebaseApp ? getFunctions(firebaseApp, FIREBASE_FUNCTIONS_REGION) : null;
+export const firebaseFunctions = firebaseApp
+  ? getFunctions(firebaseApp, FIREBASE_FUNCTIONS_REGION)
+  : null;
 
 function connectFirebaseEmulators() {
-  if (
-    !shouldUseFirebaseEmulators ||
-    !firebaseAuth ||
-    !firestoreDb ||
-    !firebaseFunctions
-  ) {
+  if (!shouldUseFirebaseEmulators || !firebaseAuth || !firestoreDb || !firebaseFunctions) {
     return false;
   }
 
