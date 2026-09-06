@@ -78,6 +78,12 @@ jobs:
       - name: Smoke Phase 6E2 deployable Functions module
         run: npm --prefix functions run smoke
 
+      - name: Test Phase 6E3 callable client boundary
+        run: >-
+          npx vitest run
+          src/lib/firebase/client.test.js
+          src/services/bookingCompensationCallableClient.test.js
+
       - name: Test Firestore Security Rules
         env:
           CI: true
