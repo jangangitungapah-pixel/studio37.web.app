@@ -42,7 +42,7 @@ The browser must never submit or derive trusted values for:
 The application-facing service is:
 
 ```js
-bookingCompensationCallableClient.initialize({ bookingId })
+bookingCompensationCallableClient.initialize({ bookingId });
 ```
 
 The request object must contain exactly one key: `bookingId`.
@@ -67,12 +67,12 @@ Firebase Auth continues to provide the authenticated actor identity. The browser
 The only accepted response shape is:
 
 ```js
-{
+const receipt = {
   bookingId,
   createdEntryCount,
   existingEntryCount,
-  initializedBookingSnapshot
-}
+  initializedBookingSnapshot,
+};
 ```
 
 The client validates all four fields and rejects additional fields.
@@ -128,12 +128,12 @@ Unexpected backend failures map to a generic `internal` client error.
 A retry can legitimately return:
 
 ```js
-{
+const receipt = {
   bookingId,
   createdEntryCount: 0,
   existingEntryCount: N,
-  initializedBookingSnapshot: false
-}
+  initializedBookingSnapshot: false,
+};
 ```
 
 This is treated as success. The client exposes counts only, preserving Phase 6D2/6E/6E2 idempotency semantics without exposing commission-entry identities.
