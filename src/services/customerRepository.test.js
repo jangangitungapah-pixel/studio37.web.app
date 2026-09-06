@@ -175,6 +175,8 @@ describe('customerRepository', () => {
       ],
     });
 
-    await expect(repository.findCustomersByPhone('0812-3456-7890')).rejects.toThrow(/not canonical/);
+    await expect(repository.findCustomersByPhone('0812-3456-7890')).rejects.toThrow(
+      /not canonical/,
+    );
   });
 });
