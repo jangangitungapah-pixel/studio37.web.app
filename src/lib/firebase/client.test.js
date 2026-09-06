@@ -4,6 +4,7 @@ import { firebaseClientConfig } from './config.js';
 import {
   firebaseApp,
   firebaseAuth,
+  firebaseFunctions,
   firestoreDb,
   getFirebaseClientStatus,
   initializeFirebaseAnalytics,
@@ -16,11 +17,12 @@ describe('Firebase client foundation', () => {
     expect(firebaseClientConfig.appId).toBe('1:1057595609578:web:13d717ba53055d6427a293');
   });
 
-  it('initializes one Firebase app with Auth and Firestore clients', () => {
+  it('initializes one Firebase app with Auth, Firestore, and Functions clients', () => {
     expect(firebaseApp).not.toBeNull();
     expect(firebaseApp.options.projectId).toBe('studio37webapp');
     expect(firebaseAuth).not.toBeNull();
     expect(firestoreDb).not.toBeNull();
+    expect(firebaseFunctions).not.toBeNull();
 
     expect(getFirebaseClientStatus()).toMatchObject({
       appEnvironment: 'development',
@@ -28,6 +30,7 @@ describe('Firebase client foundation', () => {
       authInitialized: true,
       configured: true,
       firestoreInitialized: true,
+      functionsInitialized: true,
       projectId: 'studio37webapp',
       useFirebaseEmulators: false,
     });
