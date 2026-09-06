@@ -8,7 +8,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -32,6 +32,19 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Apply Phase 7A customer rules patch
+        if: github.event_name == 'push' && github.ref_name == 'phase/7a-customer-domain-foundation'
+        run: |
+          node scripts/apply-phase7a-customer-rules.mjs
+          if git diff --quiet -- firestore.rules; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add firestore.rules
+          git commit -m 'feat: activate customer firestore boundary'
+          git push origin HEAD:${{ github.ref_name }}
 
       - name: Check formatting
         run: npm run format:check
