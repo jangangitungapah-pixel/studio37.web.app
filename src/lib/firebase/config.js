@@ -49,6 +49,7 @@ export const firebaseEmulatorConfig = Object.freeze({
   host: readEnvironmentValue('VITE_FIREBASE_EMULATOR_HOST', '127.0.0.1'),
   authPort: readPort('VITE_FIREBASE_AUTH_EMULATOR_PORT', 9099),
   firestorePort: readPort('VITE_FIRESTORE_EMULATOR_PORT', 8080),
+  functionsPort: readPort('VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT', 5001),
 });
 
 export const isProductionEnvironment = appEnvironment === 'production';
