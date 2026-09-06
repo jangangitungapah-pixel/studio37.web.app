@@ -66,6 +66,18 @@ jobs:
       - name: Test Phase 6E trusted execution core
         run: npx vitest run src/services/trustedBookingCompensationExecution.test.js
 
+      - name: Install Phase 6E2 Functions dependencies
+        run: npm --prefix functions install --no-audit --no-fund
+
+      - name: Prepare Phase 6E2 Functions runtime
+        run: npm run functions:prepare
+
+      - name: Test Phase 6E2 Firebase Functions runtime
+        run: npm --prefix functions test
+
+      - name: Smoke Phase 6E2 deployable Functions module
+        run: npm --prefix functions run smoke
+
       - name: Test Firestore Security Rules
         env:
           CI: true
