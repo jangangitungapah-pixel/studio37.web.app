@@ -16,7 +16,7 @@ function createCustomerDocument(overrides = {}) {
   return {
     createdAt: CREATED_AT,
     createdByUid: 'owner-1',
-    displayPhone: '0812-3456-7890',
+    displayPhone: '+6281234567890',
     email: 'client@example.com',
     id: 'customer-001',
     name: 'Raka Studio',
@@ -38,7 +38,7 @@ describe('customer domain foundation', () => {
         notes: '  Repeat rehearsal customer  ',
       }),
     ).toEqual({
-      displayPhone: '0812-3456-7890',
+      displayPhone: '+6281234567890',
       email: 'client@example.com',
       name: 'Raka Studio',
       normalizedPhone: '+6281234567890',
@@ -49,7 +49,7 @@ describe('customer domain foundation', () => {
     expect(normalizeCustomerPhoneMatch('+62 812 3456 7890')).toBe('+6281234567890');
   });
 
-  it('keeps display phone while deriving one canonical matching value', () => {
+  it('persists both phone evidence fields in one canonical enforceable form', () => {
     const details = normalizeCustomerDetails({
       displayPhone: '+62 (812) 3456-7890',
       email: null,
@@ -57,7 +57,7 @@ describe('customer domain foundation', () => {
       notes: '',
     });
 
-    expect(details.displayPhone).toBe('+62 (812) 3456-7890');
+    expect(details.displayPhone).toBe('+6281234567890');
     expect(details.normalizedPhone).toBe('+6281234567890');
     expect(details.email).toBeNull();
   });
@@ -92,7 +92,7 @@ describe('customer domain foundation', () => {
     ).toThrow('valid email');
   });
 
-  it('decodes a canonical customer document and validates normalized phone evidence', () => {
+  it('decodes a canonical customer document and validates phone evidence', () => {
     const customer = decodeCustomerDocument(createCustomerDocument());
 
     expect(customer.id).toBe('customer-001');
@@ -102,7 +102,10 @@ describe('customer domain foundation', () => {
 
     expect(() =>
       decodeCustomerDocument(createCustomerDocument({ normalizedPhone: '+6289999999999' })),
-    ).toThrow('does not match');
+    ).toThrow('not canonical');
+    expect(() =>
+      decodeCustomerDocument(createCustomerDocument({ displayPhone: '0812-3456-7890' })),
+    ).toThrow('not canonical');
   });
 
   it('rejects customer documents whose update time predates creation', () => {
@@ -119,7 +122,7 @@ describe('customer domain foundation', () => {
 
     expect(snapshot).toEqual({
       customerId: 'customer-001',
-      displayPhone: '0812-3456-7890',
+      displayPhone: '+6281234567890',
       email: 'client@example.com',
       name: 'Raka Studio',
       normalizedPhone: '+6281234567890',
@@ -138,7 +141,7 @@ describe('customer domain foundation', () => {
     );
   });
 
-  it('matches repeat customers using normalized phone rather than display formatting', () => {
+  it('matches repeat customers using normalized phone rather than input formatting', () => {
     const customer = decodeCustomerDocument(createCustomerDocument());
 
     expect(customerMatchesPhone(customer, '+62 812 3456 7890')).toBe(true);
