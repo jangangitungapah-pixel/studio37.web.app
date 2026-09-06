@@ -84,6 +84,18 @@ jobs:
           src/lib/firebase/client.test.js
           src/services/bookingCompensationCallableClient.test.js
 
+      - name: Test Phase 7A customer domain and repository
+        run: >-
+          npx vitest run
+          src/features/customers/customers.test.js
+          src/services/customerRepository.test.js
+
+      - name: Test Phase 7A customer Firestore boundary
+        env:
+          CI: true
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
+        run: npm run test:rules:customers
+
       - name: Test Firestore Security Rules
         env:
           CI: true
