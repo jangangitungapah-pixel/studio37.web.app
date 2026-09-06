@@ -210,9 +210,10 @@ export function createBookingCompensationCallableClient({ invokeCallable } = {})
 
       try {
         const callableResult = await callableInvoker({ bookingId: normalizedRequest.bookingId });
-        const responseData = isRecord(callableResult) && 'data' in callableResult
-          ? callableResult.data
-          : callableResult;
+        const responseData =
+          isRecord(callableResult) && 'data' in callableResult
+            ? callableResult.data
+            : callableResult;
         return normalizeSafeReceipt(responseData, normalizedRequest.bookingId);
       } catch (error) {
         if (error instanceof BookingCompensationClientError) {
