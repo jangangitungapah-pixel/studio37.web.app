@@ -2,6 +2,7 @@ import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/anal
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 import {
   firebaseClientConfig,
@@ -13,6 +14,7 @@ import {
 } from './config.js';
 
 const emulatorStateKey = Symbol.for('studio37.firebase.emulator-state');
+const FIREBASE_FUNCTIONS_REGION = 'asia-southeast2';
 
 function getOrCreateFirebaseApp() {
   if (!hasFirebaseClientConfiguration()) {
@@ -25,9 +27,15 @@ function getOrCreateFirebaseApp() {
 export const firebaseApp = getOrCreateFirebaseApp();
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
 export const firestoreDb = firebaseApp ? getFirestore(firebaseApp) : null;
+export const firebaseFunctions = firebaseApp ? getFunctions(firebaseApp, FIREBASE_FUNCTIONS_REGION) : null;
 
 function connectFirebaseEmulators() {
-  if (!shouldUseFirebaseEmulators || !firebaseAuth || !firestoreDb) {
+  if (
+    !shouldUseFirebaseEmulators ||
+    !firebaseAuth ||
+    !firestoreDb ||
+    !firebaseFunctions
+  ) {
     return false;
   }
 
@@ -43,6 +51,11 @@ function connectFirebaseEmulators() {
       firestoreDb,
       firebaseEmulatorConfig.host,
       firebaseEmulatorConfig.firestorePort,
+    );
+    connectFunctionsEmulator(
+      firebaseFunctions,
+      firebaseEmulatorConfig.host,
+      firebaseEmulatorConfig.functionsPort,
     );
     emulatorState.connected = true;
     globalThis[emulatorStateKey] = emulatorState;
@@ -67,6 +80,7 @@ export function getFirebaseClientStatus() {
     authInitialized: Boolean(firebaseAuth),
     emulatorsConnected: firebaseEmulatorsConnected,
     firestoreInitialized: Boolean(firestoreDb),
+    functionsInitialized: Boolean(firebaseFunctions),
   });
 }
 
