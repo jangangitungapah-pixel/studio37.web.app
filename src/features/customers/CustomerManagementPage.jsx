@@ -251,7 +251,9 @@ export function CustomerManagementPage({ repository = customerRepository }) {
       setDuplicateMatches([]);
       setReloadKey((value) => value + 1);
     } catch (error) {
-      setDialogError(getSafeFirebaseMessage(error, dialogMode === 'edit' ? 'menyimpan' : 'membuat'));
+      setDialogError(
+        getSafeFirebaseMessage(error, dialogMode === 'edit' ? 'menyimpan' : 'membuat'),
+      );
     } finally {
       setSaving(false);
     }
@@ -317,7 +319,9 @@ export function CustomerManagementPage({ repository = customerRepository }) {
       {exactSearchState === 'error' ? (
         <div className="customer-workspace__notice" data-tone="warning">
           <Icon name="warning" size={18} />
-          <p>Pencarian nomor lengkap gagal. Data directory yang sudah dimuat tetap bisa digunakan.</p>
+          <p>
+            Pencarian nomor lengkap gagal. Data directory yang sudah dimuat tetap bisa digunakan.
+          </p>
         </div>
       ) : null}
 
