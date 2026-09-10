@@ -13,6 +13,7 @@ export const ROUTE_POLICIES = Object.freeze({
   BOOKING: createPolicy({ allOf: [CAPABILITIES.BOOKING_VIEW] }),
   BOOKKEEPING: createPolicy({ allOf: [CAPABILITIES.BOOKKEEPING_VIEW] }),
   CALENDAR: createPolicy({ allOf: [CAPABILITIES.BOOKING_VIEW] }),
+  CUSTOMERS: createPolicy({ allOf: [CAPABILITIES.CUSTOMER_VIEW] }),
   DASHBOARD: createPolicy({ allOf: [CAPABILITIES.DASHBOARD_VIEW] }),
   DANGER_ZONE: createPolicy({ ownerOnly: true }),
   DEVELOPMENT: createPolicy({ ownerOnly: true }),
