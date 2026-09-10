@@ -178,7 +178,10 @@ describe('booking domain', () => {
   });
 
   it('allows non-reserving sessions to omit a studio', () => {
-    const value = draft({ sessionType: sessionType({ requiresStudioReservation: false }), studio: null });
+    const value = draft({
+      sessionType: sessionType({ requiresStudioReservation: false }),
+      studio: null,
+    });
     expect(value.studioId).toBeNull();
     expect(value.studioSnapshot).toBeNull();
   });

@@ -271,7 +271,10 @@ function normalizePricingSnapshot(value) {
   const rule = requireRecord(snapshot.rule, 'booking.pricingSnapshot.rule');
   requireExactFields(rule, pricingRuleSnapshotFieldNames, 'booking.pricingSnapshot.rule');
   const normalizedRule = Object.freeze({
-    configuration: clonePlainValue(rule.configuration, 'booking.pricingSnapshot.rule.configuration'),
+    configuration: clonePlainValue(
+      rule.configuration,
+      'booking.pricingSnapshot.rule.configuration',
+    ),
     effectiveFromIso: requireCanonicalIso(
       rule.effectiveFromIso,
       'booking.pricingSnapshot.rule.effectiveFromIso',
@@ -284,9 +287,13 @@ function normalizePricingSnapshot(value) {
     ),
     id: requireSingleSegmentId(rule.id, 'booking.pricingSnapshot.rule.id'),
     name: requireTrimmedString(rule.name, 'booking.pricingSnapshot.rule.name', { maxLength: 100 }),
-    pricingModel: requireTrimmedString(rule.pricingModel, 'booking.pricingSnapshot.rule.pricingModel', {
-      maxLength: 40,
-    }),
+    pricingModel: requireTrimmedString(
+      rule.pricingModel,
+      'booking.pricingSnapshot.rule.pricingModel',
+      {
+        maxLength: 40,
+      },
+    ),
     priority: Number.isInteger(rule.priority) ? rule.priority : NaN,
     sessionTypeId: requireSingleSegmentId(
       rule.sessionTypeId,
@@ -446,7 +453,8 @@ export function bookingsOverlap(leftValue, rightValue) {
   const right = requireRecord(rightValue, 'right booking');
   const leftStudioId = normalizeOptionalSingleSegmentId(left.studioId, 'left booking.studioId');
   const rightStudioId = normalizeOptionalSingleSegmentId(right.studioId, 'right booking.studioId');
-  if (leftStudioId === null || rightStudioId === null || leftStudioId !== rightStudioId) return false;
+  if (leftStudioId === null || rightStudioId === null || leftStudioId !== rightStudioId)
+    return false;
   if (!isConflictRelevantBooking(left) || !isConflictRelevantBooking(right)) return false;
 
   const leftStart = toJavaScriptDate(left.startAt, { label: 'left booking.startAt' });
@@ -573,7 +581,10 @@ export function decodeBookingDocument(value) {
   if ((studioSnapshot?.studioId ?? null) !== studioId) {
     throw new RangeError('booking.studioSnapshot does not match studioId.');
   }
-  if (sessionSnapshot.sessionTypeId !== requireSingleSegmentId(booking.sessionTypeId, 'booking.sessionTypeId')) {
+  if (
+    sessionSnapshot.sessionTypeId !==
+    requireSingleSegmentId(booking.sessionTypeId, 'booking.sessionTypeId')
+  ) {
     throw new RangeError('booking.sessionSnapshot does not match sessionTypeId.');
   }
   if (pricingSnapshot.rule.sessionTypeId !== sessionSnapshot.sessionTypeId) {
@@ -608,8 +619,14 @@ export function decodeBookingDocument(value) {
     assignedOperatorIds: normalizeAssignedOperatorIds(booking.assignedOperatorIds),
     balanceAmountIdr: booking.balanceAmountIdr,
     bookingNumber: booking.bookingNumber,
-    compensationSnapshot: clonePlainValue(booking.compensationSnapshot, 'booking.compensationSnapshot'),
-    compensationSummary: clonePlainValue(booking.compensationSummary, 'booking.compensationSummary'),
+    compensationSnapshot: clonePlainValue(
+      booking.compensationSnapshot,
+      'booking.compensationSnapshot',
+    ),
+    compensationSummary: clonePlainValue(
+      booking.compensationSummary,
+      'booking.compensationSummary',
+    ),
     createdAt,
     createdByUid: normalizeBookingActorUid(booking.createdByUid),
     customerId: customerSnapshot.customerId,
@@ -618,7 +635,10 @@ export function decodeBookingDocument(value) {
     durationMinutes,
     endAt,
     id,
-    notes: requireTrimmedString(booking.notes, 'booking.notes', { allowEmpty: true, maxLength: 4000 }),
+    notes: requireTrimmedString(booking.notes, 'booking.notes', {
+      allowEmpty: true,
+      maxLength: 4000,
+    }),
     paidAmountIdr: payment.paidAmountIdr,
     paymentStatus: payment.paymentStatus,
     pricingSnapshot,

@@ -64,7 +64,10 @@ export class BookingConflictQuerySaturationError extends Error {
   }
 }
 
-export function createBookingRepository({ adapter = defaultFirestoreAdapter, db = firestoreDb } = {}) {
+export function createBookingRepository({
+  adapter = defaultFirestoreAdapter,
+  db = firestoreDb,
+} = {}) {
   const resolvedDb = requireFirestore(db);
   const collectionReference = adapter.collection(resolvedDb, BOOKINGS_COLLECTION_NAME);
   const getDocumentReference = (bookingId) =>
@@ -82,8 +85,7 @@ export function createBookingRepository({ adapter = defaultFirestoreAdapter, db 
       const window = normalizeConflictWindow({ endAt, startAt, studioId });
       if (window.studioId === null) return Object.freeze([]);
 
-      const excludedId =
-        excludeBookingId === null ? null : normalizeBookingId(excludeBookingId);
+      const excludedId = excludeBookingId === null ? null : normalizeBookingId(excludeBookingId);
       const conflictQuery = adapter.query(
         collectionReference,
         adapter.where('studioId', '==', window.studioId),
