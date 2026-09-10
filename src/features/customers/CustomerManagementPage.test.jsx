@@ -195,7 +195,9 @@ describe('CustomerManagementPage', () => {
     repository.listCustomerDirectory.mockRejectedValueOnce({ code: 'unavailable' });
     renderPage({ repository });
 
-    expect(await screen.findByRole('heading', { name: 'Customer belum bisa dimuat' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Customer belum bisa dimuat' }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Firestore sedang tidak tersedia/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Coba lagi' })).toBeInTheDocument();
   });
