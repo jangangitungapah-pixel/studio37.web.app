@@ -96,6 +96,12 @@ jobs:
           FIREBASE_CLI_DISABLE_UPDATE_CHECK: true
         run: npm run test:rules:customers
 
+      - name: Test Phase 7B customer management UI
+        run: >-
+          npx vitest run
+          src/features/customers/customerManagement.test.js
+          src/features/customers/CustomerManagementPage.test.jsx
+
       - name: Test Firestore Security Rules
         env:
           CI: true
