@@ -10,6 +10,7 @@ import { BookingDetailPage } from '../features/booking/BookingDetailPage.jsx';
 import { BookkeepingPage } from '../features/bookkeeping/BookkeepingPage.jsx';
 import { CalendarPage } from '../features/calendar/CalendarPage.jsx';
 import { FeesCommissionsPage } from '../features/commissions/FeesCommissionsPage.jsx';
+import { CustomerManagementPage } from '../features/customers/CustomerManagementPage.jsx';
 import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
 import { DesignSystemPreviewPage } from '../features/dev/DesignSystemPreviewPage.jsx';
 import { FirebaseStatusPage } from '../features/dev/FirebaseStatusPage.jsx';
@@ -20,6 +21,7 @@ import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { StudioSettingsPage } from '../features/settings/StudioSettingsPage.jsx';
 
 export function AppRouter({
+  customerRepository,
   operatorAccountInvitationRepository,
   operatorRepository,
   permissionAdministrationRepository,
@@ -47,6 +49,13 @@ export function AppRouter({
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.CALENDAR} />}>
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
+          </Route>
+
+          <Route element={<CapabilityRoute policy={ROUTE_POLICIES.CUSTOMERS} />}>
+            <Route
+              path="customers"
+              element={<CustomerManagementPage repository={customerRepository} />}
+            />
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.FEES_COMMISSIONS} />}>

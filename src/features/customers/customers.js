@@ -2,6 +2,7 @@ import { toJavaScriptDate } from '../../lib/datetime/timestamps.js';
 import { normalizeIndonesianPhone } from '../../lib/validation/indonesianPhone.js';
 
 export const CUSTOMERS_COLLECTION_NAME = 'customers';
+export const CUSTOMER_DIRECTORY_LIMIT = 50;
 export const CUSTOMER_PHONE_MATCH_LIMIT = 5;
 
 const customerDetailFieldNames = Object.freeze(['displayPhone', 'email', 'name', 'notes']);
