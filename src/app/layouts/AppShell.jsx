@@ -16,6 +16,7 @@ const navigationItems = [
     icon: 'calendar',
     policy: ROUTE_POLICIES.CALENDAR,
   },
+  { to: '/customers', label: 'Customers', icon: 'user', policy: ROUTE_POLICIES.CUSTOMERS },
   {
     to: '/fees-commissions',
     label: 'Fee & Commission',
@@ -30,6 +31,7 @@ const pageLabels = [
   { match: '/bookings/', label: 'Booking Detail' },
   { match: '/fees-commissions', label: 'Fee & Commission' },
   { match: '/bookkeeping', label: 'Pembukuan' },
+  { match: '/customers', label: 'Customers' },
   { match: '/calendar', label: 'Booking Calendar' },
   { match: '/settings', label: 'Settings' },
   { match: '/dashboard', label: 'Dashboard' },
