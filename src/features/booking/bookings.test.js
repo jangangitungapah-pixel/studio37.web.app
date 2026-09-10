@@ -102,11 +102,13 @@ function storedBooking(overrides = {}) {
 describe('booking domain', () => {
   it('builds a stable booking number and canonical end time', () => {
     expect(buildBookingNumber('booking-001')).toBe('ST37-booking-001');
-    expect(calculateBookingEndAt('2026-09-12T03:30:00.000Z', 150).toISOString()).toBe(
-      '2026-09-12T06:00:00.000Z',
-    );
+    expect(
+      calculateBookingEndAt(new Date('2026-09-12T03:30:00.000Z'), 150).toISOString(),
+    ).toBe('2026-09-12T06:00:00.000Z');
     expect(() => buildBookingNumber('bookings/booking-001')).toThrow(/document id/);
-    expect(() => calculateBookingEndAt('2026-09-12T03:30:00.000Z', 70)).toThrow(/15-minute/);
+    expect(() => calculateBookingEndAt(new Date('2026-09-12T03:30:00.000Z'), 70)).toThrow(
+      /15-minute/,
+    );
   });
 
   it('blocks only real same-room interval intersections', () => {
