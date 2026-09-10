@@ -52,7 +52,10 @@ export function AppRouter({
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.CUSTOMERS} />}>
-            <Route path="customers" element={<CustomerManagementPage repository={customerRepository} />} />
+            <Route
+              path="customers"
+              element={<CustomerManagementPage repository={customerRepository} />}
+            />
           </Route>
 
           <Route element={<CapabilityRoute policy={ROUTE_POLICIES.FEES_COMMISSIONS} />}>
