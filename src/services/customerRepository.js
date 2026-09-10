@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -13,6 +14,7 @@ import {
 
 import {
   CUSTOMERS_COLLECTION_NAME,
+  CUSTOMER_DIRECTORY_LIMIT,
   CUSTOMER_PHONE_MATCH_LIMIT,
   decodeCustomerDocument,
   normalizeCustomerActorUid,
@@ -28,6 +30,7 @@ const defaultFirestoreAdapter = Object.freeze({
   getDoc,
   getDocs,
   limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -57,6 +60,17 @@ function decodeSnapshot(snapshot) {
   });
 }
 
+function decodeQuerySnapshot(snapshot) {
+  return Object.freeze(
+    snapshot.docs.map((customerSnapshot) =>
+      decodeCustomerDocument({
+        ...customerSnapshot.data(),
+        id: customerSnapshot.id,
+      }),
+    ),
+  );
+}
+
 export function createCustomerRepository({
   adapter = defaultFirestoreAdapter,
   db = firestoreDb,
@@ -71,10 +85,21 @@ export function createCustomerRepository({
 
   return Object.freeze({
     collectionName: CUSTOMERS_COLLECTION_NAME,
+    directoryLimit: CUSTOMER_DIRECTORY_LIMIT,
     phoneMatchLimit: CUSTOMER_PHONE_MATCH_LIMIT,
 
     async getCustomer(customerId) {
       return decodeSnapshot(await adapter.getDoc(getDocumentReference(customerId)));
+    },
+
+    async listCustomerDirectory() {
+      const directoryQuery = adapter.query(
+        collectionReference,
+        adapter.orderBy('name', 'asc'),
+        adapter.limit(CUSTOMER_DIRECTORY_LIMIT),
+      );
+
+      return decodeQuerySnapshot(await adapter.getDocs(directoryQuery));
     },
 
     async findCustomersByPhone(phone) {
@@ -84,16 +109,8 @@ export function createCustomerRepository({
         adapter.where('normalizedPhone', '==', normalizedPhone),
         adapter.limit(CUSTOMER_PHONE_MATCH_LIMIT),
       );
-      const snapshot = await adapter.getDocs(phoneQuery);
 
-      return Object.freeze(
-        snapshot.docs.map((customerSnapshot) =>
-          decodeCustomerDocument({
-            ...customerSnapshot.data(),
-            id: customerSnapshot.id,
-          }),
-        ),
-      );
+      return decodeQuerySnapshot(await adapter.getDocs(phoneQuery));
     },
 
     async createCustomer(value, { actorUid } = {}) {
