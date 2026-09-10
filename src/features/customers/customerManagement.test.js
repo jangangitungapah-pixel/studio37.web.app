@@ -66,12 +66,7 @@ describe('customer management view model', () => {
     });
 
     expect(result.normalized).toBeNull();
-    expect(Object.keys(result.errors).sort()).toEqual([
-      'displayPhone',
-      'email',
-      'name',
-      'notes',
-    ]);
+    expect(Object.keys(result.errors).sort()).toEqual(['displayPhone', 'email', 'name', 'notes']);
   });
 
   it('filters the bounded directory by name, email, and practical phone fragments', () => {
