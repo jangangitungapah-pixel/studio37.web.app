@@ -25,6 +25,19 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Diagnose Phase 8A1 formatting
+        shell: bash
+        run: |
+          npx prettier --write \
+            src/features/booking/bookings.js \
+            src/features/booking/bookings.test.js \
+            src/services/bookingRepository.js
+          git diff -- \
+            src/features/booking/bookings.js \
+            src/features/booking/bookings.test.js \
+            src/services/bookingRepository.js
+          exit 1
+
       - name: Formatting
         run: npm run format:check
 
