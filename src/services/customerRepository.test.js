@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { CUSTOMER_PHONE_MATCH_LIMIT } from '../features/customers/customers.js';
+import {
+  CUSTOMER_DIRECTORY_LIMIT,
+  CUSTOMER_PHONE_MATCH_LIMIT,
+} from '../features/customers/customers.js';
 import { createCustomerRepository } from './customerRepository.js';
 
 function createStoredCustomer(overrides = {}) {
@@ -49,6 +52,7 @@ function createHarness({ exactCustomer = createStoredCustomer(), phoneDocuments 
       ],
     })),
     limit: vi.fn((value) => ({ type: 'limit', value })),
+    orderBy: vi.fn((field, direction) => ({ direction, field, type: 'orderBy' })),
     query: vi.fn((...constraints) => ({ constraints })),
     setDoc: vi.fn(async () => undefined),
     updateDoc: vi.fn(async () => undefined),
@@ -81,6 +85,18 @@ describe('customerRepository', () => {
     const { repository } = createHarness({ exactCustomer: null });
 
     await expect(repository.getCustomer('customer-missing')).resolves.toBeNull();
+  });
+
+  it('loads one name-ordered customer directory capped at fifty documents', async () => {
+    const { adapter, repository } = createHarness();
+
+    const customers = await repository.listCustomerDirectory();
+
+    expect(adapter.orderBy).toHaveBeenCalledWith('name', 'asc');
+    expect(adapter.limit).toHaveBeenCalledWith(CUSTOMER_DIRECTORY_LIMIT);
+    expect(repository.directoryLimit).toBe(CUSTOMER_DIRECTORY_LIMIT);
+    expect(customers).toHaveLength(2);
+    expect(repository).not.toHaveProperty('listAll');
   });
 
   it('matches repeat customers with one normalized-phone query capped at five results', async () => {
