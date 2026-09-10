@@ -79,7 +79,9 @@ export function validateCustomerForm(values) {
 }
 
 export function filterCustomerDirectory(customers, searchText) {
-  const queryText = String(searchText ?? '').trim().toLocaleLowerCase('id-ID');
+  const queryText = String(searchText ?? '')
+    .trim()
+    .toLocaleLowerCase('id-ID');
   if (!queryText) return Object.freeze([...customers]);
 
   const phoneToken = normalizeSearchPhoneToken(queryText);
