@@ -25,6 +25,13 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Diagnose booking test formatting
+        shell: bash
+        run: |
+          npx prettier --write src/features/booking/bookings.test.js
+          git diff -- src/features/booking/bookings.test.js
+          exit 1
+
       - name: Formatting
         run: npm run format:check
 
